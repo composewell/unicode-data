@@ -11,13 +11,11 @@ Unicode data sources:
 * http://www.unicode.org/Public/UCD/latest/ucdxml/
 
 Download and decompress the following files:
-* `NormalizationTest.txt` from the `ucd` directory
 * `DerivedCoreProperties.txt` from the `ucd` directory
 * `ucd.all.flat.zip` from the `ucdxml` directory
 
 ```
 rm ucd/DerivedCoreProperties.txt
-wget -P ucd https://www.unicode.org/Public/UCD/latest/ucd/NormalizationTest.txt
 wget -P ucd https://www.unicode.org/Public/UCD/latest/ucd/DerivedCoreProperties.txt
 wget -P ucdxml http://www.unicode.org/Public/UCD/latest/ucdxml/ucd.all.flat.zip
 unzip -d ucdxml ucdxml/ucd.all.flat.zip
