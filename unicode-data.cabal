@@ -38,6 +38,7 @@ library
       Data.Unicode.Properties.Decompositions
       Data.Unicode.Properties.DecompositionsK
       Data.Unicode.Properties.DecompositionsK2
+      Data.Unicode.Properties.Core
   hs-source-dirs: lib
   ghc-options: -Wall
                -fwarn-identities
