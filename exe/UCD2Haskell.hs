@@ -34,9 +34,12 @@ import qualified Data.Set             as S
 import           GHC.Generics         (Generic)
 import           System.FilePath      ((-<.>))
 import           Text.HTML.TagSoup    (Tag (..), parseTags)
-import           WithCli              (withCli)
+import           WithCli              (withCli, HasArguments(..))
 
 import           Data.Unicode.Properties.DecomposeHangul (isHangul)
+
+import           DerivedCoreProperties (genCoreProperties)
+
 
 data GeneralCategory =
     Lu|Ll|Lt|             --LC
@@ -402,8 +405,8 @@ xmlToProps src dst = do
 
 -- | Convert the unicode data file (ucd.all.flat.xml) to Haskell data
 -- structures
-processFile :: FilePath -> FilePath -> IO ()
-processFile src outdir = do
+processFileXML :: FilePath -> FilePath -> IO ()
+processFileXML src outdir = do
     props <- (readSavedProps dst
               `catch` \(_e::IOException) -> xmlToProps src dst)
     -- print $ length props
@@ -423,5 +426,20 @@ processFile src outdir = do
         emitFile name gen =
             writeFile (outdir <> "/" <> name <> ".hs") $ gen name
 
+data CLIOptions =
+    CLIOptions
+        { ucdxml :: Maybe String
+        , ucd :: String
+        , output :: String
+        , core_prop :: [String]
+        } deriving (Show, Generic, HasArguments)
+
+cliClient :: CLIOptions -> IO ()
+cliClient opts = do
+    case (ucdxml opts) of
+        Nothing -> print "Skipping XML parsing."
+        Just xmlfile -> processFileXML xmlfile (output opts)
+    genCoreProperties (core_prop opts) (ucd opts) (output opts)
+
 main :: IO ()
-main = withCli processFile
+main = withCli cliClient
