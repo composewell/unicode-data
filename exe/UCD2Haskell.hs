@@ -39,6 +39,7 @@ import           WithCli              (withCli, HasArguments(..))
 import           Data.Unicode.Properties.DecomposeHangul (isHangul)
 
 import           DerivedCoreProperties (genCoreProperties)
+import           UnicodeData           (genModules)
 
 
 data GeneralCategory =
@@ -437,7 +438,7 @@ data CLIOptions =
 cliClient :: CLIOptions -> IO ()
 cliClient opts = do
     case (ucdxml opts) of
-        Nothing -> print "Skipping XML parsing."
+        Nothing -> genModules (ucd opts) (output opts)
         Just xmlfile -> processFileXML xmlfile (output opts)
     genCoreProperties (core_prop opts) (ucd opts) (output opts)
 

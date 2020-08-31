@@ -12,6 +12,10 @@ import Data.Bits (shiftL)
 import Data.Char (chr)
 import Data.List (unfoldr)
 
+{- XXX Is it worth using something like this?
+type InclusiveRange = (Int, Int)
+-}
+
 genSignature :: String -> String
 genSignature testBit = testBit <> " :: Char -> Bool"
 
