@@ -10,13 +10,18 @@ Unicode data sources:
 * http://www.unicode.org/Public/UCD/latest/ucd/
 * http://www.unicode.org/Public/UCD/latest/ucdxml/
 
-Download and decompress the following files:
+Download and decompress the following files preserving the file hierarchy:
 * `DerivedCoreProperties.txt` from the `ucd` directory
+* `DerivedNormalizationProps.txt` from the `ucd` directory
+* `UnicodeData.txt` from the `ucd` directory
+* `DerivedCombiningClass.txt` from the `ucd/extracted` directory
 * `ucd.all.flat.zip` from the `ucdxml` directory
 
 ```
-rm ucd/DerivedCoreProperties.txt
 wget -P ucd https://www.unicode.org/Public/UCD/latest/ucd/DerivedCoreProperties.txt
+wget -P ucd https://www.unicode.org/Public/UCD/latest/ucd/DerivedNormalizationProps.txt
+wget -P ucd https://www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt
+wget -P ucd/extracted https://www.unicode.org/Public/UCD/latest/ucd/extracted/DerivedCombiningClass.txt
 wget -P ucdxml http://www.unicode.org/Public/UCD/latest/ucdxml/ucd.all.flat.zip
 unzip -d ucdxml ucdxml/ucd.all.flat.zip
 ```
@@ -30,7 +35,7 @@ ucd2haskell --ucdxml ./ucdxml/ucd.all.flat.xml --ucd ./ucd --output ../lib/Data/
 ```
 `PROP = Any *Derived Property*(s) from ucd/DerivedCoreProperties.txt`
 
-To exclude generation from xml files, omit `--ucdxml`
+To use text files for generation generation, omit `--ucdxml`
 
 To exclude generation from DerivedCoreProperties.txt, omit `--core-prop`
 
