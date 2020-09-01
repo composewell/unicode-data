@@ -18,7 +18,7 @@
 module Parser.Text where
 
 import Control.DeepSeq (NFData(..))
-import Data.Char (chr, ord, isSpace)
+import Data.Char (ord, isSpace)
 import Data.Maybe (fromMaybe)
 import Data.Function ((&))
 import GHC.Generics (Generic)
@@ -37,31 +37,6 @@ import Common
 import Data.Binary as Bin
 import Prelude hiding (pred)
 
-data GeneralCategory =
-    Lu|Ll|Lt|             --LC
-    Lm|Lo|                --L
-    Mn|Mc|Me|             --M
-    Nd|Nl|No|             --N
-    Pc|Pd|Ps|Pe|Pi|Pf|Po| --P
-    Sm|Sc|Sk|So|          --S
-    Zs|Zl|Zp|             --Z
-    Cc|Cf|Cs|Co|Cn        --C
-    deriving (Show, Read, Generic, NFData, Binary)
-
-data DecompType =
-       DTCanonical | DTCompat  | DTFont
-     | DTNoBreak   | DTInitial | DTMedial   | DTFinal
-     | DTIsolated  | DTCircle  | DTSuper    | DTSub
-     | DTVertical  | DTWide    | DTNarrow
-     | DTSmall     | DTSquare  | DTFraction
-    deriving (Show,Eq,Generic, NFData, Binary)
-
-data Decomp = DCSelf | DC [Char] deriving (Show,Eq,Generic, NFData, Binary)
-
-data DType = Canonical | Kompat
-
-type PropertiesDB = [DetailedChar]
-
 data DetailedChar =
     DetailedChar
         { _char :: Char
@@ -72,9 +47,6 @@ data DetailedChar =
         , _decomposition :: Decomp
         }
     deriving (Show, Generic, NFData, Binary)
-
-readCodePoint :: String -> Char
-readCodePoint = chr . read . ("0x"++)
 
 -- XXX We seem to be adding a few additional cases for Canonical
 readDecomp :: String -> (Maybe DecompType, Decomp)

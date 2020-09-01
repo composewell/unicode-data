@@ -1,3 +1,10 @@
+{-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE TupleSections       #-}
+
 -- |
 -- Module      : Common functions & data
 --               (c) 2020 Composewell Technologies
@@ -11,10 +18,41 @@ module Common where
 import Data.Bits (shiftL)
 import Data.Char (chr)
 import Data.List (unfoldr)
+import Control.DeepSeq (NFData(..))
+import GHC.Generics (Generic)
+
+import Data.Binary as Bin
+
 
 {- XXX Is it worth using something like this?
 type InclusiveRange = (Int, Int)
 -}
+
+data GeneralCategory =
+    Lu|Ll|Lt|             --LC
+    Lm|Lo|                --L
+    Mn|Mc|Me|             --M
+    Nd|Nl|No|             --N
+    Pc|Pd|Ps|Pe|Pi|Pf|Po| --P
+    Sm|Sc|Sk|So|          --S
+    Zs|Zl|Zp|             --Z
+    Cc|Cf|Cs|Co|Cn        --C
+    deriving (Show, Read, Generic, NFData, Binary)
+
+data DecompType =
+       DTCanonical | DTCompat  | DTFont
+     | DTNoBreak   | DTInitial | DTMedial   | DTFinal
+     | DTIsolated  | DTCircle  | DTSuper    | DTSub
+     | DTVertical  | DTWide    | DTNarrow
+     | DTSmall     | DTSquare  | DTFraction
+    deriving (Show,Eq,Generic, NFData, Binary)
+
+data Decomp = DCSelf | DC [Char] deriving (Show,Eq,Generic, NFData, Binary)
+
+data DType = Canonical | Kompat
+
+readCodePoint :: String -> Char
+readCodePoint = chr . read . ("0x"++)
 
 genSignature :: String -> String
 genSignature testBit = testBit <> " :: Char -> Bool"
