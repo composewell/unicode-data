@@ -33,18 +33,18 @@ structures. It is recommended to use the text files for generation.
 
 To use the XML files run the utility like this:
 ```
-ucd2haskell --ucdxml ./ucdxml/ucd.all.flat.xml --output ../lib/Data/Unicode/Properties
+ucd2haskell --parser XML --input ./ucdxml/ucd.all.flat.xml --output ../lib/Data/Unicode/Properties
 ```
 
 To use the text files run the utility like this:
 ```
-ucd2haskell --ucd ./ucd --output ../lib/Data/Unicode/Properties --core-prop PROP
+ucd2haskell --parser Text --input ./ucd --output ../lib/Data/Unicode/Properties --core-prop PROP
 ```
 `PROP = Any *Derived Property* from ucd/DerivedCoreProperties.txt`
 
-You can generate in multiple properties like this:
+You can generate multiple properties like this:
 ```
-ucd2haskell --ucd ./ucd --output ../lib/Data/Unicode/Properties --core-prop Uppercase --core-prop Lowercase
+ucd2haskell --parser Text --input ./ucd --output ../lib/Data/Unicode/Properties --core-prop Uppercase --core-prop Lowercase
 ```
 
 Update the unicode version in the changelog below as well as in the top level

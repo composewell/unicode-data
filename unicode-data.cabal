@@ -57,6 +57,7 @@ executable ucd2haskell
       Data.Unicode.Properties.DecomposeHangul
       Data.Unicode.Internal.Division
       Parser.Text
+      Parser.XML
       Common
   build-depends:
       base >= 4 && < 5
