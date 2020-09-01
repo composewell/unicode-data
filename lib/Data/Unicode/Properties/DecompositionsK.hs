@@ -10,7 +10,6 @@ import qualified Data.Unicode.Properties.DecompositionsK2 as DK2
 -- this if isDecomposable returns false.
 {-# NOINLINE decomposeChar #-}
 decomposeChar :: Char -> [Char]
-
 decomposeChar '\160' = " "
 decomposeChar '\168' = " \776"
 decomposeChar '\170' = "a"
@@ -2357,5 +2356,4 @@ decomposeChar '\43869' = "\43831"
 decomposeChar '\43870' = "\619"
 decomposeChar '\43871' = "\43858"
 decomposeChar '\43881' = "\653"
-
 decomposeChar c = DK2.decomposeChar c

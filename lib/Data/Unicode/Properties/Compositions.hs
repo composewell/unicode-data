@@ -1001,6 +1001,7 @@ composeStarterPair '\71989' '\71984' = Just '\71992'
 composeStarterPair _ _ = Nothing
 
 
+{-# INLINE isSecondStarter #-}
 isSecondStarter :: Char -> Bool
 isSecondStarter = \c -> let n = ord c in n >= 2494 && n <= 71984 && lookupBit64 bitmap# n
   where
