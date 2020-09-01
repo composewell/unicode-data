@@ -28,20 +28,24 @@ unzip -d ucdxml ucdxml/ucd.all.flat.zip
 
 ## Generating Haskell files from Unicode database
 
-To generate the Haskell data structures from UCD build the ucd2haskell
-utility and run it like this:
+You can either use the XML or the text files to generate Haskell data
+structures. It is recommended to use the text files for generation.
+
+To use the XML files run the utility like this:
 ```
-ucd2haskell --ucdxml ./ucdxml/ucd.all.flat.xml --ucd ./ucd --output ../lib/Data/Unicode/Properties --core-prop PROP
+ucd2haskell --ucdxml ./ucdxml/ucd.all.flat.xml --output ../lib/Data/Unicode/Properties
 ```
-`PROP = Any *Derived Property*(s) from ucd/DerivedCoreProperties.txt`
 
-To use text files for generation generation, omit `--ucdxml`
+To use the text files run the utility like this:
+```
+ucd2haskell --ucd ./ucd --output ../lib/Data/Unicode/Properties --core-prop PROP
+```
+`PROP = Any *Derived Property* from ucd/DerivedCoreProperties.txt`
 
-To exclude generation from DerivedCoreProperties.txt, omit `--core-prop`
-
-You can pass in multiple properties like this:
+You can generate in multiple properties like this:
 ```
 ucd2haskell --ucd ./ucd --output ../lib/Data/Unicode/Properties --core-prop Uppercase --core-prop Lowercase
 ```
-Update the unicode version in the changelog below as well as in the top
-level README and haddock docs.
+
+Update the unicode version in the changelog below as well as in the top level
+README and haddock docs.
