@@ -4,12 +4,10 @@ module Data.Unicode.Properties.DecompositionsK2
 (decomposeChar)
 where
 
-
 -- Note: this is a partial function we do not expect to call
 -- this if isDecomposable returns false.
 {-# NOINLINE decomposeChar #-}
 decomposeChar :: Char -> [Char]
-
 decomposeChar '\63744' = "\35912"
 decomposeChar '\63745' = "\26356"
 decomposeChar '\63746' = "\36554"
@@ -3400,4 +3398,3 @@ decomposeChar '\195098' = "\40719"
 decomposeChar '\195099' = "\40726"
 decomposeChar '\195100' = "\40763"
 decomposeChar '\195101' = "\173568"
-
