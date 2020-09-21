@@ -20,6 +20,11 @@ source-repository head
   type: git
   location: https://github.com/composewell/unicode-data
 
+flag exe
+  description: Make the executable buildable
+  manual: True
+  default: False
+
 library
   default-language: Haskell2010
   exposed-modules:
@@ -70,3 +75,7 @@ executable ucd2haskell
     , containers
     , deepseq
     , filepath
+  if flag(exe)
+    buildable: True
+  else
+    buildable: False
