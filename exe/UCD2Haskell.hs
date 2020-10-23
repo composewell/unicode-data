@@ -20,29 +20,19 @@
 module Main where
 
 import WithCli (HasArguments(..), withCli)
-import Parser.XML (processFileXML)
 import Parser.Text (genModules)
 import GHC.Generics (Generic)
 
-data Parser
-    = XML
-    | Text
-    deriving (Show, Generic, Read)
-
 data CLIOptions =
     CLIOptions
-        { parser :: String
-        , input :: String
+        { input :: String
         , output :: String
         , core_prop :: [String]
         }
     deriving (Show, Generic, HasArguments)
 
 cliClient :: CLIOptions -> IO ()
-cliClient opts = do
-    case read (parser opts) of
-        Text -> genModules (input opts) (output opts) (core_prop opts)
-        XML -> processFileXML (input opts) (output opts)
+cliClient opts = genModules (input opts) (output opts) (core_prop opts)
 
 main :: IO ()
 main = withCli cliClient
