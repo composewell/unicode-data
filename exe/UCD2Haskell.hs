@@ -1,9 +1,7 @@
 -- |
 -- Module      : Main
--- Description : Script to parse Unicode XML database and convert
---               it to Haskell data structures
+-- Copyright   : (c) 2020 Composewell Technologies and Contributors
 --
--- Copyright   : (c) 2020 Composewell Technologies
 -- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental

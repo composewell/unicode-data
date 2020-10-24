@@ -2,7 +2,7 @@
 -- Module      : Data.Unicode.Internal.Division
 -- Copyright   : (c) 2020 Andrew Lelechenko
 --
--- License     : Apache-2.0
+-- License     : BSD-3-Clause
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 -- Portability : GHC

@@ -6,9 +6,10 @@ description:         A low level package providing efficient access to the
 homepage:            http://github.com/composewell/unicode-data
 bug-reports:         https://github.com/composewell/unicode-data/issues
 license:             Apache-2.0
-author:              Composewell Technologies
+license-file:        LICENSE
+author:              Composewell Technologies and Contributers
 maintainer:          streamly@composewell.com
-copyright:           2020 Composewell Technologies
+copyright:           2020 Composewell Technologies and Contributers
 category:            Data,Text,Unicode
 stability:           Experimental
 build-type:          Simple
