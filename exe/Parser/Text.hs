@@ -22,9 +22,8 @@ import Data.Char (chr, ord, isSpace)
 import Data.List (unfoldr)
 import Data.Maybe (fromMaybe)
 import Data.Function ((&))
-import Data.Unicode.Properties.DecomposeHangul (isHangul)
-import Streamly.Internal.Data.Fold (Fold(..))
 import Data.List (isInfixOf, intersperse)
+import Streamly.Internal.Data.Fold (Fold(..))
 
 import qualified Data.Set as Set
 import qualified Streamly.Prelude as S
@@ -121,6 +120,29 @@ bitMapToAddrLiteral = map (chr . toByte . padTo8) . unfoldr go
 
     toByte :: [Bool] -> Int
     toByte xs = sum $ map (\i -> if xs !! i then 1 `shiftL` i else 0) [0..7]
+
+
+-- This bit of code is duplicated but this duplication allows us to reduce 2
+-- dependencies on the executable.
+
+jamoLCount :: Int
+jamoLCount = 19
+
+jamoVCount :: Int
+jamoVCount = 21
+
+jamoTCount :: Int
+jamoTCount = 28
+
+hangulFirst :: Int
+hangulFirst = 0xac00
+
+hangulLast :: Int
+hangulLast = hangulFirst + jamoLCount * jamoVCount * jamoTCount - 1
+
+isHangul :: Char -> Bool
+isHangul c = n >= hangulFirst && n <= hangulLast
+    where n = ord c
 
 --------------------------------------------------------------------------------
 -- Parser
