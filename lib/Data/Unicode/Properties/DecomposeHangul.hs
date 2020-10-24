@@ -2,10 +2,10 @@
 
 -- |
 -- Module      : Data.Unicode.Properties.DecomposeHangul
--- Copyright   : (c) 2016 Harendra Kumar
+-- Copyright   : (c) 2020 Composewell Technologies
 --
--- License     : BSD-3-Clause
--- Maintainer  : harendra.kumar@gmail.com
+-- License     : Apache-2.0
+-- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 --
 module Data.Unicode.Properties.DecomposeHangul

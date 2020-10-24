@@ -1,27 +1,25 @@
 name:                unicode-data
-version:             0.1.0.0
-synopsis:            Generate Haskell files for unicode properties
-description:         -
+version:             0.1.0
+synopsis:            APIs to access Unicode database
+description:         A low level package providing efficient access to the
+                     unicode database.
 homepage:            http://github.com/composewell/unicode-data
 bug-reports:         https://github.com/composewell/unicode-data/issues
-license:             BSD3
-author:              Harendra Kumar, Antonio Nikishaev
-maintainer:          harendra.kumar@gmail.com
-copyright:           2014-15 Antonio Nikishaev, 2016 Harendra Kumar
+license:             Apache-2.0
+author:              Composewell Technologies
+maintainer:          streamly@composewell.com
+copyright:           2020 Composewell Technologies
 category:            Data,Text,Unicode
 stability:           Experimental
 build-type:          Simple
 cabal-version:       >= 1.10
-
-extra-source-files:
-    stack.yaml
 
 source-repository head
   type: git
   location: https://github.com/composewell/unicode-data
 
 flag exe
-  description: Make the executable buildable
+  description: Build the ucd2haskell executable
   manual: True
   default: False
 

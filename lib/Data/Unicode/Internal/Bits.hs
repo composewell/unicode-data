@@ -4,8 +4,8 @@
 -- Copyright   : (c) 2020 Andrew Lelechenko
 --               (c) 2020 Composewell Technologies
 --
--- License     : BSD-3-Clause
--- Maintainer  : harendra.kumar@gmail.com
+-- License     : Apache-2.0
+-- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 -- Portability : GHC
 --

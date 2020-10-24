@@ -1,9 +1,9 @@
 -- |
 -- Module      : Data.Unicode.Properties.Decompose
--- Copyright   : (c) 2016 Harendra Kumar
+-- Copyright   : (c) 2020 Composewell Technologies
 --
--- License     : BSD-style
--- Maintainer  : harendra.kumar@gmail.com
+-- License     : Apache-2.0
+-- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 --
 module Data.Unicode.Properties.Decompose
