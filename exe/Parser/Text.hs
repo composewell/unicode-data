@@ -17,11 +17,9 @@
 
 module Parser.Text where
 
-import Control.DeepSeq (NFData(..))
 import Data.Char (ord, isSpace)
 import Data.Maybe (fromMaybe)
 import Data.Function ((&))
-import GHC.Generics (Generic)
 import Data.Unicode.Properties.DecomposeHangul (isHangul)
 import Streamly.Internal.Data.Fold (Fold(..))
 import Data.List (isInfixOf, intersperse)
@@ -34,7 +32,6 @@ import qualified Streamly.Internal.Data.Unicode.Stream as U
 import qualified System.IO as Sys
 
 import Common
-import Data.Binary as Bin
 import Prelude hiding (pred)
 
 data DetailedChar =
@@ -46,7 +43,7 @@ data DetailedChar =
         , _decompositionType :: Maybe DecompType
         , _decomposition :: Decomp
         }
-    deriving (Show, Generic, NFData, Binary)
+    deriving (Show)
 
 -- XXX We seem to be adding a few additional cases for Canonical
 readDecomp :: String -> (Maybe DecompType, Decomp)
@@ -426,7 +423,7 @@ genModules indir outdir props = do
             , ( "DecompositionsK2"
               , genDecomposeDefModule "DecompositionsK2" [] [] Kompat (>= 60000))
             ]
-    -- XXX distribute_ does not work as expected
+    -- XXX distribute_ does not work as expected, fixed in a later PR.
     let combinedFold =
             const () <$> FL.distribute (map emitFile unicodeDataFolds)
     readLinesFromHandle unicodeDataH & S.map parseDetailedChar

@@ -62,14 +62,10 @@ executable ucd2haskell
       Parser.Text
       Common
   build-depends:
-      base >= 4 && < 5
-    , streamly
-    , getopt-generics
-    , binary
-    , bytestring
-    , containers
-    , deepseq
-    , filepath
+      base             >= 4    && < 5
+    , streamly         >= 0.7  && < 0.8
+    , getopt-generics  >= 0.13 && < 0.14
+    , containers       >= 0.5  && < 0.7
   if flag(exe)
     buildable: True
   else

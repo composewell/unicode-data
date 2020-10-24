@@ -18,15 +18,6 @@ module Common where
 import Data.Bits (shiftL)
 import Data.Char (chr)
 import Data.List (unfoldr)
-import Control.DeepSeq (NFData(..))
-import GHC.Generics (Generic)
-
-import Data.Binary as Bin
-
-
-{- XXX Is it worth using something like this?
-type InclusiveRange = (Int, Int)
--}
 
 data GeneralCategory =
     Lu|Ll|Lt|             --LC
@@ -37,7 +28,7 @@ data GeneralCategory =
     Sm|Sc|Sk|So|          --S
     Zs|Zl|Zp|             --Z
     Cc|Cf|Cs|Co|Cn        --C
-    deriving (Show, Read, Generic, NFData, Binary)
+    deriving (Show, Read)
 
 data DecompType =
        DTCanonical | DTCompat  | DTFont
@@ -45,9 +36,9 @@ data DecompType =
      | DTIsolated  | DTCircle  | DTSuper    | DTSub
      | DTVertical  | DTWide    | DTNarrow
      | DTSmall     | DTSquare  | DTFraction
-    deriving (Show,Eq,Generic, NFData, Binary)
+    deriving (Show, Eq)
 
-data Decomp = DCSelf | DC [Char] deriving (Show,Eq,Generic, NFData, Binary)
+data Decomp = DCSelf | DC [Char] deriving (Show, Eq)
 
 data DType = Canonical | Kompat
 
