@@ -60,7 +60,6 @@ executable ucd2haskell
       Data.Unicode.Properties.DecomposeHangul
       Data.Unicode.Internal.Division
       Parser.Text
-      Common
   build-depends:
       base             >= 4    && < 5
     , streamly         >= 0.7  && < 0.8
