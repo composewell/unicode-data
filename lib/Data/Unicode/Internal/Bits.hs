@@ -1,4 +1,3 @@
-{-# LANGUAGE MagicHash #-}
 -- |
 -- Module      : Data.Unicode.Internal.Bits
 -- Copyright   : (c) 2020 Andrew Lelechenko
