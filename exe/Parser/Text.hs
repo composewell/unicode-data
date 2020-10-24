@@ -6,12 +6,12 @@
 {-# LANGUAGE TupleSections       #-}
 
 -- |
--- Module      : Script to parse ucd/*.txt
+-- Module      : Parser.Text
+-- Description : Script to parse ucd/*.txt
 --               to Haskell data structures
 --
---               (c) 2020 Composewell Technologies
---
--- License     : BSD-3-Clause
+-- Copyright   : (c) 2020 Composewell Technologies
+-- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 

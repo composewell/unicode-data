@@ -6,10 +6,10 @@
 {-# LANGUAGE TupleSections       #-}
 
 -- |
--- Module      : Common functions & data
---               (c) 2020 Composewell Technologies
---
--- License     : BSD-3-Clause
+-- Module      : Common
+-- Description : Common functions & data structures
+-- Copyright   : (c) 2020 Composewell Technologies
+-- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 

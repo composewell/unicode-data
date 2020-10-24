@@ -5,8 +5,8 @@
 -- Module      : Data.Unicode.Internal.Division
 -- Copyright   : (c) 2020 Andrew Lelechenko
 --
--- License     : BSD-3-Clause
--- Maintainer  : harendra.kumar@gmail.com
+-- License     : Apache-2.0
+-- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 -- Portability : GHC
 --
@@ -39,7 +39,7 @@ highMul (W# x#) (W# y#) = W# high#
     where
         !(# high#, _ #) = timesWord2# x# y#
 
--- Input must be non-negative.
+-- | Input must be non-negative.
 --
 -- Instead of division by 21, we compute
 -- floor(floor((2^68+17)/21 * n) / 2^68) = floor((2^68+17)/21 * n/2^68) =
@@ -57,7 +57,7 @@ quotRem21 n
         high = highMul w 14054662151397753613 -- (2^68+17)/21
         q = high `shiftR` 4
 
--- Input must be non-negative.
+-- | Input must be non-negative.
 --
 -- Instead of division by 28, we compute
 -- floor(floor((2^65+3)/7 * n) / 2^67) = floor((2^65+3)/7 * n/2^67) =

@@ -1,7 +1,7 @@
 # README
 
-This package provides a library that defines unicode properties and an
-executable to generate the contents of the library.
+A Haskell library providing APIs to access unicode database. The Haskell content
+is generated programmatically from original unicode database files.
 
 ## Unicode database update
 
@@ -26,13 +26,13 @@ wget -P ucd/extracted https://www.unicode.org/Public/UCD/latest/ucd/extracted/De
 
 Run the program like this:
 ```
-ucd2haskell --input ./ucd --output ../lib/Data/Unicode/Properties --core-prop PROP
+ucd2haskell --input ./ucd --output ./lib/Data/Unicode/Properties --core-prop PROP
 ```
 `PROP = Any *Derived Property* from ucd/DerivedCoreProperties.txt`
 
 You can generate multiple properties like this:
 ```
-ucd2haskell --input ./ucd --output ../lib/Data/Unicode/Properties --core-prop Uppercase --core-prop Lowercase
+ucd2haskell --input ./ucd --output ./lib/Data/Unicode/Properties --core-prop Uppercase --core-prop Lowercase --core-prop Alphabetic
 ```
 
 Update the unicode version in the changelog below as well as in the top level
