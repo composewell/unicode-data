@@ -1,11 +1,11 @@
 -- |
 -- Module      : Data.Unicode.Properties.DecomposeHangul
--- Copyright   : (c) 2020 Composewell Technologies
+-- Copyright   : (c) 2020 Composewell Technologies and Contributors
 --
 -- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
---
+
 module Data.Unicode.Properties.DecomposeHangul
     (decomposeCharHangul
     , hangulFirst

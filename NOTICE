@@ -1,0 +1,18 @@
+unicode-data
+Copyright 2020 Composewell Technologies
+
+This product includes software developed at Composewell Technologies
+(http://www.composewell.com).
+
+The Initial Developer of some parts the framework, which are copied from
+https://github.com/composewell/unicode-transforms/, is Harendra Kumar
+(harendra.kumar@gmail.com). See the section about unicode-transforms-0.2.0 in
+LICENSE for the original license.
+* exe/Parser/Text.hs
+
+The Initial Developer of some parts of the framework, which are copied from
+https://github.com/composewell/unicode-transforms/, is Andrew Lelechenko
+(https://github.com/Bodigrim). See the section about unicode-transforms-0.2.0 in
+LICENSE original license.
+* lib/Data/Unicode/Internal/Bits.hs
+* lib/Data/Unicode/Internal/Division.hs
