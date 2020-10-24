@@ -56,10 +56,7 @@ executable ucd2haskell
                -fwarn-tabs
   hs-source-dirs: lib, exe
   main-is: UCD2Haskell.hs
-  other-modules:
-      Data.Unicode.Properties.DecomposeHangul
-      Data.Unicode.Internal.Division
-      Parser.Text
+  other-modules: Parser.Text
   build-depends:
       base             >= 4    && < 5
     , streamly         >= 0.7  && < 0.8
