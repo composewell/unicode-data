@@ -24,6 +24,16 @@ flag exe
   default: False
 
 library
+  default-extensions:
+      DeriveGeneric
+      DeriveAnyClass
+      RecordWildCards
+      ScopedTypeVariables
+      TemplateHaskell
+      TupleSections
+      BangPatterns
+      MagicHash
+      UnboxedTuples
   default-language: Haskell2010
   exposed-modules:
       Data.Unicode.Internal.Bits
@@ -48,6 +58,9 @@ library
       base >=4.7 && <5
 
 executable ucd2haskell
+  default-extensions:
+        DeriveGeneric
+        DeriveAnyClass
   default-language: Haskell2010
   ghc-options: -Wall
                -fwarn-identities

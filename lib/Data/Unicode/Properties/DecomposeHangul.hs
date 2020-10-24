@@ -1,5 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-
 -- |
 -- Module      : Data.Unicode.Properties.DecomposeHangul
 -- Copyright   : (c) 2020 Composewell Technologies
