@@ -23,3 +23,5 @@ cabal.project.local~
 
 ucdxml/ucd.all.flat.pdb
 ucdxml/ucd.all.flat.xml
+
+*~
