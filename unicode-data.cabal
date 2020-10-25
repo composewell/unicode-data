@@ -22,7 +22,7 @@ extra-source-files:
     .github/workflows/haskell.yml
     .gitignore
     .hlint.ignore
-    -- Changelog.md
+    Changelog.md
     README.md
     NOTICE
 
