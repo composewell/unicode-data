@@ -125,7 +125,7 @@ jamoTIndex c
 decomposeCharHangul :: Char -> (Char, Char, Char)
 decomposeCharHangul c = (l, v, t)
     where
-        i = (ord c) - hangulFirst
+        i = ord c - hangulFirst
         !(tn, ti) = assert (jamoTCount == 28) quotRem28 i
         !(li, vi) = assert (jamoVCount == 21) quotRem21 tn
 

@@ -8,12 +8,12 @@
 
 module Parser.Text where
 
+import Control.Monad (void)
 import Data.Bits (shiftL)
 import Data.Char (chr, ord, isSpace)
-import Data.List (unfoldr)
 import Data.Maybe (fromMaybe)
 import Data.Function ((&))
-import Data.List (isInfixOf, intersperse)
+import Data.List (unfoldr, isInfixOf, intersperse)
 import Streamly.Internal.Data.Fold (Fold(..))
 
 import qualified Data.Set as Set
@@ -114,7 +114,7 @@ bitMapToAddrLiteral = map (chr . toByte . padTo8) . unfoldr go
   where
     go :: [a] -> Maybe ([a], [a])
     go [] = Nothing
-    go xs = Just (take 8 xs, drop 8 xs)
+    go xs = Just $ splitAt 8 xs
 
     padTo8 :: [Bool] -> [Bool]
     padTo8 xs
@@ -153,7 +153,7 @@ isHangul c = n >= hangulFirst && n <= hangulLast
 
 readDecomp :: String -> (Maybe DecompType, Decomp)
 readDecomp s =
-    if length wrds == 0
+    if null wrds
     then (Nothing, DCSelf)
     else decmps wrds
 
@@ -202,7 +202,7 @@ filterDecomposableType dtype =
         case dtype of
             Canonical -> (== Just DTCanonical)
             -- XXX Is Canonical a subset of Kompat?
-            Kompat -> (const True)
+            Kompat -> const True
 
 genDecomposableModule ::
        Monad m => String -> DType -> Fold m DetailedChar String
@@ -232,14 +232,14 @@ genDecomposableModule file dtype =
 
 genCombiningClassModule :: Monad m => String -> Fold m DetailedChar String
 genCombiningClassModule file =
-    FL.lfilter (\dc -> (_combiningClass dc) /= 0) $ Fold step initial done
+    FL.lfilter (\dc -> _combiningClass dc /= 0) $ Fold step initial done
 
     where
 
     initial = return ([], [])
 
     step (st1, st2) a =
-        return $ (genCombiningClassDef a : st1, ord (_char a) : st2)
+        return (genCombiningClassDef a : st1, ord (_char a) : st2)
 
     done (st1, st2) =
         return
@@ -316,7 +316,7 @@ genCompositionsModule ::
     -> [Int]
     -> Fold m DetailedChar String
 genCompositionsModule file compExclu non0CC =
-    FL.lfilter (not . (flip elem) compExclu . ord . _char)
+    FL.lfilter (not . flip elem compExclu . ord . _char)
       $ filterNonHangul
       $ FL.lfilter (isDecompositionLen2 . _decomposition)
       $ filterDecomposableType Canonical $ FL.Fold step initial done
@@ -329,7 +329,7 @@ genCompositionsModule file compExclu non0CC =
     genComposePairDef name dc =
         name
           <> " "
-          <> show (d01 !! 0)
+          <> show (head d01)
           <> " " <> show (d01 !! 1) <> " = Just " <> show (_char dc)
 
         where
@@ -346,7 +346,7 @@ genCompositionsModule file compExclu non0CC =
 
     initial = return ([], [], [])
 
-    step (dec, sp, ss) dc = return $ (dec1, sp1, ss1)
+    step (dec, sp, ss) dc = return (dec1, sp1, ss1)
 
         where
 
@@ -354,11 +354,11 @@ genCompositionsModule file compExclu non0CC =
         d1Ord = ord $ d01 !! 1
         dec1 = genComposePairDef "composePair" dc : dec
         sp1 =
-            if not (elem d1Ord non0CC)
+            if d1Ord `notElem` non0CC
             then genComposePairDef "composeStarterPair" dc : sp
             else sp
         ss1 =
-            if not (elem d1Ord non0CC)
+            if d1Ord `notElem` non0CC
             then d1Ord : ss
             else ss
 
@@ -412,17 +412,18 @@ parseProperty propHeader = Fold step initial extract
     extract (Just x) = return x
 
     step Nothing str
-        | isInfixOf propHeader str = return $ Just (extractPropertyName str, [])
+        | propHeader `isInfixOf` str =
+            return $ Just (extractPropertyName str, [])
         | otherwise = return Nothing
     step st [] = return st
     step st (x:_)
         | x == '#' = return st
     step (Just (name, ordList)) str =
-        return $ Just $ (name, ordList ++ (parseRange . getRange) str)
+        return $ Just (name, ordList ++ (parseRange . getRange) str)
 
     extractPropertyName :: String -> String
     extractPropertyName str =
-        dropWhile (not . (flip elem) eqChars) str & tail & dropWhile isSpace
+        dropWhile (not . flip elem eqChars) str & tail & dropWhile isSpace
           & takeWhile (not . isSpace)
 
         where
@@ -434,7 +435,7 @@ parseProperty propHeader = Fold step initial extract
 
     parseRange :: String -> [Int]
     parseRange rng =
-        if (elem '.' rng)
+        if '.' `elem` rng
         then let low = read $ "0x" ++ takeWhile (/= '.') rng
                  high =
                      read $ "0x" ++ reverse (takeWhile (/= '.') (reverse rng))
@@ -500,7 +501,7 @@ genModules indir outdir props = do
         readLinesFromHandle derivedNormalizationPropsH
           & S.splitOn isDivider (parseProperty "Derived Property:")
           & S.find (\(name, _) -> name == "Full_Composition_Exclusion")
-          & fmap (\x -> fromMaybe ("", []) x)
+          & fmap (fromMaybe ("", []))
           & fmap snd
     non0CC <-
         readLinesFromHandle derivedCombiningClassH
@@ -530,7 +531,7 @@ genModules indir outdir props = do
             ]
     -- XXX distribute_ does not work as expected, fixed in a later PR.
     let combinedFold =
-            const () <$> FL.distribute (map emitFile unicodeDataFolds)
+            void $ FL.distribute (map emitFile unicodeDataFolds)
     readLinesFromHandle unicodeDataH & S.map parseDetailedChar
       & S.fold combinedFold
     readLinesFromHandle derivedCorePropsH
