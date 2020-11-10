@@ -1,22 +1,9 @@
--- Copyright 2020 Composewell Technologies and Contributers
---
--- Licensed under the Apache License, Version 2.0 (the "License"); you may not
--- use this file except in compliance with the License.  You may obtain a copy
--- of the License at
---
---     http://www.apache.org/licenses/LICENSE-2.0
---
--- Unless required by applicable law or agreed to in writing, software
--- distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
--- WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
--- License for the specific language governing permissions and limitations under
--- the License.
-
 -- |
 -- Module      : Data.Unicode.Internal.Bits
--- Copyright   : (c) 2020 Composewell Technologies and Contributors
+-- Copyright   : (c) 2020 Andrew Lelechenko
+--               (c) 2020 Composewell Technologies
 --
--- License     : Apache-2.0
+-- License     : BSD-3-Clause
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 -- Portability : GHC
@@ -28,8 +15,9 @@ module Data.Unicode.Internal.Bits
       lookupBit64
     ) where
 
+import Data.Bits (finiteBitSize, popCount)
 import GHC.Exts
-       (Addr#, Int(..), Word(..), indexWord64OffAddr#, and#, andI#,
+       (Addr#, Int(..), Word(..), indexWordOffAddr#, and#, andI#,
         uncheckedIShiftRL#, uncheckedShiftL#)
 
 -- | @lookup64 addr index@ looks up the bit stored at bit index @index@ using a
@@ -41,7 +29,13 @@ import GHC.Exts
 lookupBit64 :: Addr# -> Int -> Bool
 lookupBit64 addr# (I# index#) = W# (word## `and#` bitMask##) /= 0
   where
-    wordIndex# = index# `uncheckedIShiftRL#` 6#
-    word## = indexWord64OffAddr# addr# wordIndex#
-    bitIndex# = index# `andI#` 63#
+    !fbs@(I# fbs#) = finiteBitSize (0 :: Word) - 1
+    !(I# logFbs#) = case fbs of
+      31 -> 5
+      63 -> 6
+      _  -> popCount fbs -- this is a really weird architecture
+
+    wordIndex# = index# `uncheckedIShiftRL#` logFbs#
+    word## = indexWordOffAddr# addr# wordIndex#
+    bitIndex# = index# `andI#` fbs#
     bitMask## = 1## `uncheckedShiftL#` bitIndex#
