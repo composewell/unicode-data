@@ -11,16 +11,16 @@ module Parser.Text where
 import Control.Monad (void)
 import Data.Bits (shiftL)
 import Data.Char (chr, ord, isSpace)
-import Data.Maybe (fromMaybe)
 import Data.Function ((&))
 import Data.List (unfoldr, isInfixOf, intersperse)
+import Data.Maybe (fromMaybe)
 import Streamly.Internal.Data.Fold (Fold(..))
 
 import qualified Data.Set as Set
 import qualified Streamly.Prelude as S
 import qualified Streamly.Internal.Data.Fold as FL
-import qualified Streamly.Internal.FileSystem.Handle as H
 import qualified Streamly.Internal.Data.Unicode.Stream as U
+import qualified Streamly.Internal.FileSystem.Handle as H
 import qualified System.IO as Sys
 
 import Prelude hiding (pred)

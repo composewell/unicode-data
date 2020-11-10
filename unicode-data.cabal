@@ -61,7 +61,8 @@ library
       Data.Unicode.Properties.DecompositionsK2
       Data.Unicode.Properties.Core
   hs-source-dirs: lib
-  ghc-options: -Wall
+  ghc-options: -O2
+               -Wall
                -fwarn-identities
                -fwarn-incomplete-record-updates
                -fwarn-incomplete-uni-patterns
@@ -74,7 +75,8 @@ executable ucd2haskell
         DeriveGeneric
         DeriveAnyClass
   default-language: Haskell2010
-  ghc-options: -Wall
+  ghc-options: -O2
+               -Wall
                -fwarn-identities
                -fwarn-incomplete-record-updates
                -fwarn-incomplete-uni-patterns
