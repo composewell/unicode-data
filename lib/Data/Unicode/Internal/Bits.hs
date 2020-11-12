@@ -2,7 +2,6 @@
 -- Module      : Data.Unicode.Internal.Bits
 -- Copyright   : (c) 2020 Andrew Lelechenko
 --               (c) 2020 Composewell Technologies
---
 -- License     : BSD-3-Clause
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
