@@ -1,11 +1,19 @@
 -- |
 -- Module      : Parser.Text
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
---
+--               (c) Harendra Kumar
+--               (c) 2014-2015 Antonio Nikishaev
 -- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 
+-- The original unicode database parser was taken from
+-- https://github.com/composewell/unicode-transforms but was completely
+-- rewritten from scratch to parse from UCD text files instead of XML, only
+-- some types remain the same. That code in turn was originally taken from
+-- https://github.com/llelf/prose (Antonio Nikishaev) and heavily modified by
+-- Harendra Kumar.
+--
 module Parser.Text where
 
 import Control.Monad (void)
