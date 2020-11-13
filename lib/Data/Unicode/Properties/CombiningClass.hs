@@ -1,7 +1,6 @@
 -- |
 -- Module      : Data.Unicode.Properties.CombiningClass
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
---
 -- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
