@@ -1,19 +1,19 @@
+cabal-version:       2.2
 name:                unicode-data
 version:             0.1.0
-synopsis:            APIs to access Unicode database
+synopsis:            Access Unicode character database
 description:         A low level package providing efficient access to the
                      unicode database.
 homepage:            http://github.com/composewell/unicode-data
 bug-reports:         https://github.com/composewell/unicode-data/issues
 license:             Apache-2.0
 license-file:        LICENSE
-author:              Composewell Technologies and Contributers
+author:              Composewell Technologies and Contributors
 maintainer:          streamly@composewell.com
 copyright:           2020 Composewell Technologies and Contributers
 category:            Data,Text,Unicode
 stability:           Experimental
 build-type:          Simple
-cabal-version:       >= 1.10
 tested-with:         GHC==8.2.2
                    , GHC==8.6.5
                    , GHC==8.8.3
@@ -32,22 +32,34 @@ source-repository head
   type: git
   location: https://github.com/composewell/unicode-data
 
-flag exe
+flag ucd2haskell
   description: Build the ucd2haskell executable
   manual: True
   default: False
 
-library
+common default-extensions
   default-extensions:
+      BangPatterns
       DeriveGeneric
-      DeriveAnyClass
+      MagicHash
       RecordWildCards
       ScopedTypeVariables
-      TemplateHaskell
       TupleSections
-      BangPatterns
-      MagicHash
+
+      -- Experimental, may lead to issues
+      DeriveAnyClass
+      TemplateHaskell
       UnboxedTuples
+
+common compile-options
+  ghc-options: -Wall
+               -fwarn-identities
+               -fwarn-incomplete-record-updates
+               -fwarn-incomplete-uni-patterns
+               -fwarn-tabs
+
+library
+  import: default-extensions, compile-options
   default-language: Haskell2010
   exposed-modules:
       Data.Unicode.Internal.Bits
@@ -64,26 +76,14 @@ library
       Data.Unicode.Properties.Core
   hs-source-dirs: lib
   ghc-options: -O2
-               -Wall
-               -fwarn-identities
-               -fwarn-incomplete-record-updates
-               -fwarn-incomplete-uni-patterns
-               -fwarn-tabs
   build-depends:
       base >=4.7 && <5
 
 executable ucd2haskell
-  default-extensions:
-        DeriveGeneric
-        DeriveAnyClass
+  import: default-extensions, compile-options
   default-language: Haskell2010
   ghc-options: -O2
-               -Wall
-               -fwarn-identities
-               -fwarn-incomplete-record-updates
-               -fwarn-incomplete-uni-patterns
-               -fwarn-tabs
-  hs-source-dirs: lib, exe
+  hs-source-dirs: exe
   main-is: UCD2Haskell.hs
   other-modules: Parser.Text
   build-depends:
@@ -91,7 +91,7 @@ executable ucd2haskell
     , streamly         >= 0.7  && < 0.8
     , getopt-generics  >= 0.13 && < 0.14
     , containers       >= 0.5  && < 0.7
-  if flag(exe)
+  if flag(ucd2haskell)
     buildable: True
   else
     buildable: False
