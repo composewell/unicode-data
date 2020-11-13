@@ -14,7 +14,7 @@
 -- https://github.com/llelf/prose (Antonio Nikishaev) and heavily modified by
 -- Harendra Kumar.
 --
-module Parser.Text where
+module Parser.Text (genModules) where
 
 import Control.Monad (void)
 import Data.Bits (shiftL)
@@ -25,17 +25,17 @@ import Data.Maybe (fromMaybe)
 import Streamly.Internal.Data.Fold (Fold(..))
 
 import qualified Data.Set as Set
-import qualified Streamly.Prelude as S
-import qualified Streamly.Internal.Data.Fold as FL
-import qualified Streamly.Internal.Data.Unicode.Stream as U
-import qualified Streamly.Internal.FileSystem.Handle as H
+import qualified Streamly.Prelude as Stream
+import qualified Streamly.Internal.Data.Fold as Fold
+import qualified Streamly.Internal.Data.Unicode.Stream as Unicode
+import qualified Streamly.Internal.FileSystem.Handle as Handle
 import qualified System.IO as Sys
 
 import Prelude hiding (pred)
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- Types
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 data GeneralCategory =
     Lu|Ll|Lt|             --LC
@@ -71,9 +71,9 @@ data DetailedChar =
         }
     deriving (Show)
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- Helpers
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 apacheLicense :: String -> String
 apacheLicense modName =
@@ -81,7 +81,6 @@ apacheLicense modName =
         [ "-- |"
         , "-- Module      : " ++ modName
         , "-- Copyright   : (c) 2020 Composewell Technologies and Contributors"
-        , "--"
         , "-- License     : Apache-2.0"
         , "-- Maintainer  : streamly@composewell.com"
         , "-- Stability   : experimental"
@@ -104,9 +103,14 @@ genBitmap :: String -> [Int] -> String
 genBitmap funcName ordList = unlines
   [ "{-# INLINE " ++ funcName  ++ " #-}"
   , genSignature funcName
-  , funcName <> " = \\c -> let n = ord c in " ++ genRangeCheck "n" ordList ++ " && lookupBit64 bitmap# n"
+  , funcName
+        <> " = \\c -> let n = ord c in "
+        ++ genRangeCheck "n" ordList
+        ++ " && lookupBit64 bitmap# n"
   , "  where"
-  , "    bitmap# = " ++ show (bitMapToAddrLiteral (positionsToBitMap ordList)) ++ "#"
+  , "    bitmap# = "
+        ++ show (bitMapToAddrLiteral (positionsToBitMap ordList))
+        ++ "#"
   ]
 
 positionsToBitMap :: [Int] -> [Bool]
@@ -155,9 +159,9 @@ isHangul :: Char -> Bool
 isHangul c = n >= hangulFirst && n <= hangulLast
     where n = ord c
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- Parser
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 readDecomp :: String -> (Maybe DecompType, Decomp)
 readDecomp s =
@@ -196,13 +200,13 @@ readDecomp s =
     dtmap _ = DTCanonical
 
 filterNonHangul :: Monad m => Fold m DetailedChar a -> Fold m DetailedChar a
-filterNonHangul = FL.lfilter (not . isHangul . _char)
+filterNonHangul = Fold.lfilter (not . isHangul . _char)
 
 filterDecomposableType ::
        Monad m => DType -> Fold m DetailedChar a -> Fold m DetailedChar a
 filterDecomposableType dtype =
-    FL.lfilter ((/= DCSelf) . _decomposition)
-      . FL.lfilter (predicate . _decompositionType)
+    Fold.lfilter ((/= DCSelf) . _decomposition)
+      . Fold.lfilter (predicate . _decompositionType)
 
     where
 
@@ -215,7 +219,9 @@ filterDecomposableType dtype =
 genDecomposableModule ::
        Monad m => String -> DType -> Fold m DetailedChar String
 genDecomposableModule file dtype =
-    filterNonHangul $ filterDecomposableType dtype $ FL.Fold step initial done
+    filterNonHangul
+        $ filterDecomposableType dtype
+        $ Fold.Fold step initial done
 
     where
 
@@ -240,7 +246,7 @@ genDecomposableModule file dtype =
 
 genCombiningClassModule :: Monad m => String -> Fold m DetailedChar String
 genCombiningClassModule file =
-    FL.lfilter (\dc -> _combiningClass dc /= 0) $ Fold step initial done
+    Fold.lfilter (\dc -> _combiningClass dc /= 0) $ Fold step initial done
 
     where
 
@@ -281,9 +287,9 @@ genDecomposeDefModule ::
     -> (Int -> Bool)
     -> Fold m DetailedChar String
 genDecomposeDefModule file before after dtype pred =
-    FL.lfilter (pred . ord . _char)
+    Fold.lfilter (pred . ord . _char)
       $ filterNonHangul
-      $ filterDecomposableType dtype $ FL.Fold step initial done
+      $ filterDecomposableType dtype $ Fold.Fold step initial done
 
     where
 
@@ -310,7 +316,8 @@ genDecomposeDefModule file before after dtype pred =
     step st dc = return $ genDecomposeDef dc : st
 
     done st =
-        return $ unlines $ genHeader ++ before ++ genSign ++ reverse st ++ after
+        let body = genHeader ++ before ++ genSign ++ reverse st ++ after
+         in return $ unlines body
 
     genDecomposeDef dc =
         "decomposeChar "
@@ -324,10 +331,10 @@ genCompositionsModule ::
     -> [Int]
     -> Fold m DetailedChar String
 genCompositionsModule file compExclu non0CC =
-    FL.lfilter (not . flip elem compExclu . ord . _char)
+    Fold.lfilter (not . flip elem compExclu . ord . _char)
       $ filterNonHangul
-      $ FL.lfilter (isDecompositionLen2 . _decomposition)
-      $ filterDecomposableType Canonical $ FL.Fold step initial done
+      $ Fold.lfilter (isDecompositionLen2 . _decomposition)
+      $ filterDecomposableType Canonical $ Fold.Fold step initial done
 
     where
 
@@ -453,7 +460,7 @@ parseProperty propHeader = Fold step initial extract
 genCorePropertiesModule ::
        Monad m => String -> [String] -> Fold m (String, [Int]) String
 genCorePropertiesModule file props =
-    FL.lfilter (\(name, _) -> name `elem` props) $ Fold step initial done
+    Fold.lfilter (\(name, _) -> name `elem` props) $ Fold step initial done
 
     where
 
@@ -479,7 +486,8 @@ genCorePropertiesModule file props =
 
 parseDetailedChar :: String -> DetailedChar
 parseDetailedChar line =
-    DetailedChar (readCodePoint char) name (read gc) (read combining) dctype dcval
+    DetailedChar
+        (readCodePoint char) name (read gc) (read combining) dctype dcval
 
     where
 
@@ -507,16 +515,17 @@ genModules indir outdir props = do
     derivedCombiningClassH <- Sys.openFile derivedCombiningClass Sys.ReadMode
     compExclu <-
         readLinesFromHandle derivedNormalizationPropsH
-          & S.splitOn isDivider (parseProperty "Derived Property:")
-          & S.find (\(name, _) -> name == "Full_Composition_Exclusion")
+          & Stream.splitOn isDivider (parseProperty "Derived Property:")
+          & Stream.find (\(name, _) -> name == "Full_Composition_Exclusion")
           & fmap (fromMaybe ("", []))
           & fmap snd
     non0CC <-
         readLinesFromHandle derivedCombiningClassH
-          & S.splitOn isDivider (parseProperty "Canonical_Combining_Class=")
-          & S.filter (\(name, _) -> name /= "Not_Reordered")
-          & S.map snd
-          & S.fold (FL.mkPureId (++) [])
+          & Stream.splitOn
+                isDivider (parseProperty "Canonical_Combining_Class=")
+          & Stream.filter (\(name, _) -> name /= "Not_Reordered")
+          & Stream.map snd
+          & Stream.fold (Fold.mkPureId (++) [])
     let unicodeDataFolds =
             [ ( "Compositions"
               , genCompositionsModule "Compositions" compExclu non0CC)
@@ -524,27 +533,30 @@ genModules indir outdir props = do
             , ("Decomposable", genDecomposableModule "Decomposable" Canonical)
             , ("DecomposableK", genDecomposableModule "DecomposableK" Kompat)
             , ( "Decompositions"
-              , genDecomposeDefModule "Decompositions" [] [] Kompat (const True))
+              , genDecomposeDefModule
+                    "Decompositions" [] [] Kompat (const True))
             , ( "DecompositionsK"
               , genDecomposeDefModule
                     "DecompositionsK"
-                    [ "import qualified Data.Unicode.Properties.DecompositionsK2 as DK2"
+                    [ "import qualified "
+                        ++ "Data.Unicode.Properties.DecompositionsK2 as DK2"
                     , ""
                     ]
                     ["decomposeChar c = DK2.decomposeChar c"]
                     Kompat
                     (< 60000))
             , ( "DecompositionsK2"
-              , genDecomposeDefModule "DecompositionsK2" [] [] Kompat (>= 60000))
+              , genDecomposeDefModule
+                    "DecompositionsK2" [] [] Kompat (>= 60000))
             ]
     -- XXX distribute_ does not work as expected, fixed in a later PR.
     let combinedFold =
-            void $ FL.distribute (map emitFile unicodeDataFolds)
-    readLinesFromHandle unicodeDataH & S.map parseDetailedChar
-      & S.fold combinedFold
+            void $ Fold.distribute (map emitFile unicodeDataFolds)
+    readLinesFromHandle unicodeDataH & Stream.map parseDetailedChar
+      & Stream.fold combinedFold
     readLinesFromHandle derivedCorePropsH
-      & S.splitOn isDivider (parseProperty "Derived Property:")
-      & S.fold (emitFile ("Core", genCorePropertiesModule "Core" props))
+      & Stream.splitOn isDivider (parseProperty "Derived Property:")
+      & Stream.fold (emitFile ("Core", genCorePropertiesModule "Core" props))
     Sys.hClose unicodeDataH
     Sys.hClose derivedNormalizationPropsH
     Sys.hClose derivedCorePropsH
@@ -552,7 +564,10 @@ genModules indir outdir props = do
 
     where
 
-    readLinesFromHandle h = S.unfold H.read h & U.decodeUtf8 & U.lines FL.toList
+    readLinesFromHandle h =
+        Stream.unfold Handle.read h
+            & Unicode.decodeUtf8
+            & Unicode.lines Fold.toList
 
     isDivider x = x == "# ================================================"
 
@@ -563,4 +578,4 @@ genModules indir outdir props = do
         indir <> "/extracted/" <> "DerivedCombiningClass.txt"
 
     emitFile (file, fld) =
-        FL.mapM (writeFile (outdir <> "/" <> file <> ".hs")) fld
+        Fold.mapM (writeFile (outdir <> "/" <> file <> ".hs")) fld
