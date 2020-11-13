@@ -26,6 +26,7 @@ extra-source-files:
     README.md
     NOTICE
     download-ucd.sh
+    run-ucd2haskell.sh
 
 source-repository head
   type: git
