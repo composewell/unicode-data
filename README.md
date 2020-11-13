@@ -1,39 +1,27 @@
 # README
 
-A Haskell library providing APIs to access unicode database. The Haskell content
-is generated programmatically from original unicode database files.
+`unicode-data` provides Haskell APIs to efficiently access the
+unicode character database. The Haskell data structures are generated
+programmatically from the unicode character database (UCD) files.  The
+current unicode version supported by this library is 13.0.0.
 
-## Unicode database update
+Please see the haddock documentation for reference documentation.
 
-Unicode data sources:
-* http://www.unicode.org/Public/UCD/latest/
-* http://www.unicode.org/Public/UCD/latest/ucd/
+## Unicode database version update
 
-Download and decompress the following files preserving the file hierarchy:
-* `DerivedCoreProperties.txt` from the `ucd` directory
-* `DerivedNormalizationProps.txt` from the `ucd` directory
-* `UnicodeData.txt` from the `ucd` directory
-* `DerivedCombiningClass.txt` from the `ucd/extracted` directory
+To update the unicode version please update the version number in
+`download-ucd.sh`.
+
+To download the unicode database, run `download-ucd.sh` from the top
+level directory of the repo to fetch the database in `./ucd`.::
 
 ```
-wget -P ucd https://www.unicode.org/Public/UCD/latest/ucd/DerivedCoreProperties.txt
-wget -P ucd https://www.unicode.org/Public/UCD/latest/ucd/DerivedNormalizationProps.txt
-wget -P ucd https://www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt
-wget -P ucd/extracted https://www.unicode.org/Public/UCD/latest/ucd/extracted/DerivedCombiningClass.txt
+$ ./download-ucd.sh
 ```
 
-## Generating Haskell files from Unicode database
+To generate the Haskell data structure files from the downloaded database
+files, run `run-ucd2haskell.sh` from the top level dir of the repo.
 
-Run the program like this:
 ```
-ucd2haskell --input ./ucd --output ./lib/Data/Unicode/Properties --core-prop PROP
+$ ./run-ucd2haskell.sh
 ```
-`PROP = Any *Derived Property* from ucd/DerivedCoreProperties.txt`
-
-You can generate multiple properties like this:
-```
-ucd2haskell --input ./ucd --output ./lib/Data/Unicode/Properties --core-prop Uppercase --core-prop Lowercase --core-prop Alphabetic
-```
-
-Update the unicode version in the changelog below as well as in the top level
-README and haddock docs.
