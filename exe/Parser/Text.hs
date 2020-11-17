@@ -213,7 +213,6 @@ filterDecomposableType dtype =
     predicate =
         case dtype of
             Canonical -> (== Just DTCanonical)
-            -- XXX Is Canonical a subset of Kompat?
             Kompat -> const True
 
 genDecomposableModule ::
@@ -534,7 +533,7 @@ genModules indir outdir props = do
             , ("DecomposableK", genDecomposableModule "DecomposableK" Kompat)
             , ( "Decompositions"
               , genDecomposeDefModule
-                    "Decompositions" [] [] Kompat (const True))
+                    "Decompositions" [] [] Canonical (const True))
             , ( "DecompositionsK"
               , genDecomposeDefModule
                     "DecompositionsK"
