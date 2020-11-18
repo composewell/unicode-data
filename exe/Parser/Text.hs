@@ -240,7 +240,7 @@ genDecomposableModule moduleName dtype =
                 , "where"
                 , ""
                 , "import Data.Char (ord)"
-                , "import Data.Unicode.Internal.Bits (lookupBit64)"
+                , "import Unicode.Internal.Bits (lookupBit64)"
                 , ""
                 , genBitmap "isDecomposable" (reverse st)
                 ]
@@ -266,7 +266,7 @@ genCombiningClassModule moduleName =
                 , "where"
                 , ""
                 , "import Data.Char (ord)"
-                , "import Data.Unicode.Internal.Bits (lookupBit64)"
+                , "import Unicode.Internal.Bits (lookupBit64)"
                 , ""
                 , "getCombiningClass :: Char -> Int"
                 , unlines (reverse st1)
@@ -387,7 +387,7 @@ genCompositionsModule moduleName compExclu non0CC =
         , "where"
         , ""
         , "import Data.Char (ord)"
-        , "import Data.Unicode.Internal.Bits (lookupBit64)"
+        , "import Unicode.Internal.Bits (lookupBit64)"
         , ""
         ]
 
@@ -482,7 +482,7 @@ genCorePropertiesModule moduleName props =
         , "where"
         , ""
         , "import Data.Char (ord)"
-        , "import Data.Unicode.Internal.Bits (lookupBit64)"
+        , "import Unicode.Internal.Bits (lookupBit64)"
         ]
 
 parseDetailedChar :: String -> DetailedChar
@@ -529,32 +529,32 @@ genModules indir outdir props = do
           & Stream.fold (Fold.mkPureId (++) [])
 
     let compositions =
-            ( "Data.Unicode.Internal.Properties.Compositions"
+            ( "Unicode.Internal.Properties.Compositions"
             , \m -> genCompositionsModule m compExclu non0CC )
         combiningClass =
-            ( "Data.Unicode.Properties.CombiningClass"
+            ( "Unicode.Properties.CombiningClass"
             , genCombiningClassModule )
         decomposable =
-            ("Data.Unicode.Internal.Properties.Decomposable"
+            ("Unicode.Internal.Properties.Decomposable"
             , \m -> genDecomposableModule m Canonical)
         decomposableK =
-            ("Data.Unicode.Internal.Properties.DecomposableK"
+            ("Unicode.Internal.Properties.DecomposableK"
             , \m -> genDecomposableModule m Kompat)
         decompositions =
-            ( "Data.Unicode.Internal.Properties.Decompositions"
+            ( "Unicode.Internal.Properties.Decompositions"
             , \m -> genDecomposeDefModule m [] [] Canonical (const True))
         decompositionsK2 =
-            ( "Data.Unicode.Internal.Properties.DecompositionsK2"
+            ( "Unicode.Internal.Properties.DecompositionsK2"
             , \m -> genDecomposeDefModule m [] [] Kompat (>= 60000))
         decompositionsK =
             let pre = [ "import qualified " <> fst decompositionsK2 <> " as DK2"
                       , ""
                       ]
                 post = ["decomposeChar c = DK2.decomposeChar c"]
-             in ( "Data.Unicode.Internal.Properties.DecompositionsK"
+             in ( "Unicode.Internal.Properties.DecompositionsK"
                 , \m -> genDecomposeDefModule m pre post Kompat (< 60000))
         core =
-            ( "Data.Unicode.Properties.Core"
+            ( "Unicode.Properties.Core"
             , \m -> genCorePropertiesModule m props)
         unicodeDataFolds =
             [ compositions

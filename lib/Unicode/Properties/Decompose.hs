@@ -1,21 +1,21 @@
 -- |
--- Module      : Data.Unicode.Properties.Decompose
+-- Module      : Unicode.Properties.Decompose
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
 -- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 --
-module Data.Unicode.Properties.Decompose
+module Unicode.Properties.Decompose
     ( decomposeChar
     , DecomposeMode(..)
     , isDecomposable
     )
 where
 
-import qualified Data.Unicode.Internal.Properties.Decomposable    as D
-import qualified Data.Unicode.Internal.Properties.DecomposableK   as K
-import qualified Data.Unicode.Internal.Properties.Decompositions  as D
-import qualified Data.Unicode.Internal.Properties.DecompositionsK as K
+import qualified Unicode.Internal.Properties.Decomposable    as D
+import qualified Unicode.Internal.Properties.DecomposableK   as K
+import qualified Unicode.Internal.Properties.Decompositions  as D
+import qualified Unicode.Internal.Properties.DecompositionsK as K
 
 data DecomposeMode = DecomposeNFD | DecomposeNFKD
 

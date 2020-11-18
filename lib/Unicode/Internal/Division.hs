@@ -1,5 +1,5 @@
 -- |
--- Module      : Data.Unicode.Internal.Division
+-- Module      : Unicode.Internal.Division
 -- Copyright   : (c) 2020 Andrew Lelechenko
 --
 -- License     : BSD-3-Clause
@@ -23,7 +23,7 @@
 -- case the argument was casted from 'Int', so we can guarantee that it is
 -- below 2^63.
 
-module Data.Unicode.Internal.Division
+module Unicode.Internal.Division
     ( quotRem21
     , quotRem28
     ) where

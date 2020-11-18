@@ -1,11 +1,11 @@
 -- |
--- Module      : Data.Unicode.Properties.DecomposeHangul
+-- Module      : Unicode.Properties.DecomposeHangul
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
 -- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 
-module Data.Unicode.Properties.DecomposeHangul
+module Unicode.Properties.DecomposeHangul
     (decomposeCharHangul
     , hangulFirst
     , hangulLast
@@ -33,7 +33,7 @@ where
 import Control.Exception              (assert)
 import Data.Char                      (ord)
 import GHC.Base                       (unsafeChr)
-import Data.Unicode.Internal.Division (quotRem21, quotRem28)
+import Unicode.Internal.Division (quotRem21, quotRem28)
 
 -- Hangul characters can be decomposed algorithmically instead of via mappings
 
