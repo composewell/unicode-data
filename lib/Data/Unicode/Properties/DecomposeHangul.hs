@@ -120,6 +120,7 @@ jamoTIndex c
 -- Hangul decomposition
 -------------------------------------------------------------------------------
 
+-- | Decompose a hangul syllable into its correcponding jamo characters.
 {-# INLINE decomposeCharHangul #-}
 decomposeCharHangul :: Char -> (Char, Char, Char)
 decomposeCharHangul c = (l, v, t)
