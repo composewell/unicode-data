@@ -536,10 +536,10 @@ genModules indir outdir props = do
             , genCombiningClassModule )
         decomposable =
             ("Unicode.Internal.Properties.Decomposable"
-            , \m -> genDecomposableModule m Canonical)
+            , (`genDecomposableModule` Canonical))
         decomposableK =
             ("Unicode.Internal.Properties.DecomposableK"
-            , \m -> genDecomposableModule m Kompat)
+            , (`genDecomposableModule` Kompat))
         decompositions =
             ( "Unicode.Internal.Properties.Decompositions"
             , \m -> genDecomposeDefModule m [] [] Canonical (const True))
@@ -555,7 +555,7 @@ genModules indir outdir props = do
                 , \m -> genDecomposeDefModule m pre post Kompat (< 60000))
         core =
             ( "Unicode.Properties.Core"
-            , \m -> genCorePropertiesModule m props)
+            , (`genCorePropertiesModule` props))
         unicodeDataFolds =
             [ compositions
             , combiningClass
