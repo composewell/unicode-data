@@ -36,22 +36,43 @@ jobs:
       BUILD: cabal-v2 ${{ matrix.pack_options }}
       GHCVER: ${{ matrix.ghc_version }}
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        name: [GHC 8.2.2, GHC 8.6.5, GHC 8.8.3+exe, Hlint]
+        name:
+          [ Ubuntu+GHC822, Ubuntu+GHC865, Ubuntu+GHC883+exe
+          , MacOS+GHC883+exe, Windows+GHC883+exe
+          , Hlint ]
         cabal_version: [3.2]
         include:
-          - name: GHC 8.2.2
+
+          - name: Ubuntu+GHC822
             ghc_version: 8.2.2
-          - name: GHC 8.6.5
+            runner: ubuntu-latest
+
+          - name: Ubuntu+GHC865
             ghc_version: 8.6.5
-          - name: GHC 8.8.3+exe
+            runner: ubuntu-latest
+
+          - name: Ubuntu+GHC883+exe
             ghc_version: 8.8.3
             pack_options: CABAL_BUILD_OPTIONS="-f exe"
+            runner: ubuntu-latest
+
           - name: Hlint
             pack_options: HLINT_OPTIONS="lint" HLINT_TARGETS="lib exe"
+            runner: ubuntu-latest
+
+          - name: MacOS+GHC883+exe
+            ghc_version: 8.8.3
+            pack_options: CABAL_BUILD_OPTIONS="-f exe"
+            runner: macos-latest
+
+          - name: Windows+GHC883+exe
+            ghc_version: 8.8.3
+            pack_options: CABAL_BUILD_OPTIONS="-f exe"
+            runner: windows-latest
 
     steps:
     - uses: actions/checkout@v2
