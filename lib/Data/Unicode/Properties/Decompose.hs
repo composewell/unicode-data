@@ -15,13 +15,13 @@ module Data.Unicode.Properties.Decompose
     )
 where
 
-import qualified Data.Unicode.Properties.Decomposable    as D
-import qualified Data.Unicode.Properties.DecomposableK   as K
+import qualified Data.Unicode.Internal.Properties.Decomposable    as D
+import qualified Data.Unicode.Internal.Properties.DecomposableK   as K
 import           Data.Unicode.Properties.DecomposeHangul ( decomposeCharHangul
                                                          , jamoLFirst
                                                          , isHangul)
-import qualified Data.Unicode.Properties.Decompositions  as D
-import qualified Data.Unicode.Properties.DecompositionsK as K
+import qualified Data.Unicode.Internal.Properties.Decompositions  as D
+import qualified Data.Unicode.Internal.Properties.DecompositionsK as K
 
 data DecomposeMode = DecomposeNFD | DecomposeNFKD
 

@@ -529,29 +529,29 @@ genModules indir outdir props = do
           & Stream.fold (Fold.mkPureId (++) [])
 
     let compositions =
-            ( "Data.Unicode.Properties.Compositions"
+            ( "Data.Unicode.Internal.Properties.Compositions"
             , \m -> genCompositionsModule m compExclu non0CC )
         combiningClass =
             ( "Data.Unicode.Properties.CombiningClass"
             , genCombiningClassModule )
         decomposable =
-            ("Data.Unicode.Properties.Decomposable"
+            ("Data.Unicode.Internal.Properties.Decomposable"
             , \m -> genDecomposableModule m Canonical)
         decomposableK =
-            ("Data.Unicode.Properties.DecomposableK"
+            ("Data.Unicode.Internal.Properties.DecomposableK"
             , \m -> genDecomposableModule m Kompat)
         decompositions =
-            ( "Data.Unicode.Properties.Decompositions"
+            ( "Data.Unicode.Internal.Properties.Decompositions"
             , \m -> genDecomposeDefModule m [] [] Canonical (const True))
         decompositionsK2 =
-            ( "Data.Unicode.Properties.DecompositionsK2"
+            ( "Data.Unicode.Internal.Properties.DecompositionsK2"
             , \m -> genDecomposeDefModule m [] [] Kompat (>= 60000))
         decompositionsK =
             let pre = [ "import qualified " <> fst decompositionsK2 <> " as DK2"
                       , ""
                       ]
                 post = ["decomposeChar c = DK2.decomposeChar c"]
-             in ( "Data.Unicode.Properties.DecompositionsK"
+             in ( "Data.Unicode.Internal.Properties.DecompositionsK"
                 , \m -> genDecomposeDefModule m pre post Kompat (< 60000))
         core =
             ( "Data.Unicode.Properties.Core"
