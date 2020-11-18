@@ -5,7 +5,7 @@
 
 cabal run --flag ucd2haskell ucd2haskell -- \
 --input ./ucd \
---output ./lib/Data/Unicode/Properties \
+--output ./lib/ \
 --core-prop Uppercase \
 --core-prop Lowercase \
 --core-prop Alphabetic
