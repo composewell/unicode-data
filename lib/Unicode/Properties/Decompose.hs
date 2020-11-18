@@ -17,18 +17,18 @@ import qualified Unicode.Internal.Properties.DecomposableK   as K
 import qualified Unicode.Internal.Properties.Decompositions  as D
 import qualified Unicode.Internal.Properties.DecompositionsK as K
 
-data DecomposeMode = DecomposeNFD | DecomposeNFKD
+data DecomposeMode = Canonical | Kompat
 
 -- | Given the 'DecomposeMode' @D@ and a character @c@, decompose @c@ into its
 -- normal form in @D@.
 {-# INLINE decomposeChar #-}
 decomposeChar :: DecomposeMode -> Char -> [Char]
-decomposeChar DecomposeNFD  = D.decomposeChar
-decomposeChar DecomposeNFKD = K.decomposeChar
+decomposeChar Canonical  = D.decomposeChar
+decomposeChar Kompat = K.decomposeChar
 
 -- | Given the 'DecomposeMode' @D@ and a character @c@, return True if @c@ is
 -- decomposable in @D@. This does not work for Hangul characters.
 {-# INLINE isDecomposable #-}
 isDecomposable :: DecomposeMode -> Char -> Bool
-isDecomposable DecomposeNFD  = D.isDecomposable
-isDecomposable DecomposeNFKD = K.isDecomposable
+isDecomposable Canonical  = D.isDecomposable
+isDecomposable Kompat = K.isDecomposable
