@@ -1,5 +1,5 @@
 -- |
--- Module      : Data.Unicode.Internal.Bits
+-- Module      : Unicode.Internal.Bits
 -- Copyright   : (c) 2020 Andrew Lelechenko
 --               (c) 2020 Composewell Technologies
 -- License     : BSD-3-Clause
@@ -9,7 +9,7 @@
 --
 -- Fast, static bitmap lookup utilities
 
-module Data.Unicode.Internal.Bits
+module Unicode.Internal.Bits
     (
       lookupBit64
     ) where
