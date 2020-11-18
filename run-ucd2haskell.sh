@@ -4,7 +4,7 @@
 # *Derived Property* from `ucd/DerivedCoreProperties.txt`
 
 cabal run --flag ucd2haskell ucd2haskell -- \
---input ./ucd \
+--input ./ucd/ \
 --output ./lib/ \
 --core-prop Uppercase \
 --core-prop Lowercase \
