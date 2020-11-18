@@ -588,11 +588,11 @@ genModules indir outdir props = do
 
     isDivider x = x == "# ================================================"
 
-    unicodeData = indir <> "/" <> "UnicodeData.txt"
-    derivedCoreProps = indir <> "/" <> "DerivedCoreProperties.txt"
-    derivedNormalizationProps = indir <> "/" <> "DerivedNormalizationProps.txt"
+    unicodeData = indir <> "UnicodeData.txt"
+    derivedCoreProps = indir <> "DerivedCoreProperties.txt"
+    derivedNormalizationProps = indir <> "DerivedNormalizationProps.txt"
     derivedCombiningClass =
-        indir <> "/extracted/" <> "DerivedCombiningClass.txt"
+        indir <> "extracted/" <> "DerivedCombiningClass.txt"
 
     getFile = map (\x -> if x == '.' then '/' else x)
     getDir = reverse . dropWhile (/= '/') . reverse
