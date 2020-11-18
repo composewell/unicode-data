@@ -7,19 +7,13 @@
 --
 module Data.Unicode.Properties.Decompose
     ( decomposeChar
-    , decomposeCharHangul
     , DecomposeMode(..)
-    , isHangul
-    , jamoLFirst
     , isDecomposable
     )
 where
 
 import qualified Data.Unicode.Internal.Properties.Decomposable    as D
 import qualified Data.Unicode.Internal.Properties.DecomposableK   as K
-import           Data.Unicode.Properties.DecomposeHangul ( decomposeCharHangul
-                                                         , jamoLFirst
-                                                         , isHangul)
 import qualified Data.Unicode.Internal.Properties.Decompositions  as D
 import qualified Data.Unicode.Internal.Properties.DecompositionsK as K
 
