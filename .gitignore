@@ -20,8 +20,5 @@ cabal.project.local
 cabal.project.local~
 .HTF/
 .ghc.environment.*
-
-ucdxml/ucd.all.flat.pdb
-ucdxml/ucd.all.flat.xml
-
+ucd/
 *~
