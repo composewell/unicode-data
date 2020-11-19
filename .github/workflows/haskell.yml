@@ -42,7 +42,7 @@ jobs:
       matrix:
         name:
           [ Ubuntu+GHC822, Ubuntu+GHC865, Ubuntu+GHC883+exe
-          , MacOS+GHC883+exe, Windows+GHC883+exe
+          , MacOS+GHC883+exe
           , Hlint ]
         cabal_version: [3.2]
         include:
@@ -68,11 +68,6 @@ jobs:
             ghc_version: 8.8.3
             pack_options: CABAL_BUILD_OPTIONS="-f exe"
             runner: macos-latest
-
-          - name: Windows+GHC883+exe
-            ghc_version: 8.8.3
-            pack_options: CABAL_BUILD_OPTIONS="-f exe"
-            runner: windows-latest
 
     steps:
     - uses: actions/checkout@v2
