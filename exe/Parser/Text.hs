@@ -1,7 +1,7 @@
 -- |
 -- Module      : Parser.Text
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
---               (c) Harendra Kumar
+--               (c) 2016-2017 Harendra Kumar
 --               (c) 2014-2015 Antonio Nikishaev
 -- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
