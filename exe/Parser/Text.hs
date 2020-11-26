@@ -529,7 +529,7 @@ genModules indir outdir props = do
           & Stream.fold (Fold.mkPureId (++) [])
 
     let compositions =
-            ( "Unicode.Internal.Properties.Compositions"
+            ( "Unicode.Properties.Compose"
             , \m -> genCompositionsModule m compExclu non0CC )
         combiningClass =
             ( "Unicode.Properties.CombiningClass"
