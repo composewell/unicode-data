@@ -65,12 +65,12 @@ library
   default-language: Haskell2010
   exposed-modules:
       Unicode.Properties.CombiningClass
+      Unicode.Properties.Compose
       Unicode.Properties.Decompose
       Unicode.Properties.DecomposeHangul
 
       Unicode.Internal.Bits
       Unicode.Internal.Division
-      Unicode.Internal.Properties.Compositions
       Unicode.Internal.Properties.Decomposable
       Unicode.Internal.Properties.DecomposableK
       Unicode.Internal.Properties.Decompositions
