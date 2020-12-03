@@ -41,8 +41,9 @@ jobs:
       fail-fast: false
       matrix:
         name:
-          [ Ubuntu+GHC822, Ubuntu+GHC865, Ubuntu+GHC883+exe
-          , MacOS+GHC883+exe
+          [ Ubuntu+GHC822, Ubuntu+GHC865, Ubuntu+GHC844
+          , Ubuntu+GHC884, Ubuntu+GHC8102+exe
+          , MacOS+GHC884+exe
           , Hlint ]
         cabal_version: [3.2]
         include:
@@ -51,12 +52,20 @@ jobs:
             ghc_version: 8.2.2
             runner: ubuntu-latest
 
+          - name: Ubuntu+GHC844
+            ghc_version: 8.4.4
+            runner: ubuntu-latest
+
           - name: Ubuntu+GHC865
             ghc_version: 8.6.5
             runner: ubuntu-latest
 
-          - name: Ubuntu+GHC883+exe
-            ghc_version: 8.8.3
+          - name: Ubuntu+GHC884
+            ghc_version: 8.8.4
+            runner: ubuntu-latest
+
+          - name: Ubuntu+GHC8102+exe
+            ghc_version: 8.10.2
             pack_options: CABAL_BUILD_OPTIONS="-f exe"
             runner: ubuntu-latest
 
@@ -64,8 +73,8 @@ jobs:
             pack_options: HLINT_OPTIONS="lint" HLINT_TARGETS="lib exe"
             runner: ubuntu-latest
 
-          - name: MacOS+GHC883+exe
-            ghc_version: 8.8.3
+          - name: MacOS+GHC884+exe
+            ghc_version: 8.8.4
             pack_options: CABAL_BUILD_OPTIONS="-f exe"
             runner: macos-latest
 
