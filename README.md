@@ -13,7 +13,7 @@ To update the unicode version please update the version number in
 `download-ucd.sh`.
 
 To download the unicode database, run `download-ucd.sh` from the top
-level directory of the repo to fetch the database in `./ucd`.::
+level directory of the repo to fetch the database in `./ucd`.
 
 ```
 $ ./download-ucd.sh
