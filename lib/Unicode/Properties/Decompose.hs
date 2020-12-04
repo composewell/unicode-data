@@ -12,10 +12,10 @@ module Unicode.Properties.Decompose
     )
 where
 
-import qualified Unicode.Internal.Properties.Decomposable    as D
-import qualified Unicode.Internal.Properties.DecomposableK   as K
-import qualified Unicode.Internal.Properties.Decompositions  as D
-import qualified Unicode.Internal.Properties.DecompositionsK as K
+import qualified Unicode.Internal.Generated.UnicodeData.Decomposable    as D
+import qualified Unicode.Internal.Generated.UnicodeData.DecomposableK   as K
+import qualified Unicode.Internal.Generated.UnicodeData.Decompositions  as D
+import qualified Unicode.Internal.Generated.UnicodeData.DecompositionsK as K
 
 data DecomposeMode = Canonical | Kompat
 
