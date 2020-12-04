@@ -6,7 +6,7 @@
 -- Stability   : experimental
 --
 module Unicode.Properties.Decompose
-    ( decomposeChar
+    ( decompose
     , DecomposeMode(..)
     , isDecomposable
     )
@@ -21,10 +21,10 @@ data DecomposeMode = Canonical | Kompat
 
 -- | Given the 'DecomposeMode' @D@ and a character @c@, decompose @c@ into its
 -- normal form in @D@.
-{-# INLINE decomposeChar #-}
-decomposeChar :: DecomposeMode -> Char -> [Char]
-decomposeChar Canonical  = D.decomposeChar
-decomposeChar Kompat = K.decomposeChar
+{-# INLINE decompose #-}
+decompose :: DecomposeMode -> Char -> [Char]
+decompose Canonical  = D.decompose
+decompose Kompat = K.decompose
 
 -- | Given the 'DecomposeMode' @D@ and a character @c@, return True if @c@ is
 -- decomposable in @D@. This does not work for Hangul characters.
