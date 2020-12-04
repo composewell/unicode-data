@@ -64,19 +64,22 @@ library
   import: default-extensions, compile-options
   default-language: Haskell2010
   exposed-modules:
-      Unicode.Properties.CombiningClass
-      Unicode.Properties.Compose
       Unicode.Properties.Decompose
       Unicode.Properties.DecomposeHangul
 
+      -- Internal files
       Unicode.Internal.Bits
       Unicode.Internal.Division
-      Unicode.Internal.Properties.Decomposable
-      Unicode.Internal.Properties.DecomposableK
-      Unicode.Internal.Properties.Decompositions
-      Unicode.Internal.Properties.DecompositionsK
-      Unicode.Internal.Properties.DecompositionsK2
-      Unicode.Properties.Core
+
+      -- Generated files
+      Unicode.Internal.Generated.DerivedCoreProperties
+      Unicode.Internal.Generated.UnicodeData.CombiningClass
+      Unicode.Internal.Generated.UnicodeData.Compositions
+      Unicode.Internal.Generated.UnicodeData.Decomposable
+      Unicode.Internal.Generated.UnicodeData.DecomposableK
+      Unicode.Internal.Generated.UnicodeData.Decompositions
+      Unicode.Internal.Generated.UnicodeData.DecompositionsK
+      Unicode.Internal.Generated.UnicodeData.DecompositionsK2
   hs-source-dirs: lib
   ghc-options: -O2
   build-depends:
