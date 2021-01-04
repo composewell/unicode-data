@@ -25,12 +25,12 @@ import Data.Maybe (fromMaybe)
 import Streamly.Internal.Data.Fold (Fold(..))
 import Streamly (IsStream, SerialT)
 import System.Directory (createDirectoryIfMissing)
-import System.IO (Handle)
 
 import qualified Data.Set as Set
 import qualified Streamly.Prelude as Stream
 import qualified Streamly.Internal.Data.Fold as Fold
 import qualified Streamly.Internal.Data.Unicode.Stream as Unicode
+import qualified Streamly.Internal.FileSystem.File as File
 import qualified Streamly.Internal.FileSystem.Handle as Handle
 import qualified System.IO as Sys
 
@@ -509,17 +509,12 @@ parseDetailedChar line =
 isDivider :: String -> Bool
 isDivider x = x == "# ================================================"
 
--- XXX Should replace readLinesFromHandle
-readLinesFromHandle1 :: IsStream t => Handle -> t IO String
-readLinesFromHandle1 h =
-    Stream.unfold Handle.read h & Unicode.decodeUtf8 & Unicode.lines Fold.toList
-
-readLinesFromFile :: IsStream t => String -> t IO String
+readLinesFromFile :: String -> SerialT IO String
 readLinesFromFile file =
-    Stream.bracket
-        (Sys.openFile file Sys.ReadMode)
-        Sys.hClose
-        readLinesFromHandle1
+    File.withFile file Sys.ReadMode
+        $ \h ->
+              Stream.unfold Handle.read h & Unicode.decodeUtf8
+                  & Unicode.lines Fold.toList
 
 moduleToFileName :: String -> String
 moduleToFileName = map (\x -> if x == '.' then '/' else x)
