@@ -586,8 +586,8 @@ generateModule infile transformLines outdir modName fldGen =
     outfiledir = dirFromFileName outfile
     action c = createDirectoryIfMissing True outfiledir >> writeFile outfile c
 
-propListTransformer :: (IsStream t, Monad m) => t m String -> t m PropertyLine
-propListTransformer =
+propertyTransformer :: (IsStream t, Monad m) => t m String -> t m PropertyLine
+propertyTransformer =
     Stream.splitOn isDivider
         $ Fold.lmap parsePropertyLine
         $ Fold.mkPureId combinePropertyLines emptyPropertyLine
@@ -598,7 +598,6 @@ genModules indir outdir props = do
     unicodeDataH <- Sys.openFile unicodeData Sys.ReadMode
     derivedNormalizationPropsH <-
         Sys.openFile derivedNormalizationProps Sys.ReadMode
-    derivedCorePropsH <- Sys.openFile derivedCoreProps Sys.ReadMode
     derivedCombiningClassH <- Sys.openFile derivedCombiningClass Sys.ReadMode
     compExclu <-
         readLinesFromHandle derivedNormalizationPropsH
@@ -639,9 +638,6 @@ genModules indir outdir props = do
                 post = ["decompose c = DK2.decompose c"]
              in ( "Unicode.Internal.Generated.UnicodeData.DecompositionsK"
                 , \m -> genDecomposeDefModule m pre post Kompat (< 60000))
-        core =
-            ( "Unicode.Internal.Generated.DerivedCoreProperties"
-            , (`genCorePropertiesModule` (`elem` props)))
         unicodeDataFolds =
             [ compositions
             , combiningClass
@@ -656,23 +652,25 @@ genModules indir outdir props = do
             void $ Fold.distribute (map emitFile unicodeDataFolds)
     readLinesFromHandle unicodeDataH & Stream.map parseDetailedChar
       & Stream.fold combinedFold
-    readLinesFromHandle derivedCorePropsH
-      & Stream.splitOn isDivider (parseProperty "Derived Property:")
-      & Stream.fold (emitFile core)
     Sys.hClose unicodeDataH
     Sys.hClose derivedNormalizationPropsH
-    Sys.hClose derivedCorePropsH
     Sys.hClose derivedCombiningClassH
 
     generateModule
         (indir <> "PropList.txt")
-        propListTransformer
+        propertyTransformer
         outdir
         "Unicode.Internal.Generated.PropList"
         (`genCorePropertiesModule` (`elem` props))
 
-    where
+    generateModule
+        (indir <> "DerivedCoreProperties.txt")
+        propertyTransformer
+        outdir
+        "Unicode.Internal.Generated.DerivedCoreProperties"
+        (`genCorePropertiesModule` (`elem` props))
 
+    where
 
     readLinesFromHandle h =
         Stream.unfold Handle.read h
@@ -680,7 +678,6 @@ genModules indir outdir props = do
             & Unicode.lines Fold.toList
 
     unicodeData = indir <> "UnicodeData.txt"
-    derivedCoreProps = indir <> "DerivedCoreProperties.txt"
     derivedNormalizationProps = indir <> "DerivedNormalizationProps.txt"
     derivedCombiningClass =
         indir <> "extracted/" <> "DerivedCombiningClass.txt"
