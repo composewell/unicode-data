@@ -554,21 +554,20 @@ propertyTransformer =
 genModules :: String -> String -> [String] -> IO ()
 genModules indir outdir props = do
     unicodeDataH <- Sys.openFile unicodeData Sys.ReadMode
-    derivedNormalizationPropsH <-
-        Sys.openFile derivedNormalizationProps Sys.ReadMode
-    derivedCombiningClassH <- Sys.openFile derivedCombiningClass Sys.ReadMode
+
     compExclu <-
-        readLinesFromHandle derivedNormalizationPropsH
-          & propertyTransformer
-          & Stream.find (\(name, _) -> name == "Full_Composition_Exclusion")
-          & fmap (fromMaybe ("", []))
-          & fmap snd
+        readLinesFromFile (indir <> "DerivedNormalizationProps.txt")
+            & propertyTransformer
+            & Stream.find (\(name, _) -> name == "Full_Composition_Exclusion")
+            & fmap (fromMaybe ("", []))
+            & fmap snd
+
     non0CC <-
-        readLinesFromHandle derivedCombiningClassH
-          & propertyTransformer
-          & Stream.filter (\(name, _) -> name /= "0")
-          & Stream.map snd
-          & Stream.fold (Fold.mkPureId (++) [])
+        readLinesFromFile (indir <> "extracted/DerivedCombiningClass.txt")
+            & propertyTransformer
+            & Stream.filter (\(name, _) -> name /= "0")
+            & Stream.map snd
+            & Stream.fold (Fold.mkPureId (++) [])
 
     let compositions =
             ( "Unicode.Internal.Generated.UnicodeData.Compositions"
@@ -610,8 +609,6 @@ genModules indir outdir props = do
     readLinesFromHandle unicodeDataH & Stream.map parseDetailedChar
       & Stream.fold combinedFold
     Sys.hClose unicodeDataH
-    Sys.hClose derivedNormalizationPropsH
-    Sys.hClose derivedCombiningClassH
 
     generateModule
         (indir <> "PropList.txt")
@@ -635,9 +632,6 @@ genModules indir outdir props = do
             & Unicode.lines Fold.toList
 
     unicodeData = indir <> "UnicodeData.txt"
-    derivedNormalizationProps = indir <> "DerivedNormalizationProps.txt"
-    derivedCombiningClass =
-        indir <> "extracted/" <> "DerivedCombiningClass.txt"
 
     getFile = map (\x -> if x == '.' then '/' else x)
     getDir = reverse . dropWhile (/= '/') . reverse
