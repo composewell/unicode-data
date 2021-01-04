@@ -563,8 +563,8 @@ generateMultipleModules infile transformLines outdir recipes =
     -- XXX distribute_ does not work as expected, fixed in 0.8.0
     combinedFld = void $ Fold.distribute generatedFolds
 
-propertyTransformer :: (IsStream t, Monad m) => t m String -> t m PropertyLine
-propertyTransformer =
+parsePropertyLines :: (IsStream t, Monad m) => t m String -> t m PropertyLine
+parsePropertyLines =
     Stream.splitOn isDivider
         $ Fold.lmap parsePropertyLine
         $ Fold.mkPureId combinePropertyLines emptyPropertyLine
@@ -574,14 +574,14 @@ genModules indir outdir props = do
 
     compExclu <-
         readLinesFromFile (indir <> "DerivedNormalizationProps.txt")
-            & propertyTransformer
+            & parsePropertyLines
             & Stream.find (\(name, _) -> name == "Full_Composition_Exclusion")
             & fmap (fromMaybe ("", []))
             & fmap snd
 
     non0CC <-
         readLinesFromFile (indir <> "extracted/DerivedCombiningClass.txt")
-            & propertyTransformer
+            & parsePropertyLines
             & Stream.filter (\(name, _) -> name /= "0")
             & Stream.map snd
             & Stream.fold (Fold.mkPureId (++) [])
@@ -601,14 +601,14 @@ genModules indir outdir props = do
 
     generateOneModule
         (indir <> "PropList.txt")
-        propertyTransformer
+        parsePropertyLines
         outdir
         ("Unicode.Internal.Generated.PropList"
         , (`genCorePropertiesModule` (`elem` props)))
 
     generateOneModule
         (indir <> "DerivedCoreProperties.txt")
-        propertyTransformer
+        parsePropertyLines
         outdir
         ("Unicode.Internal.Generated.DerivedCoreProperties"
         , (`genCorePropertiesModule` (`elem` props)))
