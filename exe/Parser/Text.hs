@@ -20,7 +20,7 @@ import Control.Monad (void)
 import Data.Bits (shiftL)
 import Data.Char (chr, ord, isSpace)
 import Data.Function ((&))
-import Data.List (unfoldr, isInfixOf, intersperse)
+import Data.List (unfoldr, intersperse)
 import Data.Maybe (fromMaybe)
 import Streamly.Internal.Data.Fold (Fold(..))
 import Streamly (IsStream, SerialT)
@@ -419,48 +419,6 @@ genCompositionsModule moduleName compExclu non0CC =
           ++ composeStarterPair (reverse sp)
           ++ isSecondStarter (Set.toList (Set.fromList ss))
 
--- XXX We can replace parseProperty using parsePropertyLine and etal.
-parseProperty :: Monad m => String -> Fold m String (String, [Int])
-parseProperty propHeader = Fold step initial extract
-
-    where
-
-    initial = return Nothing
-
-    extract Nothing = return ("", [])
-    extract (Just x) = return x
-
-    step Nothing str
-        | propHeader `isInfixOf` str =
-            return $ Just (extractPropertyName str, [])
-        | otherwise = return Nothing
-    step st [] = return st
-    step st (x:_)
-        | x == '#' = return st
-    step (Just (name, ordList)) str =
-        return $ Just (name, ordList ++ (parseRange . getRange) str)
-
-    extractPropertyName :: String -> String
-    extractPropertyName str =
-        dropWhile (not . flip elem eqChars) str & tail & dropWhile isSpace
-          & takeWhile (not . isSpace)
-
-        where
-
-        eqChars = [':', '=']
-
-    getRange :: String -> String
-    getRange = takeWhile (not . isSpace) . takeWhile (/= ';')
-
-    parseRange :: String -> [Int]
-    parseRange rng =
-        if '.' `elem` rng
-        then let low = read $ "0x" ++ takeWhile (/= '.') rng
-                 high =
-                     read $ "0x" ++ reverse (takeWhile (/= '.') (reverse rng))
-              in [low .. high]
-        else [read $ "0x" ++ rng]
-
 genCorePropertiesModule ::
        Monad m => String -> (String -> Bool) -> Fold m (String, [Int]) String
 genCorePropertiesModule moduleName isProp =
@@ -601,15 +559,14 @@ genModules indir outdir props = do
     derivedCombiningClassH <- Sys.openFile derivedCombiningClass Sys.ReadMode
     compExclu <-
         readLinesFromHandle derivedNormalizationPropsH
-          & Stream.splitOn isDivider (parseProperty "Derived Property:")
+          & propertyTransformer
           & Stream.find (\(name, _) -> name == "Full_Composition_Exclusion")
           & fmap (fromMaybe ("", []))
           & fmap snd
     non0CC <-
         readLinesFromHandle derivedCombiningClassH
-          & Stream.splitOn
-                isDivider (parseProperty "Canonical_Combining_Class=")
-          & Stream.filter (\(name, _) -> name /= "Not_Reordered")
+          & propertyTransformer
+          & Stream.filter (\(name, _) -> name /= "0")
           & Stream.map snd
           & Stream.fold (Fold.mkPureId (++) [])
 
