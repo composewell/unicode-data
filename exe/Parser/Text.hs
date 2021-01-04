@@ -164,7 +164,11 @@ isHangul c = n >= hangulFirst && n <= hangulLast
     where n = ord c
 
 -------------------------------------------------------------------------------
--- Parser
+-- Parsers
+-------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+-- Parsing UnicodeData.txt
 -------------------------------------------------------------------------------
 
 readDecomp :: String -> (Maybe DecompType, Decomp)
@@ -446,6 +450,10 @@ genCorePropertiesModule moduleName isProp =
         , "import Unicode.Internal.Bits (lookupBit64)"
         ]
 
+-------------------------------------------------------------------------------
+-- Parsing property files
+-------------------------------------------------------------------------------
+
 trim :: String -> String
 trim = takeWhile (not . isSpace) . dropWhile isSpace
 
@@ -484,6 +492,15 @@ parsePropertyLine ln
               in [low .. high]
         else [read $ "0x" ++ rng]
 
+isDivider :: String -> Bool
+isDivider x = x == "# ================================================"
+
+parsePropertyLines :: (IsStream t, Monad m) => t m String -> t m PropertyLine
+parsePropertyLines =
+    Stream.splitOn isDivider
+        $ Fold.lmap parsePropertyLine
+        $ Fold.mkPureId combinePropertyLines emptyPropertyLine
+
 parseDetailedChar :: String -> DetailedChar
 parseDetailedChar line =
     DetailedChar
@@ -506,8 +523,9 @@ parseDetailedChar line =
     (_sLower, line12) = span (/= ';') (tail line11)
     _sTitle = tail line12
 
-isDivider :: String -> Bool
-isDivider x = x == "# ================================================"
+-------------------------------------------------------------------------------
+-- Generation
+-------------------------------------------------------------------------------
 
 readLinesFromFile :: String -> SerialT IO String
 readLinesFromFile file =
@@ -522,9 +540,14 @@ moduleToFileName = map (\x -> if x == '.' then '/' else x)
 dirFromFileName :: String -> String
 dirFromFileName = reverse . dropWhile (/= '/') . reverse
 
-type GeneratorRecipe a = (String, String -> Fold IO a String)
+-- ModuleRecipe is a tuple of the module name and a function that generates the
+-- module using the module name
+type ModuleRecipe a = (String, String -> Fold IO a String)
 
-fileEmitter :: String -> GeneratorRecipe a -> Fold IO a ()
+-- GeneratorRecipe is a list of ModuleRecipe
+type GeneratorRecipe a = [ModuleRecipe a]
+
+fileEmitter :: String -> ModuleRecipe a -> Fold IO a ()
 fileEmitter outdir (modName, fldGen) = Fold.mapM action $ fldGen modName
 
     where
@@ -533,36 +556,19 @@ fileEmitter outdir (modName, fldGen) = Fold.mapM action $ fldGen modName
     outfiledir = dirFromFileName outfile
     action c = createDirectoryIfMissing True outfiledir >> writeFile outfile c
 
-generateOneModule ::
+runGenerator ::
        String
     -> (SerialT IO String -> SerialT IO a)
     -> String
     -> GeneratorRecipe a
     -> IO ()
-generateOneModule infile transformLines outdir recipe =
-    readLinesFromFile infile & transformLines
-        & Stream.fold (fileEmitter outdir recipe)
-
-generateMultipleModules ::
-       String
-    -> (SerialT IO String -> SerialT IO a)
-    -> String
-    -> [GeneratorRecipe a]
-    -> IO ()
-generateMultipleModules infile transformLines outdir recipes =
+runGenerator infile transformLines outdir recipes =
     readLinesFromFile infile & transformLines & Stream.fold combinedFld
 
     where
 
     generatedFolds = map (fileEmitter outdir) recipes
-    -- XXX distribute_ does not work as expected, fixed in 0.8.0
     combinedFld = void $ Fold.distribute generatedFolds
-
-parsePropertyLines :: (IsStream t, Monad m) => t m String -> t m PropertyLine
-parsePropertyLines =
-    Stream.splitOn isDivider
-        $ Fold.lmap parsePropertyLine
-        $ Fold.mkPureId combinePropertyLines emptyPropertyLine
 
 genModules :: String -> String -> [String] -> IO ()
 genModules indir outdir props = do
@@ -581,7 +587,7 @@ genModules indir outdir props = do
             & Stream.map snd
             & Stream.fold (Fold.mkPureId (++) [])
 
-    generateMultipleModules
+    runGenerator
         (indir <> "UnicodeData.txt")
         (Stream.map parseDetailedChar)
         outdir
@@ -594,21 +600,27 @@ genModules indir outdir props = do
         , decompositionsK
         ]
 
-    generateOneModule
+    runGenerator
         (indir <> "PropList.txt")
         parsePropertyLines
         outdir
-        ("Unicode.Internal.Generated.PropList"
-        , (`genCorePropertiesModule` (`elem` props)))
+        [ propList ]
 
-    generateOneModule
+    runGenerator
         (indir <> "DerivedCoreProperties.txt")
         parsePropertyLines
         outdir
-        ("Unicode.Internal.Generated.DerivedCoreProperties"
-        , (`genCorePropertiesModule` (`elem` props)))
+        [ derivedCoreProperties ]
 
     where
+
+    propList =
+        ("Unicode.Internal.Generated.PropList"
+        , (`genCorePropertiesModule` (`elem` props)))
+
+    derivedCoreProperties =
+        ("Unicode.Internal.Generated.DerivedCoreProperties"
+        , (`genCorePropertiesModule` (`elem` props)))
 
     compositions exc non0 =
         ( "Unicode.Internal.Generated.UnicodeData.Compositions"
