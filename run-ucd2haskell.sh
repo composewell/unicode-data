@@ -8,4 +8,5 @@ cabal run --flag ucd2haskell ucd2haskell -- \
 --output ./lib/ \
 --core-prop Uppercase \
 --core-prop Lowercase \
---core-prop Alphabetic
+--core-prop Alphabetic \
+--core-prop White_Space
