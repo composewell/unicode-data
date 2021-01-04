@@ -527,22 +527,41 @@ moduleToFileName = map (\x -> if x == '.' then '/' else x)
 dirFromFileName :: String -> String
 dirFromFileName = reverse . dropWhile (/= '/') . reverse
 
-generateModule ::
-       String
-    -> (SerialT IO String -> SerialT IO a)
-    -> String
-    -> String
-    -> (String -> Fold IO a String)
-    -> IO ()
-generateModule infile transformLines outdir modName fldGen =
-    readLinesFromFile infile & transformLines & Stream.fold moduleFold
+type GeneratorRecipe a = (String, String -> Fold IO a String)
+
+fileEmitter :: String -> GeneratorRecipe a -> Fold IO a ()
+fileEmitter outdir (modName, fldGen) = Fold.mapM action $ fldGen modName
 
     where
 
-    moduleFold = Fold.mapM action $ fldGen modName
     outfile = outdir <> moduleToFileName modName <> ".hs"
     outfiledir = dirFromFileName outfile
     action c = createDirectoryIfMissing True outfiledir >> writeFile outfile c
+
+generateOneModule ::
+       String
+    -> (SerialT IO String -> SerialT IO a)
+    -> String
+    -> GeneratorRecipe a
+    -> IO ()
+generateOneModule infile transformLines outdir recipe =
+    readLinesFromFile infile & transformLines
+        & Stream.fold (fileEmitter outdir recipe)
+
+generateMultipleModules ::
+       String
+    -> (SerialT IO String -> SerialT IO a)
+    -> String
+    -> [GeneratorRecipe a]
+    -> IO ()
+generateMultipleModules infile transformLines outdir recipes =
+    readLinesFromFile infile & transformLines & Stream.fold combinedFld
+
+    where
+
+    generatedFolds = map (fileEmitter outdir) recipes
+    -- XXX distribute_ does not work as expected, fixed in 0.8.0
+    combinedFld = void $ Fold.distribute generatedFolds
 
 propertyTransformer :: (IsStream t, Monad m) => t m String -> t m PropertyLine
 propertyTransformer =
@@ -550,10 +569,8 @@ propertyTransformer =
         $ Fold.lmap parsePropertyLine
         $ Fold.mkPureId combinePropertyLines emptyPropertyLine
 
--- XXX This code can be improved
 genModules :: String -> String -> [String] -> IO ()
 genModules indir outdir props = do
-    unicodeDataH <- Sys.openFile unicodeData Sys.ReadMode
 
     compExclu <-
         readLinesFromFile (indir <> "DerivedNormalizationProps.txt")
@@ -569,76 +586,61 @@ genModules indir outdir props = do
             & Stream.map snd
             & Stream.fold (Fold.mkPureId (++) [])
 
-    let compositions =
-            ( "Unicode.Internal.Generated.UnicodeData.Compositions"
-            , \m -> genCompositionsModule m compExclu non0CC )
-        combiningClass =
-            ( "Unicode.Internal.Generated.UnicodeData.CombiningClass"
-            , genCombiningClassModule )
-        decomposable =
-            ( "Unicode.Internal.Generated.UnicodeData.Decomposable"
-            , (`genDecomposableModule` Canonical))
-        decomposableK =
-            ( "Unicode.Internal.Generated.UnicodeData.DecomposableK"
-            , (`genDecomposableModule` Kompat))
-        decompositions =
-            ( "Unicode.Internal.Generated.UnicodeData.Decompositions"
-            , \m -> genDecomposeDefModule m [] [] Canonical (const True))
-        decompositionsK2 =
-            ( "Unicode.Internal.Generated.UnicodeData.DecompositionsK2"
-            , \m -> genDecomposeDefModule m [] [] Kompat (>= 60000))
-        decompositionsK =
-            let pre = [ "import qualified " <> fst decompositionsK2 <> " as DK2"
-                      , ""
-                      ]
-                post = ["decompose c = DK2.decompose c"]
-             in ( "Unicode.Internal.Generated.UnicodeData.DecompositionsK"
-                , \m -> genDecomposeDefModule m pre post Kompat (< 60000))
-        unicodeDataFolds =
-            [ compositions
-            , combiningClass
-            , decomposable
-            , decomposableK
-            , decompositions
-            , decompositionsK2
-            , decompositionsK
-            ]
-    -- XXX distribute_ does not work as expected, fixed in a later PR.
-        combinedFold =
-            void $ Fold.distribute (map emitFile unicodeDataFolds)
-    readLinesFromHandle unicodeDataH & Stream.map parseDetailedChar
-      & Stream.fold combinedFold
-    Sys.hClose unicodeDataH
+    generateMultipleModules
+        (indir <> "UnicodeData.txt")
+        (Stream.map parseDetailedChar)
+        outdir
+        [ compositions compExclu non0CC
+        , combiningClass
+        , decomposable
+        , decomposableK
+        , decompositions
+        , decompositionsK2
+        , decompositionsK
+        ]
 
-    generateModule
+    generateOneModule
         (indir <> "PropList.txt")
         propertyTransformer
         outdir
-        "Unicode.Internal.Generated.PropList"
-        (`genCorePropertiesModule` (`elem` props))
+        ("Unicode.Internal.Generated.PropList"
+        , (`genCorePropertiesModule` (`elem` props)))
 
-    generateModule
+    generateOneModule
         (indir <> "DerivedCoreProperties.txt")
         propertyTransformer
         outdir
-        "Unicode.Internal.Generated.DerivedCoreProperties"
-        (`genCorePropertiesModule` (`elem` props))
+        ("Unicode.Internal.Generated.DerivedCoreProperties"
+        , (`genCorePropertiesModule` (`elem` props)))
 
     where
 
-    readLinesFromHandle h =
-        Stream.unfold Handle.read h
-            & Unicode.decodeUtf8
-            & Unicode.lines Fold.toList
+    compositions exc non0 =
+        ( "Unicode.Internal.Generated.UnicodeData.Compositions"
+        , \m -> genCompositionsModule m exc non0)
 
-    unicodeData = indir <> "UnicodeData.txt"
+    combiningClass =
+        ( "Unicode.Internal.Generated.UnicodeData.CombiningClass"
+        , genCombiningClassModule)
 
-    getFile = map (\x -> if x == '.' then '/' else x)
-    getDir = reverse . dropWhile (/= '/') . reverse
+    decomposable =
+        ( "Unicode.Internal.Generated.UnicodeData.Decomposable"
+        , (`genDecomposableModule` Canonical))
 
-    emitFile (modName, fldGen) =
-        let fld = fldGen modName
-            file = outdir <> getFile modName <> ".hs"
-            dir = getDir file
-            action c = createDirectoryIfMissing True dir >> writeFile file c
-         in Fold.mapM action fld
+    decomposableK =
+        ( "Unicode.Internal.Generated.UnicodeData.DecomposableK"
+        , (`genDecomposableModule` Kompat))
+
+    decompositions =
+        ( "Unicode.Internal.Generated.UnicodeData.Decompositions"
+        , \m -> genDecomposeDefModule m [] [] Canonical (const True))
+
+    decompositionsK2 =
+        ( "Unicode.Internal.Generated.UnicodeData.DecompositionsK2"
+        , \m -> genDecomposeDefModule m [] [] Kompat (>= 60000))
+
+    decompositionsK =
+        let pre = ["import qualified " <> fst decompositionsK2 <> " as DK2", ""]
+            post = ["decompose c = DK2.decompose c"]
+         in ( "Unicode.Internal.Generated.UnicodeData.DecompositionsK"
+            , \m -> genDecomposeDefModule m pre post Kompat (< 60000))
