@@ -14,6 +14,7 @@ FILES="\
   ucd/DerivedCoreProperties.txt:a5d45f59b39deaab3c72ce8c1a2e212a5e086dff11b1f9d5bb0e352642e82248 \
   ucd/DerivedNormalizationProps.txt:3ac44e11c84bdaf6b207d2c2c20eed857ae17052393fc7f71b0fe951186ba906 \
   ucd/UnicodeData.txt:bdbffbbfc8ad4d3a6d01b5891510458f3d36f7170422af4ea2bed3211a73e8bb \
+  ucd/PropList.txt:485b5a3ed25dbf1f94dfa5a9b69d8b4550ffd0c33045ccc55ccfd7c80b2a40cf \
   ucd/extracted/DerivedCombiningClass.txt:e14928a5bf6ad5958a80332bd42e96e14420080a95c660e5da29384e496755d0"
 
 # Download the files

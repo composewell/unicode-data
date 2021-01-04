@@ -79,6 +79,7 @@ library
 
       -- Generated files
       Unicode.Internal.Generated.DerivedCoreProperties
+      Unicode.Internal.Generated.PropList
       Unicode.Internal.Generated.UnicodeData.CombiningClass
       Unicode.Internal.Generated.UnicodeData.Compositions
       Unicode.Internal.Generated.UnicodeData.Decomposable

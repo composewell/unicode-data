@@ -9,10 +9,12 @@ module Unicode.Properties.Core
     ( isAlpha
     , isUpper
     , isLower
+    , isSpace
     )
 where
 
 import qualified Unicode.Internal.Generated.DerivedCoreProperties as P
+import qualified Unicode.Internal.Generated.PropList as P
 
 -- | Selects Alphabetic Unicode characters defined in Unicode character
 -- database.  This should be equivalent to "Data.Char.isAlpha".
@@ -31,3 +33,9 @@ isUpper = P.isUppercase
 {-# INLINE isLower #-}
 isLower :: Char -> Bool
 isLower = P.isLowercase
+
+-- | Selects White_Space Unicode characters defined in Unicode character
+-- database.  This should be equivalent to "Data.Char.isSpace".
+{-# INLINE isSpace #-}
+isSpace :: Char -> Bool
+isSpace = P.isWhite_Space
