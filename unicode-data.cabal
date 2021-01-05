@@ -30,8 +30,7 @@ extra-source-files:
     Changelog.md
     README.md
     NOTICE
-    download-ucd.sh
-    run-ucd2haskell.sh
+    ucd.sh
 
 source-repository head
   type: git
