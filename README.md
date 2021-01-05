@@ -10,18 +10,18 @@ Please see the haddock documentation for reference documentation.
 ## Unicode database version update
 
 To update the unicode version please update the version number in
-`download-ucd.sh`.
+`ucd.sh`.
 
-To download the unicode database, run `download-ucd.sh` from the top
+To download the unicode database, run `ucd.sh download` from the top
 level directory of the repo to fetch the database in `./ucd`.
 
 ```
-$ ./download-ucd.sh
+$ ./ucd.sh download
 ```
 
 To generate the Haskell data structure files from the downloaded database
-files, run `run-ucd2haskell.sh` from the top level dir of the repo.
+files, run `ucd.sh generate` from the top level directory of the repo.
 
 ```
-$ ./run-ucd2haskell.sh
+$ ./ucd.sh generate
 ```
