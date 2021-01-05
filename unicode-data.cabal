@@ -71,7 +71,7 @@ library
       Unicode.Properties.CombiningClass
       Unicode.Properties.Compose
       Unicode.Properties.Decompose
-      Unicode.Properties.DecomposeHangul
+      Unicode.Properties.Hangul
 
       -- Internal files
       Unicode.Internal.Bits

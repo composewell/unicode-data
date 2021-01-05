@@ -1,13 +1,12 @@
 -- |
--- Module      : Unicode.Properties.DecomposeHangul
+-- Module      : Unicode.Properties.Hangul
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
 -- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 
-module Unicode.Properties.DecomposeHangul
-    (decomposeCharHangul
-    , hangulFirst
+module Unicode.Properties.Hangul
+    ( hangulFirst
     , hangulLast
     , isHangul
     , isHangulLV
@@ -18,6 +17,7 @@ module Unicode.Properties.DecomposeHangul
     , jamoLLast
 
     , jamoVFirst
+    , jamoVCount
     , jamoVIndex
     , jamoVLast
 
@@ -30,10 +30,9 @@ module Unicode.Properties.DecomposeHangul
     )
 where
 
-import Control.Exception              (assert)
-import Data.Char                      (ord)
-import GHC.Base                       (unsafeChr)
-import Unicode.Internal.Division (quotRem21, quotRem28)
+import Control.Exception (assert)
+import Data.Char (ord)
+import Unicode.Internal.Division (quotRem28)
 
 -- Hangul characters can be decomposed algorithmically instead of via mappings
 
@@ -115,20 +114,3 @@ jamoTIndex c
   | index > 0 && index < jamoTCount = Just index
   | otherwise = Nothing
     where index = ord c - jamoTFirst
-
--------------------------------------------------------------------------------
--- Hangul decomposition
--------------------------------------------------------------------------------
-
--- | Decompose a hangul syllable into its correcponding jamo characters.
-{-# INLINE decomposeCharHangul #-}
-decomposeCharHangul :: Char -> (Char, Char, Char)
-decomposeCharHangul c = (l, v, t)
-    where
-        i = ord c - hangulFirst
-        !(tn, ti) = assert (jamoTCount == 28) quotRem28 i
-        !(li, vi) = assert (jamoVCount == 21) quotRem21 tn
-
-        l = unsafeChr (jamoLFirst + li)
-        v = unsafeChr (jamoVFirst + vi)
-        t = unsafeChr (jamoTFirst + ti)
