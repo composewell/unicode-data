@@ -1,11 +1,11 @@
 -- |
--- Module      : Unicode.Properties.Hangul
+-- Module      : Unicode.UCD.Hangul
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
 -- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 
-module Unicode.Properties.Hangul
+module Unicode.UCD.Hangul
     ( hangulFirst
     , hangulLast
     , isHangul

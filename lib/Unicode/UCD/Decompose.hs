@@ -1,11 +1,11 @@
 -- |
--- Module      : Unicode.Properties.Decompose
+-- Module      : Unicode.UCD.Decompose
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
 -- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 --
-module Unicode.Properties.Decompose
+module Unicode.UCD.Decompose
     ( decompose
     , DecomposeMode(..)
     , isDecomposable
@@ -23,7 +23,7 @@ import qualified Unicode.Internal.Generated.UnicodeData.DecomposableK   as K
 import qualified Unicode.Internal.Generated.UnicodeData.Decompositions  as D
 import qualified Unicode.Internal.Generated.UnicodeData.DecompositionsK as K
 
-import Unicode.Properties.Hangul
+import Unicode.UCD.Hangul
 
 -------------------------------------------------------------------------------
 -- Non Hangul decomposition
