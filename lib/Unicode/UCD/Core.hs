@@ -1,11 +1,11 @@
 -- |
--- Module      : Unicode.Properties.Core
+-- Module      : Unicode.UCD.Core
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
 -- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 --
-module Unicode.Properties.Core
+module Unicode.UCD.Core
     ( isAlpha
     , isUpper
     , isLower

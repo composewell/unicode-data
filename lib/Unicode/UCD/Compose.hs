@@ -1,5 +1,5 @@
 -- |
--- Module      : Unicode.Properties.Compose
+-- Module      : Unicode.UCD.Compose
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
 -- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
@@ -16,7 +16,7 @@
 -- You can read more about it in the Unicode standard. The latest Unicode
 -- standard can be found here: <http://www.unicode.org/versions/latest/>.
 --
-module Unicode.Properties.Compose
+module Unicode.UCD.Compose
     ( compose
     , composeStarters
     , isSecondStarter

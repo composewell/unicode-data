@@ -66,11 +66,11 @@ library
   import: default-extensions, compile-options
   default-language: Haskell2010
   exposed-modules:
-      Unicode.Properties.Core
-      Unicode.Properties.CombiningClass
-      Unicode.Properties.Compose
-      Unicode.Properties.Decompose
-      Unicode.Properties.Hangul
+      Unicode.UCD.Core
+      Unicode.UCD.CombiningClass
+      Unicode.UCD.Compose
+      Unicode.UCD.Decompose
+      Unicode.UCD.Hangul
 
       -- Internal files
       Unicode.Internal.Bits
