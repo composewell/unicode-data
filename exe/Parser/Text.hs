@@ -100,43 +100,46 @@ genSignature testBit = testBit <> " :: Char -> Bool"
 -- | Check that var is between minimum and maximum of orderList
 genRangeCheck :: String -> [Int] -> String
 genRangeCheck var ordList =
-      var <> " >= "
-      <> show (minimum ordList) <> " && " <> var <> " <= "
-      <> show (maximum ordList)
+    var
+        <> " >= "
+        <> show (minimum ordList)
+        <> " && " <> var <> " <= " <> show (maximum ordList)
 
 genBitmap :: String -> [Int] -> String
-genBitmap funcName ordList = unlines
-  [ "{-# INLINE " ++ funcName  ++ " #-}"
-  , genSignature funcName
-  , funcName
-        <> " = \\c -> let n = ord c in "
-        ++ genRangeCheck "n" ordList
-        ++ " && lookupBit64 bitmap# n"
-  , "  where"
-  , "    bitmap# = "
-        ++ show (bitMapToAddrLiteral (positionsToBitMap ordList))
-        ++ "#"
-  ]
+genBitmap funcName ordList =
+    unlines
+        [ "{-# INLINE " ++ funcName ++ " #-}"
+        , genSignature funcName
+        , funcName <> " = \\c -> let n = ord c in "
+              ++ genRangeCheck "n" ordList ++ " && lookupBit64 bitmap# n"
+        , "  where"
+        , "    bitmap# = "
+              ++ show (bitMapToAddrLiteral (positionsToBitMap ordList)) ++ "#"
+        ]
 
 positionsToBitMap :: [Int] -> [Bool]
 positionsToBitMap = go 0
-  where
+
+    where
+
     go _ [] = []
-    go i xxs@(x : xs)
-      | i < x     = False : go (i + 1) xxs
-      | otherwise = True  : go (i + 1) xs
+    go i xxs@(x:xs)
+        | i < x = False : go (i + 1) xxs
+        | otherwise = True : go (i + 1) xs
 
 bitMapToAddrLiteral :: [Bool] -> String
 bitMapToAddrLiteral = map (chr . toByte . padTo8) . unfoldr go
-  where
+
+    where
+
     go :: [a] -> Maybe ([a], [a])
     go [] = Nothing
     go xs = Just $ splitAt 8 xs
 
     padTo8 :: [Bool] -> [Bool]
     padTo8 xs
-      | length xs >= 8 = xs
-      | otherwise = xs ++ replicate (8 - length xs) False
+        | length xs >= 8 = xs
+        | otherwise = xs ++ replicate (8 - length xs) False
 
     toByte :: [Bool] -> Int
     toByte xs = sum $ map (\i -> if xs !! i then 1 `shiftL` i else 0) [0..7]
@@ -215,7 +218,7 @@ filterDecomposableType ::
        Monad m => DType -> Fold m DetailedChar a -> Fold m DetailedChar a
 filterDecomposableType dtype =
     Fold.filter ((/= DCSelf) . _decomposition)
-      . Fold.filter (predicate . _decompositionType)
+        . Fold.filter (predicate . _decompositionType)
 
     where
 
@@ -228,8 +231,7 @@ genDecomposableModule ::
        Monad m => String -> DType -> Fold m DetailedChar String
 genDecomposableModule moduleName dtype =
     filterNonHangul
-        $ filterDecomposableType dtype
-        $ done <$> Fold.foldl' step initial
+        $ filterDecomposableType dtype $ done <$> Fold.foldl' step initial
 
     where
 
@@ -239,16 +241,16 @@ genDecomposableModule moduleName dtype =
 
     done st =
         unlines
-                [ apacheLicense moduleName
-                , "module " <> moduleName
-                , "(isDecomposable)"
-                , "where"
-                , ""
-                , "import Data.Char (ord)"
-                , "import Unicode.Internal.Bits (lookupBit64)"
-                , ""
-                , genBitmap "isDecomposable" (reverse st)
-                ]
+            [ apacheLicense moduleName
+            , "module " <> moduleName
+            , "(isDecomposable)"
+            , "where"
+            , ""
+            , "import Data.Char (ord)"
+            , "import Unicode.Internal.Bits (lookupBit64)"
+            , ""
+            , genBitmap "isDecomposable" (reverse st)
+            ]
 
 genCombiningClassModule :: Monad m => String -> Fold m DetailedChar String
 genCombiningClassModule moduleName =
@@ -263,24 +265,24 @@ genCombiningClassModule moduleName =
 
     done (st1, st2) =
         unlines
-                [ apacheLicense moduleName
-                , "module " <> moduleName
-                , "(combiningClass, isCombining)"
-                , "where"
-                , ""
-                , "import Data.Char (ord)"
-                , "import Unicode.Internal.Bits (lookupBit64)"
-                , ""
-                , "combiningClass :: Char -> Int"
-                , unlines (reverse st1)
-                , "combiningClass _ = 0\n"
-                , ""
-                , genBitmap "isCombining" (reverse st2)
-                ]
+            [ apacheLicense moduleName
+            , "module " <> moduleName
+            , "(combiningClass, isCombining)"
+            , "where"
+            , ""
+            , "import Data.Char (ord)"
+            , "import Unicode.Internal.Bits (lookupBit64)"
+            , ""
+            , "combiningClass :: Char -> Int"
+            , unlines (reverse st1)
+            , "combiningClass _ = 0\n"
+            , ""
+            , genBitmap "isCombining" (reverse st2)
+            ]
 
     genCombiningClassDef dc =
         "combiningClass "
-          <> show (_char dc) <> " = " <> show (_combiningClass dc)
+            <> show (_char dc) <> " = " <> show (_combiningClass dc)
 
 genDecomposeDefModule ::
        Monad m
@@ -292,8 +294,8 @@ genDecomposeDefModule ::
     -> Fold m DetailedChar String
 genDecomposeDefModule moduleName before after dtype pred =
     Fold.filter (pred . ord . _char)
-      $ filterNonHangul
-      $ filterDecomposableType dtype $ done <$> Fold.foldl' step initial
+        $ filterNonHangul
+        $ filterDecomposableType dtype $ done <$> Fold.foldl' step initial
 
     where
 
@@ -324,8 +326,8 @@ genDecomposeDefModule moduleName before after dtype pred =
 
     genDecomposeDef dc =
         "decompose "
-          <> show (_char dc)
-          <> " = " <> show (decomposeChar (_char dc) (_decomposition dc))
+            <> show (_char dc)
+            <> " = " <> show (decomposeChar (_char dc) (_decomposition dc))
 
 genCompositionsModule ::
        Monad m
@@ -335,9 +337,9 @@ genCompositionsModule ::
     -> Fold m DetailedChar String
 genCompositionsModule moduleName compExclu non0CC =
     Fold.filter (not . flip elem compExclu . ord . _char)
-      $ filterNonHangul
-      $ Fold.filter (isDecompositionLen2 . _decomposition)
-      $ filterDecomposableType Canonical $ done <$> Fold.foldl' step initial
+        $ filterNonHangul
+        $ Fold.filter (isDecompositionLen2 . _decomposition)
+        $ filterDecomposableType Canonical $ done <$> Fold.foldl' step initial
 
     where
 
@@ -346,9 +348,9 @@ genCompositionsModule moduleName compExclu non0CC =
 
     genComposePairDef name dc =
         name
-          <> " "
-          <> show (head d01)
-          <> " " <> show (d01 !! 1) <> " = Just " <> show (_char dc)
+            <> " "
+            <> show (head d01)
+            <> " " <> show (d01 !! 1) <> " = Just " <> show (_char dc)
 
         where
 
@@ -412,10 +414,10 @@ genCompositionsModule moduleName compExclu non0CC =
 
     done (dec, sp, ss) =
         unlines
-          $ header
-          ++ composePair (reverse dec)
-          ++ composeStarterPair (reverse sp)
-          ++ isSecondStarter (Set.toList (Set.fromList ss))
+            $ header
+            ++ composePair (reverse dec)
+            ++ composeStarterPair (reverse sp)
+            ++ isSecondStarter (Set.toList (Set.fromList ss))
 
 genCorePropertiesModule ::
        Monad m => String -> (String -> Bool) -> Fold m (String, [Int]) String
