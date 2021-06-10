@@ -1,3 +1,6 @@
 resolver: lts-16.24
 packages:
 - '.'
+extra-deps:
+- github: composewell/streamly
+  commit: b90c614fcb00dc0739fedfd06e3689183a2d89f9

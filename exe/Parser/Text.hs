@@ -23,19 +23,18 @@ import Data.Char (chr, ord, isSpace)
 import Data.Function ((&))
 import Data.List (unfoldr, intersperse)
 import Data.Maybe (fromMaybe)
-import Streamly.Internal.Data.Fold (Fold(..))
-import Streamly (IsStream, SerialT)
+import Streamly.Internal.Data.Fold (Fold)
+import Streamly.Prelude (IsStream, SerialT)
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getEnv)
 
 import qualified Data.Set as Set
 import qualified Streamly.Prelude as Stream
 import qualified Streamly.Internal.Data.Fold as Fold
-import qualified Streamly.Internal.Data.Unicode.Stream as Unicode
 import qualified Streamly.Internal.FileSystem.File as File
 import qualified Streamly.Internal.FileSystem.Handle as Handle
 import qualified System.IO as Sys
-
+import qualified Streamly.Internal.Unicode.Stream as Unicode
 
 import Prelude hiding (pred)
 
@@ -210,13 +209,13 @@ readDecomp s =
     dtmap _ = DTCanonical
 
 filterNonHangul :: Monad m => Fold m DetailedChar a -> Fold m DetailedChar a
-filterNonHangul = Fold.lfilter (not . isHangul . _char)
+filterNonHangul = Fold.filter (not . isHangul . _char)
 
 filterDecomposableType ::
        Monad m => DType -> Fold m DetailedChar a -> Fold m DetailedChar a
 filterDecomposableType dtype =
-    Fold.lfilter ((/= DCSelf) . _decomposition)
-      . Fold.lfilter (predicate . _decompositionType)
+    Fold.filter ((/= DCSelf) . _decomposition)
+      . Fold.filter (predicate . _decompositionType)
 
     where
 
@@ -230,17 +229,16 @@ genDecomposableModule ::
 genDecomposableModule moduleName dtype =
     filterNonHangul
         $ filterDecomposableType dtype
-        $ Fold.Fold step initial done
+        $ done <$> Fold.foldl' step initial
 
     where
 
-    initial = return []
+    initial = []
 
-    step st a = return $ ord (_char a) : st
+    step st a = ord (_char a) : st
 
     done st =
-        return
-          $ unlines
+        unlines
                 [ apacheLicense moduleName
                 , "module " <> moduleName
                 , "(isDecomposable)"
@@ -254,18 +252,17 @@ genDecomposableModule moduleName dtype =
 
 genCombiningClassModule :: Monad m => String -> Fold m DetailedChar String
 genCombiningClassModule moduleName =
-    Fold.lfilter (\dc -> _combiningClass dc /= 0) $ Fold step initial done
+    Fold.filter (\dc -> _combiningClass dc /= 0)
+        $ done <$> Fold.foldl' step initial
 
     where
 
-    initial = return ([], [])
+    initial = ([], [])
 
-    step (st1, st2) a =
-        return (genCombiningClassDef a : st1, ord (_char a) : st2)
+    step (st1, st2) a = (genCombiningClassDef a : st1, ord (_char a) : st2)
 
     done (st1, st2) =
-        return
-          $ unlines
+        unlines
                 [ apacheLicense moduleName
                 , "module " <> moduleName
                 , "(combiningClass, isCombining)"
@@ -294,9 +291,9 @@ genDecomposeDefModule ::
     -> (Int -> Bool)
     -> Fold m DetailedChar String
 genDecomposeDefModule moduleName before after dtype pred =
-    Fold.lfilter (pred . ord . _char)
+    Fold.filter (pred . ord . _char)
       $ filterNonHangul
-      $ filterDecomposableType dtype $ Fold.Fold step initial done
+      $ filterDecomposableType dtype $ done <$> Fold.foldl' step initial
 
     where
 
@@ -317,13 +314,13 @@ genDecomposeDefModule moduleName before after dtype pred =
         , "{-# NOINLINE decompose #-}"
         , "decompose :: Char -> [Char]"
         ]
-    initial = return []
+    initial = []
 
-    step st dc = return $ genDecomposeDef dc : st
+    step st dc = genDecomposeDef dc : st
 
     done st =
         let body = genHeader ++ before ++ genSign ++ reverse st ++ after
-         in return $ unlines body
+         in unlines body
 
     genDecomposeDef dc =
         "decompose "
@@ -337,10 +334,10 @@ genCompositionsModule ::
     -> [Int]
     -> Fold m DetailedChar String
 genCompositionsModule moduleName compExclu non0CC =
-    Fold.lfilter (not . flip elem compExclu . ord . _char)
+    Fold.filter (not . flip elem compExclu . ord . _char)
       $ filterNonHangul
-      $ Fold.lfilter (isDecompositionLen2 . _decomposition)
-      $ filterDecomposableType Canonical $ Fold.Fold step initial done
+      $ Fold.filter (isDecompositionLen2 . _decomposition)
+      $ filterDecomposableType Canonical $ done <$> Fold.foldl' step initial
 
     where
 
@@ -365,9 +362,9 @@ genCompositionsModule moduleName compExclu non0CC =
                 then ds
                 else error "toCompFormat: length /= 2"
 
-    initial = return ([], [], [])
+    initial = ([], [], [])
 
-    step (dec, sp, ss) dc = return (dec1, sp1, ss1)
+    step (dec, sp, ss) dc = (dec1, sp1, ss1)
 
         where
 
@@ -414,8 +411,7 @@ genCompositionsModule moduleName compExclu non0CC =
         [genBitmap "isSecondStarter" secondStarters]
 
     done (dec, sp, ss) =
-        return
-          $ unlines
+        unlines
           $ header
           ++ composePair (reverse dec)
           ++ composeStarterPair (reverse sp)
@@ -424,7 +420,7 @@ genCompositionsModule moduleName compExclu non0CC =
 genCorePropertiesModule ::
        Monad m => String -> (String -> Bool) -> Fold m (String, [Int]) String
 genCorePropertiesModule moduleName isProp =
-    Fold.lfilter (\(name, _) -> isProp name) $ Fold.mkPure step initial done
+    Fold.filter (\(name, _) -> isProp name) $ done <$> Fold.foldl' step initial
 
     where
 
@@ -496,7 +492,7 @@ parsePropertyLines :: (IsStream t, Monad m) => t m String -> t m PropertyLine
 parsePropertyLines =
     Stream.splitOn isDivider
         $ Fold.lmap parsePropertyLine
-        $ Fold.mkPureId combinePropertyLines emptyPropertyLine
+        $ Fold.foldl' combinePropertyLines emptyPropertyLine
 
 parseDetailedChar :: String -> DetailedChar
 parseDetailedChar line =
@@ -545,7 +541,7 @@ type ModuleRecipe a = (String, String -> Fold IO a String)
 type GeneratorRecipe a = [ModuleRecipe a]
 
 fileEmitter :: String -> String -> ModuleRecipe a -> Fold IO a ()
-fileEmitter file outdir (modName, fldGen) = Fold.mapM action $ fldGen modName
+fileEmitter file outdir (modName, fldGen) = Fold.rmapM action $ fldGen modName
 
     where
 
@@ -592,7 +588,7 @@ genModules indir outdir props = do
             & parsePropertyLines
             & Stream.filter (\(name, _) -> name /= "0")
             & Stream.map snd
-            & Stream.fold (Fold.mkPureId (++) [])
+            & Stream.fold (Fold.foldl' (++) [])
 
     runGenerator
         indir
