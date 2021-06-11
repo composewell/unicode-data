@@ -582,8 +582,7 @@ genModules indir outdir props = do
         readLinesFromFile (indir <> "DerivedNormalizationProps.txt")
             & parsePropertyLines
             & Stream.find (\(name, _) -> name == "Full_Composition_Exclusion")
-            & fmap (fromMaybe ("", []))
-            & fmap snd
+            & fmap (fromMaybe ("", []) . snd)
 
     non0CC <-
         readLinesFromFile (indir <> "extracted/DerivedCombiningClass.txt")
