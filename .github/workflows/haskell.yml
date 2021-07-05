@@ -29,7 +29,7 @@ jobs:
       # ------------------------------------------------------------------------
       PACKCHECK_LOCAL_PATH: "./packcheck.sh"
       PACKCHECK_GITHUB_URL: "https://raw.githubusercontent.com/harendra-kumar/packcheck"
-      PACKCHECK_GITHUB_COMMIT: "563702bd02c41343dcd3dfcfef0845ca428a9240"
+      PACKCHECK_GITHUB_COMMIT: "37bbe8a79ad5136e654e48e03ec519060a5b11e6"
 
       # ------------------------------------------------------------------------
       # Build options
@@ -49,6 +49,14 @@ jobs:
         cabal_version: [3.2]
         include:
 
+          - name: Ubuntu+GHC7103
+            ghc_version: 7.10.3
+            runner: ubuntu-latest
+
+          - name: Ubuntu+GHC802
+            ghc_version: 8.0.2
+            runner: ubuntu-latest
+
           - name: Ubuntu+GHC822
             ghc_version: 8.2.2
             runner: ubuntu-latest
@@ -67,6 +75,11 @@ jobs:
 
           - name: Ubuntu+GHC8102+exe
             ghc_version: 8.10.2
+            pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
+            runner: ubuntu-latest
+
+          - name: Ubuntu+GHC901+exe
+            ghc_version: 9.0.1
             pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
             runner: ubuntu-latest
 
