@@ -67,7 +67,7 @@ jobs:
 
           - name: Ubuntu+GHC8102+exe
             ghc_version: 8.10.2
-            pack_options: CABAL_BUILD_OPTIONS="-f exe"
+            pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
             runner: ubuntu-latest
 
           - name: Hlint
@@ -76,7 +76,7 @@ jobs:
 
           - name: MacOS+GHC884+exe
             ghc_version: 8.8.4
-            pack_options: CABAL_BUILD_OPTIONS="-f exe"
+            pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
             runner: macos-latest
 
     steps:
