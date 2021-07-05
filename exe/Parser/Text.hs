@@ -23,20 +23,23 @@ import Data.Char (chr, ord, isSpace)
 import Data.Function ((&))
 import Data.List (unfoldr, intersperse)
 import Data.Maybe (fromMaybe)
-import Streamly.Internal.Data.Fold (Fold)
+import Streamly.Data.Fold (Fold)
 import Streamly.Prelude (IsStream, SerialT)
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getEnv)
 
 import qualified Data.Set as Set
 import qualified Streamly.Prelude as Stream
-import qualified Streamly.Internal.Data.Fold as Fold
-import qualified Streamly.Internal.FileSystem.File as File
-import qualified Streamly.Internal.FileSystem.Handle as Handle
+import qualified Streamly.Data.Fold as Fold
+import qualified Streamly.FileSystem.Handle as Handle
 import qualified System.IO as Sys
-import qualified Streamly.Internal.Unicode.Stream as Unicode
+import qualified Streamly.Unicode.Stream as Unicode
 
 import Prelude hiding (pred)
+
+-- Internal imports
+import qualified Streamly.Internal.FileSystem.File as File (withFile)
+import qualified Streamly.Internal.Unicode.Stream as Unicode (lines)
 
 -------------------------------------------------------------------------------
 -- Types
