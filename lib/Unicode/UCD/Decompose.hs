@@ -5,10 +5,34 @@
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 --
+-- Unicode normalization.
+--
+-- For more information please refer to the following sections of the [Unicode
+-- standard](https://www.unicode.org/versions/latest/):
+--
+-- * 2 General Structure
+--
+--     * 2.3 Compatibility Characters
+--     * 2.12 Equivalent Sequences
+--
+-- * 3 Conformance
+--
+--     * 3.6 Combination
+--     * 3.7 Decomposition
+--     * 3.11 Normalization Forms
+--     * 3.12 Conjoining Jamo Behavior
+--
+-- * 4 Character Properties
+--
+--     * 4.3 Combining Classes
+--
+-- * [Unicode® Standard Annex #15 - Unicode Normalization Forms](https://www.unicode.org/reports/tr15)
+-- * [Unicode® Standard Annex #44 - Unicode Character Database](https://www.unicode.org/reports/tr44/)
+--
 module Unicode.UCD.Decompose
-    ( decompose
-    , DecomposeMode(..)
+    ( DecomposeMode(..)
     , isDecomposable
+    , decompose
     , decomposeHangul
     )
 where
@@ -29,17 +53,19 @@ import Unicode.UCD.Hangul
 -- Non Hangul decomposition
 -------------------------------------------------------------------------------
 
+-- | Whether we are decomposing in canonical or compatibility mode.
 data DecomposeMode = Canonical | Kompat
 
--- | Given the 'DecomposeMode' @D@ and a character @c@, decompose @c@ into its
--- normal form in @D@.
+-- | Decompose a non-Hangul character into its canonical or compatibility
+-- decompositions.  Note that the resulting characters may further decompose.
 {-# INLINE decompose #-}
 decompose :: DecomposeMode -> Char -> [Char]
 decompose Canonical  = D.decompose
 decompose Kompat = K.decompose
 
--- | Given the 'DecomposeMode' @D@ and a character @c@, return True if @c@ is
--- decomposable in @D@. This does not work for Hangul characters.
+-- | Given a non-Hangul character determine if the character is decomposable.
+-- Note that in case compatibility decompositions a character may decompose
+-- into a single compatibility character.
 {-# INLINE isDecomposable #-}
 isDecomposable :: DecomposeMode -> Char -> Bool
 isDecomposable Canonical  = D.isDecomposable
@@ -49,7 +75,7 @@ isDecomposable Kompat = K.isDecomposable
 -- Hangul decomposition
 -------------------------------------------------------------------------------
 
--- | Decompose a hangul syllable into its corresponding jamo characters.
+-- | Decompose a Hangul syllable into its corresponding Jamo characters.
 {-# INLINE decomposeHangul #-}
 decomposeHangul :: Char -> (Char, Char, Char)
 decomposeHangul c = (l, v, t)

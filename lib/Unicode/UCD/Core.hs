@@ -16,26 +16,38 @@ where
 import qualified Unicode.Internal.Generated.DerivedCoreProperties as P
 import qualified Unicode.Internal.Generated.PropList as P
 
--- | Selects Alphabetic Unicode characters defined in Unicode character
--- database.  This should be equivalent to "Data.Char.isAlpha".
+-- | Returns 'True' for alphabetic Unicode characters (lower-case, upper-case
+-- and title-case letters, plus letters of caseless scripts and modifiers
+-- letters).
+--
+-- prop> isAlpha == Data.Char.isAlpha
+--
 {-# INLINE isAlpha #-}
 isAlpha :: Char -> Bool
 isAlpha = P.isAlphabetic
 
--- | Selects Uppercase Unicode characters defined in Unicode character database.
--- This should be equivalent to "Data.Char.isUpper".
+-- | Returns 'True' for upper-case or title-case letters.  Title case is used by
+-- a small number of letter ligatures like the single-character form of /Lj/.
+--
+-- prop> isUpper == Data.Char.isUpper
+--
 {-# INLINE isUpper #-}
 isUpper :: Char -> Bool
 isUpper = P.isUppercase
 
--- | Selects Lowercase Unicode characters defined in Unicode character database.
--- This should be equivalent to "Data.Char.isLower".
+-- | Returns 'True' for lower-case letters.
+--
+-- prop> isLower == Data.Char.isLower
+--
 {-# INLINE isLower #-}
 isLower :: Char -> Bool
 isLower = P.isLowercase
 
--- | Selects White_Space Unicode characters defined in Unicode character
--- database.  This should be equivalent to "Data.Char.isSpace".
+-- | Returns 'True' for any whitespace characters, and the control
+-- characters @\\t@, @\\n@, @\\r@, @\\f@, @\\v@.
+--
+-- prop> isSpace == Data.Char.isSpace
+--
 {-# INLINE isSpace #-}
 isSpace :: Char -> Bool
 isSpace = P.isWhite_Space
