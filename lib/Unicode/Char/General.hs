@@ -1,12 +1,16 @@
 -- |
--- Module      : Unicode.UCD.Hangul
+-- Module      : Unicode.Char.General
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
 -- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
+--
+module Unicode.Char.General
+    ( isAlpha
+    , isSpace
 
-module Unicode.UCD.Hangul
-    ( hangulFirst
+    -- Hangul
+    , hangulFirst
     , hangulLast
     , isHangul
     , isHangulLV
@@ -34,11 +38,34 @@ import Control.Exception (assert)
 import Data.Char (ord)
 import Unicode.Internal.Division (quotRem28)
 
--- Hangul characters can be decomposed algorithmically instead of via mappings
+import qualified Unicode.Internal.Generated.DerivedCoreProperties as P
+import qualified Unicode.Internal.Generated.PropList as P
+
+-- | Returns 'True' for alphabetic Unicode characters (lower-case, upper-case
+-- and title-case letters, plus letters of caseless scripts and modifiers
+-- letters).
+--
+-- prop> isAlpha == Data.Char.isAlpha
+--
+{-# INLINE isAlpha #-}
+isAlpha :: Char -> Bool
+isAlpha = P.isAlphabetic
+
+-- | Returns 'True' for any whitespace characters, and the control
+-- characters @\\t@, @\\n@, @\\r@, @\\f@, @\\v@.
+--
+-- prop> isSpace == Data.Char.isSpace
+--
+{-# INLINE isSpace #-}
+isSpace :: Char -> Bool
+isSpace = P.isWhite_Space
 
 -------------------------------------------------------------------------------
--- General utilities used by decomposition as well as composition
+-- Hangul
 -------------------------------------------------------------------------------
+
+-- General utilities used by decomposition as well as composition
+-- Hangul characters can be decomposed algorithmically instead of via mappings
 
 -- * https://www.unicode.org/versions/Unicode13.0.0/ch03.pdf
 -- * https://en.wikipedia.org/wiki/List_of_Hangul_jamo
