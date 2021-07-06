@@ -70,11 +70,12 @@ library
   import: default-extensions, compile-options
   default-language: Haskell2010
   exposed-modules:
-      Unicode.UCD.Core
-      Unicode.UCD.CombiningClass
-      Unicode.UCD.Compose
-      Unicode.UCD.Decompose
-      Unicode.UCD.Hangul
+      Unicode.Char
+      -- The module structure is derived from
+      -- https://www.unicode.org/reports/tr44/#Property_Index_Table
+      Unicode.Char.Normalization
+      Unicode.Char.General
+      Unicode.Char.Case
 
       -- Internal files
       Unicode.Internal.Bits
