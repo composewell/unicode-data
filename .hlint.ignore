@@ -1,2 +1,2 @@
 lib/Unicode/Internal/Division.hs
-lib/Unicode/Internal/Generated/PropList.hs
+lib/Unicode/Internal/Char/PropList.hs

@@ -630,39 +630,39 @@ genModules indir outdir props = do
     where
 
     propList =
-        ("Unicode.Internal.Generated.PropList"
+        ("Unicode.Internal.Char.PropList"
         , (`genCorePropertiesModule` (`elem` props)))
 
     derivedCoreProperties =
-        ("Unicode.Internal.Generated.DerivedCoreProperties"
+        ("Unicode.Internal.Char.DerivedCoreProperties"
         , (`genCorePropertiesModule` (`elem` props)))
 
     compositions exc non0 =
-        ( "Unicode.Internal.Generated.UnicodeData.Compositions"
+        ( "Unicode.Internal.Char.UnicodeData.Compositions"
         , \m -> genCompositionsModule m exc non0)
 
     combiningClass =
-        ( "Unicode.Internal.Generated.UnicodeData.CombiningClass"
+        ( "Unicode.Internal.Char.UnicodeData.CombiningClass"
         , genCombiningClassModule)
 
     decomposable =
-        ( "Unicode.Internal.Generated.UnicodeData.Decomposable"
+        ( "Unicode.Internal.Char.UnicodeData.Decomposable"
         , (`genDecomposableModule` Canonical))
 
     decomposableK =
-        ( "Unicode.Internal.Generated.UnicodeData.DecomposableK"
+        ( "Unicode.Internal.Char.UnicodeData.DecomposableK"
         , (`genDecomposableModule` Kompat))
 
     decompositions =
-        ( "Unicode.Internal.Generated.UnicodeData.Decompositions"
+        ( "Unicode.Internal.Char.UnicodeData.Decompositions"
         , \m -> genDecomposeDefModule m [] [] Canonical (const True))
 
     decompositionsK2 =
-        ( "Unicode.Internal.Generated.UnicodeData.DecompositionsK2"
+        ( "Unicode.Internal.Char.UnicodeData.DecompositionsK2"
         , \m -> genDecomposeDefModule m [] [] Kompat (>= 60000))
 
     decompositionsK =
         let pre = ["import qualified " <> fst decompositionsK2 <> " as DK2", ""]
             post = ["decompose c = DK2.decompose c"]
-         in ( "Unicode.Internal.Generated.UnicodeData.DecompositionsK"
+         in ( "Unicode.Internal.Char.UnicodeData.DecompositionsK"
             , \m -> genDecomposeDefModule m pre post Kompat (< 60000))

@@ -11,7 +11,7 @@ module Unicode.Char.Case
     )
 where
 
-import qualified Unicode.Internal.Generated.DerivedCoreProperties as P
+import qualified Unicode.Internal.Char.DerivedCoreProperties as P
 
 -- | Returns 'True' for lower-case letters.
 --
