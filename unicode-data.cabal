@@ -82,15 +82,17 @@ library
       Unicode.Internal.Division
 
       -- Generated files
-      Unicode.Internal.Generated.DerivedCoreProperties
-      Unicode.Internal.Generated.PropList
-      Unicode.Internal.Generated.UnicodeData.CombiningClass
-      Unicode.Internal.Generated.UnicodeData.Compositions
-      Unicode.Internal.Generated.UnicodeData.Decomposable
-      Unicode.Internal.Generated.UnicodeData.DecomposableK
-      Unicode.Internal.Generated.UnicodeData.Decompositions
-      Unicode.Internal.Generated.UnicodeData.DecompositionsK
-      Unicode.Internal.Generated.UnicodeData.DecompositionsK2
+      -- This module structure is largely based on the UCD file names from which
+      -- the properties are generated.
+      Unicode.Internal.Char.DerivedCoreProperties
+      Unicode.Internal.Char.PropList
+      Unicode.Internal.Char.UnicodeData.CombiningClass
+      Unicode.Internal.Char.UnicodeData.Compositions
+      Unicode.Internal.Char.UnicodeData.Decomposable
+      Unicode.Internal.Char.UnicodeData.DecomposableK
+      Unicode.Internal.Char.UnicodeData.Decompositions
+      Unicode.Internal.Char.UnicodeData.DecompositionsK
+      Unicode.Internal.Char.UnicodeData.DecompositionsK2
   hs-source-dirs: lib
   ghc-options: -O2
   build-depends:

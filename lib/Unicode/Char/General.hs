@@ -38,8 +38,8 @@ import Control.Exception (assert)
 import Data.Char (ord)
 import Unicode.Internal.Division (quotRem28)
 
-import qualified Unicode.Internal.Generated.DerivedCoreProperties as P
-import qualified Unicode.Internal.Generated.PropList as P
+import qualified Unicode.Internal.Char.DerivedCoreProperties as P
+import qualified Unicode.Internal.Char.PropList as P
 
 -- | Returns 'True' for alphabetic Unicode characters (lower-case, upper-case
 -- and title-case letters, plus letters of caseless scripts and modifiers

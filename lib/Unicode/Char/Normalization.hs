@@ -31,12 +31,12 @@ import Unicode.Internal.Division (quotRem21, quotRem28)
 import Unicode.Char.General
     (hangulFirst, jamoLFirst, jamoTCount, jamoTFirst, jamoVCount, jamoVFirst)
 
-import qualified Unicode.Internal.Generated.UnicodeData.CombiningClass  as CC
-import qualified Unicode.Internal.Generated.UnicodeData.Compositions    as C
-import qualified Unicode.Internal.Generated.UnicodeData.Decomposable    as D
-import qualified Unicode.Internal.Generated.UnicodeData.DecomposableK   as K
-import qualified Unicode.Internal.Generated.UnicodeData.Decompositions  as D
-import qualified Unicode.Internal.Generated.UnicodeData.DecompositionsK as K
+import qualified Unicode.Internal.Char.UnicodeData.CombiningClass  as CC
+import qualified Unicode.Internal.Char.UnicodeData.Compositions    as C
+import qualified Unicode.Internal.Char.UnicodeData.Decomposable    as D
+import qualified Unicode.Internal.Char.UnicodeData.DecomposableK   as K
+import qualified Unicode.Internal.Char.UnicodeData.Decompositions  as D
+import qualified Unicode.Internal.Char.UnicodeData.DecompositionsK as K
 
 -------------------------------------------------------------------------------
 -- Compose
