@@ -18,6 +18,7 @@ module Parser.Text (genModules) where
 
 import Control.Exception (catch, IOException)
 import Control.Monad (void)
+import Control.Monad.IO.Class (MonadIO(liftIO))
 import Data.Bits (shiftL)
 import Data.Char (chr, ord, isSpace)
 import Data.Function ((&))
@@ -36,10 +37,6 @@ import qualified System.IO as Sys
 import qualified Streamly.Unicode.Stream as Unicode
 
 import Prelude hiding (pred)
-
--- Internal imports
-import qualified Streamly.Internal.FileSystem.File as File (withFile)
-import qualified Streamly.Internal.Unicode.Stream as Unicode (lines)
 
 -------------------------------------------------------------------------------
 -- Types
@@ -527,10 +524,18 @@ parseDetailedChar line =
 
 readLinesFromFile :: String -> SerialT IO String
 readLinesFromFile file =
-    File.withFile file Sys.ReadMode
+    withFile file Sys.ReadMode
         $ \h ->
               Stream.unfold Handle.read h & Unicode.decodeUtf8
-                  & Unicode.lines Fold.toList
+                  & unicodeLines Fold.toList
+
+    where
+
+    unicodeLines = Stream.splitOnSuffix (== '\n')
+
+    withFile file_ mode =
+        Stream.bracket (liftIO $ Sys.openFile file_ mode) (liftIO . Sys.hClose)
+
 
 moduleToFileName :: String -> String
 moduleToFileName = map (\x -> if x == '.' then '/' else x)

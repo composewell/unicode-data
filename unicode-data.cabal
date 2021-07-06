@@ -52,6 +52,7 @@ common default-extensions
       RecordWildCards
       ScopedTypeVariables
       TupleSections
+      FlexibleContexts
 
       -- Experimental, may lead to issues
       DeriveAnyClass
