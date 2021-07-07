@@ -1,0 +1,6 @@
+.packcheck.ignore
+.github/workflows/haskell.yml
+appveyor.yml
+stack.yaml
+.gitignore
+.hlint.ignore

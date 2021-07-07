@@ -25,11 +25,6 @@ tested-with:         GHC==7.10.3
                    , GHC==9.0.1
 
 extra-source-files:
-    .github/workflows/haskell.yml
-    appveyor.yml
-    stack.yaml
-    .gitignore
-    .hlint.ignore
     Changelog.md
     README.md
     NOTICE
