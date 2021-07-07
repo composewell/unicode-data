@@ -5,22 +5,50 @@
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 --
+-- Low level Unicode database functions to facilitate Unicode normalization.
+--
+-- For more information on Unicode normalization please refer to the following
+-- sections of the [Unicode standard](https://www.unicode.org/versions/latest/):
+--
+-- * 2 General Structure
+--
+--     * 2.3 Compatibility Characters
+--     * 2.12 Equivalent Sequences
+--
+-- * 3 Conformance
+--
+--     * 3.6 Combination
+--     * 3.7 Decomposition
+--     * 3.11 Normalization Forms
+--     * 3.12 Conjoining Jamo Behavior
+--
+-- * 4 Character Properties
+--
+--     * 4.3 Combining Classes
+--
+-- * [Unicode® Standard Annex #15 - Unicode Normalization Forms](https://www.unicode.org/reports/tr15)
+-- * [Unicode® Standard Annex #44 - Unicode Character Database](https://www.unicode.org/reports/tr44/)
+--
+
 module Unicode.Char.Normalization
     (
-    -- Compose
-      compose
+    -- * Combining class
+      isCombining
+    , combiningClass
     , isCombiningStarter
+
+    -- * Composition
+    , compose
     , composeStarters
 
-    -- Decompose
+    -- * Decomposition
+    -- ** Non-Hangul
     , DecomposeMode(..)
     , isDecomposable
     , decompose
-    , decomposeHangul
 
-    -- Combining class
-    , isCombining
-    , combiningClass
+    -- ** Hangul
+    , decomposeHangul
     )
 where
 
@@ -64,29 +92,6 @@ isCombiningStarter = C.isSecondStarter
 -------------------------------------------------------------------------------
 -- Decompose
 -------------------------------------------------------------------------------
-
--- For more information please refer to the following sections of the [Unicode
--- standard](https://www.unicode.org/versions/latest/):
---
--- * 2 General Structure
---
---     * 2.3 Compatibility Characters
---     * 2.12 Equivalent Sequences
---
--- * 3 Conformance
---
---     * 3.6 Combination
---     * 3.7 Decomposition
---     * 3.11 Normalization Forms
---     * 3.12 Conjoining Jamo Behavior
---
--- * 4 Character Properties
---
---     * 4.3 Combining Classes
---
--- * [Unicode® Standard Annex #15 - Unicode Normalization Forms](https://www.unicode.org/reports/tr15)
--- * [Unicode® Standard Annex #44 - Unicode Character Database](https://www.unicode.org/reports/tr44/)
---
 
 -------------------------------------------------------------------------------
 -- Non Hangul decomposition
