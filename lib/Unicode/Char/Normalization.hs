@@ -9,7 +9,7 @@ module Unicode.Char.Normalization
     (
     -- Compose
       compose
-    , isSecondStarter
+    , isCombiningStarter
     , composeStarters
 
     -- Decompose
@@ -57,9 +57,9 @@ composeStarters = C.composeStarters
 
 -- | Return 'True' if a starter character may combine with some preceding
 -- starter character.
-{-# INLINE isSecondStarter #-}
-isSecondStarter :: Char -> Bool
-isSecondStarter = C.isSecondStarter
+{-# INLINE isCombiningStarter #-}
+isCombiningStarter :: Char -> Bool
+isCombiningStarter = C.isSecondStarter
 
 -------------------------------------------------------------------------------
 -- Decompose
