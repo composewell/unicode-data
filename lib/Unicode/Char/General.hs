@@ -6,7 +6,7 @@
 -- Stability   : experimental
 --
 module Unicode.Char.General
-    ( isAlpha
+    ( isLetter
     , isSpace
 
     -- Hangul
@@ -45,11 +45,11 @@ import qualified Unicode.Internal.Char.PropList as P
 -- and title-case letters, plus letters of caseless scripts and modifiers
 -- letters).
 --
--- prop> isAlpha == Data.Char.isAlpha
+-- prop> isLetter == Data.Char.isLetter
 --
-{-# INLINE isAlpha #-}
-isAlpha :: Char -> Bool
-isAlpha = P.isAlphabetic
+{-# INLINE isLetter #-}
+isLetter :: Char -> Bool
+isLetter = P.isAlphabetic
 
 -- | Returns 'True' for any whitespace characters, and the control
 -- characters @\\t@, @\\n@, @\\r@, @\\f@, @\\v@.
