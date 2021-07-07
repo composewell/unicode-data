@@ -5,6 +5,8 @@
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 --
+-- Case and case mapping related functions.
+--
 module Unicode.Char.Case
     ( isLower
     , isUpper
@@ -15,7 +17,7 @@ import qualified Unicode.Internal.Char.DerivedCoreProperties as P
 
 -- | Returns 'True' for lower-case letters.
 --
--- prop> isLower == Data.Char.isLower
+-- prop> isLower c == Data.Char.isLower c
 --
 {-# INLINE isLower #-}
 isLower :: Char -> Bool
@@ -24,7 +26,7 @@ isLower = P.isLowercase
 -- | Returns 'True' for upper-case or title-case letters.  Title case is used by
 -- a small number of letter ligatures like the single-character form of /Lj/.
 --
--- prop> isUpper == Data.Char.isUpper
+-- prop> isUpper c == Data.Char.isUpper c
 --
 {-# INLINE isUpper #-}
 isUpper :: Char -> Bool

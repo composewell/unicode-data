@@ -15,14 +15,6 @@ any other packages or use cases.
 
 Please see the haddock documentation for reference documentation.
 
-## Module Structure
-
-The module structure under `Unicode.Char` is largely based on the
-["Property Index by Scope of Use" in Unicode® Standard Annex #44](https://www.unicode.org/reports/tr44/#Property_Index_Table).
-
-The module structure under `Unicode.Internal.Char` is largely based on
-the UCD file names from which the properties are generated.
-
 ## Unicode database version update
 
 To update the unicode version please update the version number in
@@ -42,7 +34,20 @@ files, run `ucd.sh generate` from the top level directory of the repo.
 $ ./ucd.sh generate
 ```
 
-## References
+## Running property doctests
 
-* See https://www.unicode.org/reports/tr44/ to understand what the unicode
-  database files contain and their formats.
+Temporarily add `QuickCheck` to build depends of library.
+
+```
+$ cabal build
+$ cabal-docspec --check-properties --property-variables c
+```
+
+## Licensing
+
+`unicode-data` is an [open source](https://github.com/composewell/unicode-data)
+project available under a liberal [Apache-2.0 license](LICENSE).
+
+## Contributing to Streamly
+
+As an open project we welcome contributions.
