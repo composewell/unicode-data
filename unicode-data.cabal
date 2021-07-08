@@ -16,7 +16,7 @@ license:             Apache-2.0
 license-file:        LICENSE
 author:              Composewell Technologies and Contributors
 maintainer:          streamly@composewell.com
-copyright:           2020 Composewell Technologies and Contributers
+copyright:           2020 Composewell Technologies and Contributors
 category:            Data,Text,Unicode
 stability:           Experimental
 build-type:          Simple
