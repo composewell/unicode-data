@@ -29,9 +29,11 @@ module Unicode.Char
     ( module Unicode.Char.General
     , module Unicode.Char.Case
     , module Unicode.Char.Normalization
+    , module Unicode.Char.Identifiers
     )
 where
 
 import Unicode.Char.Case
 import Unicode.Char.General
 import Unicode.Char.Normalization
+import Unicode.Char.Identifiers

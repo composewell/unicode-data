@@ -77,6 +77,7 @@ library
       Unicode.Char.Normalization
       Unicode.Char.General
       Unicode.Char.Case
+      Unicode.Char.Identifiers
 
       -- Internal files
       Unicode.Internal.Bits
