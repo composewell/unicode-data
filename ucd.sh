@@ -61,7 +61,13 @@ run_generator() {
           --core-prop Uppercase \
           --core-prop Lowercase \
           --core-prop Alphabetic \
-          --core-prop White_Space
+          --core-prop White_Space \
+          --core-prop ID_Start \
+          --core-prop ID_Continue \
+          --core-prop XID_Start \
+          --core-prop XID_Continue \
+          --core-prop Pattern_Syntax \
+          --core-prop Pattern_White_Space
 }
 
 # Print help text
