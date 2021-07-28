@@ -1,2 +1,3 @@
 lib/Unicode/Internal/Division.hs
 lib/Unicode/Internal/Char/PropList.hs
+lib/Unicode/Internal/Char/DerivedCoreProperties.hs
