@@ -4,18 +4,18 @@
 # we used to generate them earlier are exactly the same as the ones we are
 # downloading. To ensure that verfication of the checksum is necessary.
 
-VERSION=13.0.0
+VERSION=14.0.0
 
 # When downloading fresh new version comment this out
 VERIFY_CHECKSUM=y
 
 # Filename:checksum
 FILES="\
-  ucd/DerivedCoreProperties.txt:a5d45f59b39deaab3c72ce8c1a2e212a5e086dff11b1f9d5bb0e352642e82248 \
-  ucd/DerivedNormalizationProps.txt:3ac44e11c84bdaf6b207d2c2c20eed857ae17052393fc7f71b0fe951186ba906 \
-  ucd/UnicodeData.txt:bdbffbbfc8ad4d3a6d01b5891510458f3d36f7170422af4ea2bed3211a73e8bb \
-  ucd/PropList.txt:485b5a3ed25dbf1f94dfa5a9b69d8b4550ffd0c33045ccc55ccfd7c80b2a40cf \
-  ucd/extracted/DerivedCombiningClass.txt:e14928a5bf6ad5958a80332bd42e96e14420080a95c660e5da29384e496755d0"
+  ucd/DerivedCoreProperties.txt:e3eddd7d469cd1b0feed7528defad1a1cc7c6a9ceb0ae4446a6d10921ed2e7bc \
+  ucd/DerivedNormalizationProps.txt:b2c444c20730b097787fdf50bd7d6dd3fc5256ab8084f5b35b11c8776eca674c \
+  ucd/UnicodeData.txt:36018e68657fdcb3485f636630ffe8c8532e01c977703d2803f5b89d6c5feafb \
+  ucd/PropList.txt:6bddfdb850417a5bee6deff19290fd1b138589909afb50f5a049f343bf2c6722 \
+  ucd/extracted/DerivedCombiningClass.txt:12b0c3af9b600b49488d66545a3e7844ea980809627201bf9afeebe1c9f16f4e"
 
 # Download the files
 
