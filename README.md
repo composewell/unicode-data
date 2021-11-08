@@ -1,11 +1,11 @@
 # README
 
-`unicode-data` provides Haskell APIs to efficiently access the unicode
+`unicode-data` provides Haskell APIs to efficiently access the Unicode
 character database. Performance is the primary goal in the design of
 this package.
 
 The Haskell data structures are generated programmatically from the
-unicode character database (UCD) files.  The latest unicode version
+Unicode character database (UCD) files.  The latest Unicode version
 supported by this library is 14.0.0.
 
 This package is far from complete. Currently it supports normalization
@@ -17,10 +17,10 @@ Please see the haddock documentation for reference documentation.
 
 ## Unicode database version update
 
-To update the unicode version please update the version number in
+To update the Unicode version please update the version number in
 `ucd.sh`.
 
-To download the unicode database, run `ucd.sh download` from the top
+To download the Unicode database, run `ucd.sh download` from the top
 level directory of the repo to fetch the database in `./ucd`.
 
 ```
