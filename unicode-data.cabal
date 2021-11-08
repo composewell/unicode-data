@@ -3,12 +3,12 @@ name:                unicode-data
 version:             0.2.0.0
 synopsis:            Access Unicode character database
 description:
-  @unicode-data@ provides Haskell APIs to efficiently access the unicode
+  @unicode-data@ provides Haskell APIs to efficiently access the Unicode
   character database. Performance is the primary goal in the design of
   this package.
   .
   The Haskell data structures are generated programmatically from the
-  unicode character database (UCD) files. The latest unicode version
+  Unicode character database (UCD) files. The latest Unicode version
   supported by this library is 14.0.0.
 homepage:            http://github.com/composewell/unicode-data
 bug-reports:         https://github.com/composewell/unicode-data/issues

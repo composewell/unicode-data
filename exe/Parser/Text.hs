@@ -7,7 +7,7 @@
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 
--- The original unicode database parser was taken from
+-- The original Unicode database parser was taken from
 -- https://github.com/composewell/unicode-transforms but was completely
 -- rewritten from scratch to parse from UCD text files instead of XML, only
 -- some types remain the same. That code in turn was originally taken from
