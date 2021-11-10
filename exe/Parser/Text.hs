@@ -37,6 +37,8 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Set as Set
 import qualified Streamly.Prelude as Stream
 import qualified Streamly.Data.Fold as Fold
+import qualified Streamly.Internal.Data.Fold as Fold
+import qualified Streamly.Data.Unfold as Unfold
 import qualified Streamly.FileSystem.Handle as Handle
 import qualified System.IO as Sys
 import qualified Streamly.Unicode.Stream as Unicode
@@ -593,6 +595,59 @@ parsePropertyLines =
         $ Fold.lmap parsePropertyLine
         $ Fold.foldl' combinePropertyLines emptyPropertyLine
 
+-- | A range entry in @UnicodeData.txt@.
+data UnicodeDataRange
+    = SingleCode    !DetailedChar
+    -- ^ Regular entry for one code point
+    | FirstCode     !String !DetailedChar
+    -- ^ A partial range for entry with a name as: @\<RANGE_IDENTIFIER, First\>@
+    | CompleteRange !String !DetailedChar !DetailedChar
+    -- ^ A complete range, requiring 2 continuous entries with respective names:
+    -- 
+    -- * @\<RANGE_IDENTIFIER, First\>@
+    -- * @\<RANGE_IDENTIFIER, Last\>@
+
+{-| Parse UnicodeData.txt lines
+ 
+Parse ranges according to https://www.unicode.org/reports/tr44/#Code_Point_Ranges.
+
+__Note:__ this does /not/ fill missing char entries,
+i.e. entries with no explicit entry nor within a range.
+-} 
+parseUnicodeDataLines :: forall t m. (IsStream t, Monad m) => t m String -> t m DetailedChar
+parseUnicodeDataLines
+    = Stream.unfoldMany (Unfold.unfoldr unitToRange)
+    . Stream.foldMany ( Fold.lmap parseDetailedChar
+                      $ Fold.mkFold_ step initial )
+
+    where
+
+    step :: Maybe UnicodeDataRange
+         -> DetailedChar
+         -> Fold.Step (Maybe UnicodeDataRange) (Maybe UnicodeDataRange)
+    step Nothing dc = case span (/= ',') (_name dc) of
+        (range, ", First>") -> Fold.Partial (Just (FirstCode range dc))
+        _                   -> Fold.Done (Just (SingleCode dc))
+    step (Just (FirstCode range1 dc1)) dc2 = case span (/= ',') (_name dc2) of
+        (range2, ", Last>") -> if range1 == range2 && _char dc1 < _char dc2
+            then Fold.Done (Just (CompleteRange range1 dc1 dc2))
+            else error $ "Cannot create range: incompatible ranges" <> show (dc1, dc2)
+        _ -> error $ "Cannot create range: missing <range, Last> entry."
+    step _ _ = error "impossible case"
+
+    initial :: Fold.Step (Maybe UnicodeDataRange) (Maybe UnicodeDataRange)
+    initial = Fold.Partial Nothing
+
+    unitToRange :: Maybe UnicodeDataRange -> Maybe (DetailedChar, Maybe UnicodeDataRange)
+    unitToRange = fmap $ \u -> case u of
+        SingleCode          dc      -> (dc, Nothing)
+        FirstCode     _     dc      -> error $ "Incomplete range: " <> show dc
+        CompleteRange range dc1 dc2 -> if _char dc1 < _char dc2
+            -- [TODO] Create the proper name
+            then (dc1{_name="TODO"}, Just (CompleteRange range dc1{_char=succ (_char dc1)} dc2))
+            else (dc2{_name="TODO"}, Nothing)
+
+-- | Parse a single entry of @UnicodeData.txt@
 parseDetailedChar :: String -> DetailedChar
 parseDetailedChar line =
     DetailedChar
@@ -699,7 +754,7 @@ genModules indir outdir props = do
     runGenerator
         indir
         "UnicodeData.txt"
-        (Stream.map parseDetailedChar)
+        parseUnicodeDataLines
         outdir
         [ compositions compExclu non0CC
         , combiningClass
