@@ -109,48 +109,48 @@ because some functions (e.g. 'generalCategory') rely on the 'Enum' instance.
 -}
 data GeneralCategory
   -- L: Letter
-  = UppercaseLetter       -- ^ Lu: Letter, Uppercase
-  | LowercaseLetter       -- ^ Ll: Letter, Lowercase
-  | TitlecaseLetter       -- ^ Lt: Letter, Titlecase
-  | ModifierLetter        -- ^ Lm: Letter, Modifier
-  | OtherLetter           -- ^ Lo: Letter, Other
+  = UppercaseLetter       -- ^ @Lu@: Letter, Uppercase
+  | LowercaseLetter       -- ^ @Ll@: Letter, Lowercase
+  | TitlecaseLetter       -- ^ @Lt@: Letter, Titlecase
+  | ModifierLetter        -- ^ @Lm@: Letter, Modifier
+  | OtherLetter           -- ^ @Lo@: Letter, Other
 
   -- M: Mark
-  | NonSpacingMark        -- ^ Mn: Mark, Non-Spacing
-  | SpacingCombiningMark  -- ^ Mc: Mark, Spacing Combining
-  | EnclosingMark         -- ^ Me: Mark, Enclosing
+  | NonSpacingMark        -- ^ @Mn@: Mark, Non-Spacing
+  | SpacingCombiningMark  -- ^ @Mc@: Mark, Spacing Combining
+  | EnclosingMark         -- ^ @Me@: Mark, Enclosing
 
   -- N: Number
-  | DecimalNumber         -- ^ Nd: Number, Decimal
-  | LetterNumber          -- ^ Nl: Number, Letter
-  | OtherNumber           -- ^ No: Number, Other
+  | DecimalNumber         -- ^ @Nd@: Number, Decimal
+  | LetterNumber          -- ^ @Nl@: Number, Letter
+  | OtherNumber           -- ^ @No@: Number, Other
 
   -- P: Punctuation
-  | ConnectorPunctuation  -- ^ Pc: Punctuation, Connector
-  | DashPunctuation       -- ^ Pd: Punctuation, Dash
-  | OpenPunctuation       -- ^ Ps: Punctuation, Open
-  | ClosePunctuation      -- ^ Pe: Punctuation, Close
-  | InitialQuote          -- ^ Pi: Punctuation, Initial quote
-  | FinalQuote            -- ^ Pf: Punctuation, Final quote
-  | OtherPunctuation      -- ^ Po: Punctuation, Other
+  | ConnectorPunctuation  -- ^ @Pc@: Punctuation, Connector
+  | DashPunctuation       -- ^ @Pd@: Punctuation, Dash
+  | OpenPunctuation       -- ^ @Ps@: Punctuation, Open
+  | ClosePunctuation      -- ^ @Pe@: Punctuation, Close
+  | InitialQuote          -- ^ @Pi@: Punctuation, Initial quote
+  | FinalQuote            -- ^ @Pf@: Punctuation, Final quote
+  | OtherPunctuation      -- ^ @Po@: Punctuation, Other
 
   -- S: Symbol
-  | MathSymbol            -- ^ Sm: Symbol, Math
-  | CurrencySymbol        -- ^ Sc: Symbol, Currency
-  | ModifierSymbol        -- ^ Sk: Symbol, Modifier
-  | OtherSymbol           -- ^ So: Symbol, Other
+  | MathSymbol            -- ^ @Sm@: Symbol, Math
+  | CurrencySymbol        -- ^ @Sc@: Symbol, Currency
+  | ModifierSymbol        -- ^ @Sk@: Symbol, Modifier
+  | OtherSymbol           -- ^ @So@: Symbol, Other
 
   -- Z: Separator
-  | Space                 -- ^ Zs: Separator, Space
-  | LineSeparator         -- ^ Zl: Separator, Line
-  | ParagraphSeparator    -- ^ Zp: Separator, Paragraph
+  | Space                 -- ^ @Zs@: Separator, Space
+  | LineSeparator         -- ^ @Zl@: Separator, Line
+  | ParagraphSeparator    -- ^ @Zp@: Separator, Paragraph
 
   -- C: Other
-  | Control               -- ^ Cc: Other, Control
-  | Format                -- ^ Cf: Other, Format
-  | Surrogate             -- ^ Cs: Other, Surrogate
-  | PrivateUse            -- ^ Co: Other, Private Use
-  | NotAssigned           -- ^ Cn: Other, Not Assigned
+  | Control               -- ^ @Cc@: Other, Control
+  | Format                -- ^ @Cf@: Other, Format
+  | Surrogate             -- ^ @Cs@: Other, Surrogate
+  | PrivateUse            -- ^ @Co@: Other, Private Use
+  | NotAssigned           -- ^ @Cn@: Other, Not Assigned
   deriving ( Show
            , Eq
            , Ord
@@ -159,7 +159,7 @@ data GeneralCategory
            , Ix
            )
 
--- | Abbreviation of 'GeneralCategory'.
+-- | Abbreviation of 'GeneralCategory' used in the Unicode standard.
 generalCategoryAbbr :: GeneralCategory -> String
 generalCategoryAbbr UppercaseLetter      = "Lu"
 generalCategoryAbbr LowercaseLetter      = "Ll"
@@ -198,6 +198,8 @@ This property is defined in the column 2 of the @UnicodeData@ table.
 
 This relies on the 'Enum' instance of 'GeneralCategory', which must remain in the
 same order as the categories are presented in the Unicode standard.
+
+prop> show (generalCategory c) == show (Data.Char.generalCategory c)
 -}
 {-# INLINE generalCategory #-}
 generalCategory :: Char -> GeneralCategory
@@ -241,13 +243,13 @@ __Note:__ this function is /not/ equivalent to 'isAlpha'/'isLetter':
 
 * whereas 'isAlphabetic' matches:
 
-    * @Uppercase@ property
-    * @Lowercase@ property
+    * @Uppercase@ [property](https://www.unicode.org/reports/tr44/#Uppercase)
+    * @Lowercase@ [property](https://www.unicode.org/reports/tr44/#Lowercase)
     * 'TitlecaseLetter' (@Lt@)
     * 'ModifierLetter' (@Lm@)
     * 'OtherLetter' (@Lo@)
     * 'LetterNumber' (@Nl@)
-    * @Other_Alphabetic@ property
+    * @Other_Alphabetic@ [property](https://www.unicode.org/reports/tr44/#Other_Alphabetic)
 -}
 {-# INLINE isAlphabetic #-}
 isAlphabetic :: Char -> Bool
@@ -266,6 +268,8 @@ following 'GeneralCategory's, or 'False' otherwise:
 * 'DecimalNumber'
 * 'LetterNumber'
 * 'OtherNumber'
+
+prop> isAlphaNum c == Data.Char.isAlphaNum c
 -}
 isAlphaNum :: Char -> Bool
 isAlphaNum c = case generalCategory c of
@@ -283,6 +287,8 @@ isAlphaNum c = case generalCategory c of
 of the Latin-1 subset of Unicode.
 
 This function returns 'True' if its argument has the 'GeneralCategory' 'Control'.
+
+prop> isControl c == Data.Char.isControl c
 -}
 isControl :: Char -> Bool
 isControl c = case generalCategory c of
@@ -299,6 +305,9 @@ following 'GeneralCategory's, or 'False' otherwise:
 * 'TitlecaseLetter'
 * 'ModifierLetter'
 * 'OtherLetter'
+
+__Note:__ this function is /not/ equivalent to 'isAlphabetic'.
+See the description of 'isAlphabetic' for further details.
 
 prop> isLetter c == Data.Char.isLetter c
 -}
@@ -340,6 +349,8 @@ following 'GeneralCategory's, or 'False' otherwise:
 * 'DecimalNumber'
 * 'LetterNumber'
 * 'OtherNumber'
+
+prop> isNumber c == Data.Char.isNumber c
 -}
 isNumber :: Char -> Bool
 isNumber c = case generalCategory c of
@@ -348,7 +359,7 @@ isNumber c = case generalCategory c of
   OtherNumber   -> True
   _             -> False
 
-{- Selects printable Unicode characters (letters, numbers, marks, punctuation, symbols and spaces).
+{-| Selects printable Unicode characters (letters, numbers, marks, punctuation, symbols and spaces).
 
 This function returns 'False' if its argument has one of the
 following 'GeneralCategory's, or 'True' otherwise:
@@ -360,6 +371,8 @@ following 'GeneralCategory's, or 'True' otherwise:
 * 'Surrogate'
 * 'PrivateUse'
 * 'NotAssigned'
+
+prop> isPrint c == Data.Char.isPrint c
 -}
 isPrint :: Char -> Bool
 isPrint c = case generalCategory c of
@@ -401,6 +414,10 @@ isPunctuation c = case generalCategory c of
 
 {-| Selects Unicode space characters (general category 'Space'),
 and the control characters @\\t@, @\\n@, @\\r@, @\\f@, @\\v@.
+
+__Note:__ 'isSpace' is /not/ equivalent to 'isWhiteSpace'.
+
+prop> isSpace c == Data.Char.isSpace c
 -}
 isSpace :: Char -> Bool
 isSpace '\t' = True
@@ -412,11 +429,13 @@ isSpace c = case generalCategory c of
   Space -> True
   _     -> False
 
--- | Returns 'True' for any whitespace characters, and the control
--- characters @\\t@, @\\n@, @\\r@, @\\f@, @\\v@.
---
--- prop> isSpace c == Data.Char.isSpace c
---
+{- | Returns 'True' for any whitespace characters, and the control
+characters @\\t@, @\\n@, @\\r@, @\\f@, @\\v@.
+
+See: [White_Space](https://www.unicode.org/reports/tr44/#White_Space).
+
+__Note:__ 'isWhiteSpace' is /not/ equivalent to 'isSpace'.
+-}
 {-# INLINE isWhiteSpace #-}
 isWhiteSpace :: Char -> Bool
 isWhiteSpace = P.isWhite_Space
@@ -429,6 +448,8 @@ following 'GeneralCategory's, or 'False' otherwise:
 * 'Space'
 * 'LineSeparator'
 * 'ParagraphSeparator'
+
+prop> isSeparator c == Data.Char.isSeparator c
 -}
 isSeparator :: Char -> Bool
 isSeparator c = case generalCategory c of
