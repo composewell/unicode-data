@@ -16,6 +16,7 @@ module Unicode.Char.General
 
     -- * Character classification
     , isAlpha
+    , isAlphabetic
     , isAlphaNum
     , isControl
     , isLetter
@@ -26,6 +27,7 @@ module Unicode.Char.General
     , isSeparator
     , isSpace
     , isSymbol
+    , isWhiteSpace
 
     -- * Korean Hangul Characters
     -- | The Hangul script used in the Korean writing system consists of
@@ -201,11 +203,42 @@ following 'GeneralCategory's, or 'False' otherwise:
 
 Alias of 'isLetter'.
 
+__Note:__ this function is /not/ equivalent to 'isAlphabetic'.
+See the description of 'isAlphabetic' for further details.
+
 prop> isAlpha c == Data.Char.isAlpha c
 -}
 {-# INLINE isAlpha #-}
 isAlpha :: Char -> Bool
 isAlpha = isLetter
+
+{-| Returns 'True' for alphabetic Unicode characters (lower-case, upper-case
+and title-case letters, plus letters of caseless scripts and modifiers
+letters).
+
+__Note:__ this function is /not/ equivalent to 'isAlpha'/'isLetter':
+
+* 'isAlpha' matches the following general categories:
+
+    * 'UppercaseLetter' (@Lu@)
+    * 'LowercaseLetter' (@Ll@)
+    * 'TitlecaseLetter' (@Lt@)
+    * 'ModifierLetter' (@Lm@)
+    * 'OtherLetter' (@Lo@)
+
+* whereas 'isAlphabetic' matches:
+
+    * @Uppercase@ property
+    * @Lowercase@ property
+    * 'TitlecaseLetter' (@Lt@)
+    * 'ModifierLetter' (@Lm@)
+    * 'OtherLetter' (@Lo@)
+    * 'LetterNumber' (@Nl@)
+    * @Other_Alphabetic@ property
+-}
+{-# INLINE isAlphabetic #-}
+isAlphabetic :: Char -> Bool
+isAlphabetic = P.isAlphabetic
 
 {-| Selects alphabetic or numeric Unicode characters.
 
@@ -243,15 +276,28 @@ isControl c = case generalCategory c of
   Control -> True
   _       -> False
 
--- | Returns 'True' for alphabetic Unicode characters (lower-case, upper-case
--- and title-case letters, plus letters of caseless scripts and modifiers
--- letters).
---
--- prop> isLetter c == Data.Char.isLetter c
---
+{-| Selects alphabetic Unicode characters (lower-case, upper-case and title-case letters, plus letters of caseless scripts and modifiers letters).
+
+This function returns 'True' if its argument has one of the
+following 'GeneralCategory's, or 'False' otherwise:
+
+* 'UppercaseLetter'
+* 'LowercaseLetter'
+* 'TitlecaseLetter'
+* 'ModifierLetter'
+* 'OtherLetter'
+
+prop> isLetter c == Data.Char.isLetter c
+-}
 {-# INLINE isLetter #-}
 isLetter :: Char -> Bool
-isLetter = P.isAlphabetic
+isLetter c = case generalCategory c of
+  UppercaseLetter -> True
+  LowercaseLetter -> True
+  TitlecaseLetter -> True
+  ModifierLetter  -> True
+  OtherLetter     -> True
+  _               -> False
 
 {-| Selects Unicode mark characters, for example accents and the
 like, which combine with preceding characters.
@@ -340,14 +386,28 @@ isPunctuation c = case generalCategory c of
   OtherPunctuation     -> True
   _                    -> False
 
+-- [FIXME] 0x0085, 0x2028, 0x2029 should not be included?
+{-| Selects Unicode space characters (general category 'Space'),
+and the control characters @\\t@, @\\n@, @\\r@, @\\f@, @\\v@.
+-}
+isSpace :: Char -> Bool
+isSpace '\t' = True
+isSpace '\n' = True
+isSpace '\v' = True
+isSpace '\f' = True
+isSpace '\r' = True
+isSpace c = case generalCategory c of
+  Space -> True
+  _     -> False
+
 -- | Returns 'True' for any whitespace characters, and the control
 -- characters @\\t@, @\\n@, @\\r@, @\\f@, @\\v@.
 --
 -- prop> isSpace c == Data.Char.isSpace c
 --
-{-# INLINE isSpace #-}
-isSpace :: Char -> Bool
-isSpace = P.isWhite_Space
+{-# INLINE isWhiteSpace #-}
+isWhiteSpace :: Char -> Bool
+isWhiteSpace = P.isWhite_Space
 
 {-| Selects Unicode space and separator characters.
 
