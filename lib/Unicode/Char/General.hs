@@ -108,17 +108,24 @@ __Note:__ the classes must be in the same order they are listed in the Unicode S
 because some functions (e.g. 'generalCategory') rely on the 'Enum' instance.
 -}
 data GeneralCategory
+  -- L: Letter
   = UppercaseLetter       -- ^ Lu: Letter, Uppercase
   | LowercaseLetter       -- ^ Ll: Letter, Lowercase
   | TitlecaseLetter       -- ^ Lt: Letter, Titlecase
   | ModifierLetter        -- ^ Lm: Letter, Modifier
   | OtherLetter           -- ^ Lo: Letter, Other
+
+  -- M: Mark
   | NonSpacingMark        -- ^ Mn: Mark, Non-Spacing
   | SpacingCombiningMark  -- ^ Mc: Mark, Spacing Combining
   | EnclosingMark         -- ^ Me: Mark, Enclosing
+
+  -- N: Number
   | DecimalNumber         -- ^ Nd: Number, Decimal
   | LetterNumber          -- ^ Nl: Number, Letter
   | OtherNumber           -- ^ No: Number, Other
+
+  -- P: Punctuation
   | ConnectorPunctuation  -- ^ Pc: Punctuation, Connector
   | DashPunctuation       -- ^ Pd: Punctuation, Dash
   | OpenPunctuation       -- ^ Ps: Punctuation, Open
@@ -126,13 +133,19 @@ data GeneralCategory
   | InitialQuote          -- ^ Pi: Punctuation, Initial quote
   | FinalQuote            -- ^ Pf: Punctuation, Final quote
   | OtherPunctuation      -- ^ Po: Punctuation, Other
+
+  -- S: Symbol
   | MathSymbol            -- ^ Sm: Symbol, Math
   | CurrencySymbol        -- ^ Sc: Symbol, Currency
   | ModifierSymbol        -- ^ Sk: Symbol, Modifier
   | OtherSymbol           -- ^ So: Symbol, Other
+
+  -- Z: Separator
   | Space                 -- ^ Zs: Separator, Space
   | LineSeparator         -- ^ Zl: Separator, Line
   | ParagraphSeparator    -- ^ Zp: Separator, Paragraph
+
+  -- C: Other
   | Control               -- ^ Cc: Other, Control
   | Format                -- ^ Cf: Other, Format
   | Surrogate             -- ^ Cs: Other, Surrogate
@@ -386,7 +399,6 @@ isPunctuation c = case generalCategory c of
   OtherPunctuation     -> True
   _                    -> False
 
--- [FIXME] 0x0085, 0x2028, 0x2029 should not be included?
 {-| Selects Unicode space characters (general category 'Space'),
 and the control characters @\\t@, @\\n@, @\\r@, @\\f@, @\\v@.
 -}
