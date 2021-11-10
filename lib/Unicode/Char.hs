@@ -30,9 +30,27 @@ module Unicode.Char
     , module Unicode.Char.Case
     , module Unicode.Char.Normalization
     , module Unicode.Char.Identifiers
+
+    -- * Re-export
+    -- ** Numbers
+    , isDigit
+    , isOctDigit
+    , isHexDigit
+    -- ** Subranges
+    , isAscii
+    , isLatin1
+    , isAsciiUpper
+    , isAsciiLower
+    -- ** Numeric representations
+    , ord
+    , chr
     )
 where
 
+import Data.Char 
+    ( isDigit, isOctDigit, isHexDigit
+    , isAscii, isLatin1, isAsciiUpper, isAsciiLower
+    , chr, ord )
 import Unicode.Char.Case
 import Unicode.Char.General
 import Unicode.Char.Normalization
