@@ -19,16 +19,21 @@ module Parser.Text (genModules) where
 import Control.Exception (catch, IOException)
 import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO(liftIO))
-import Data.Bits (shiftL)
+import Data.Bits (Bits(..), FiniteBits(..))
+import Data.Word (Word8)
 import Data.Char (chr, ord, isSpace)
 import Data.Function ((&))
 import Data.List (unfoldr, intersperse)
+import Data.Foldable (foldl')
 import Data.Maybe (fromMaybe)
+import Data.Proxy (Proxy(..))
 import Streamly.Data.Fold (Fold)
 import Streamly.Prelude (IsStream, SerialT)
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getEnv)
 
+import qualified Prelude as Prelude
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Set as Set
 import qualified Streamly.Prelude as Stream
 import qualified Streamly.Data.Fold as Fold
@@ -51,7 +56,7 @@ data GeneralCategory =
     Sm|Sc|Sk|So|          --S
     Zs|Zl|Zp|             --Z
     Cc|Cf|Cs|Co|Cn        --C
-    deriving (Show, Read)
+    deriving (Show, Bounded, Enum, Read)
 
 data DecompType =
        DTCanonical | DTCompat  | DTFont
@@ -95,7 +100,7 @@ readCodePoint :: String -> Char
 readCodePoint = chr . read . ("0x"++)
 
 genSignature :: String -> String
-genSignature testBit = testBit <> " :: Char -> Bool"
+genSignature = (<> " :: Char -> Bool")
 
 -- | Check that var is between minimum and maximum of orderList
 genRangeCheck :: String -> [Int] -> String
@@ -144,6 +149,67 @@ bitMapToAddrLiteral = map (chr . toByte . padTo8) . unfoldr go
     toByte :: [Bool] -> Int
     toByte xs = sum $ map (\i -> if xs !! i then 1 `shiftL` i else 0) [0..7]
 
+genEnumBitmap :: forall a. (Bounded a, Enum a) => String -> [a] -> String
+genEnumBitmap funcName as = unlines
+    [ "{-# INLINE " ++ funcName ++ " #-}"
+    , funcName <> " :: Char -> Int"
+    , funcName <> " c = let n = ord c in if n >= "
+               <> show (length as)
+               <> " then "
+               <> show (fromEnum Cn)
+               <> " else lookupIntN bitmap# "
+               <> (show $ enumBitSize (Proxy :: Proxy a))
+               <> " n"
+    , "  where"
+    , "    bitmap# = "
+        <> show (enumMapToAddrLiteral as) <> "#"
+    ]
+
+enumBitSize :: forall a. (Bounded a, Enum a) => Proxy a -> Int
+enumBitSize _ =
+    let m = fromEnum (maxBound :: a)
+    in finiteBitSize m - countLeadingZeros m
+
+enumMapToAddrLiteral :: forall a. (Bounded a, Enum a) => [a] -> String
+enumMapToAddrLiteral = reverse . finalize . foldl' go (mempty, 0, 0)
+
+    where
+    bs = enumBitSize (Proxy :: Proxy a)
+
+    finalize (cs, _, 0) = padWord cs
+    finalize (cs, i, _) = padWord (addChar8 cs i)
+
+    go :: (String, Word8, Int) -> a -> (String, Word8, Int)
+    go (cs, x, offset) a =
+        let is = toWord8s offset x (fromIntegral $ fromEnum a)
+            (n, offset') = quotRem (offset + bs) 8
+            x' = if offset' == 0 then 0 else NE.last is
+        in let cs' = foldl' addChar8 cs (NE.take n is)
+           in (cs', x', offset')
+
+    toWord8s :: Int -> Word8 -> Word -> NE.NonEmpty Word8
+    toWord8s 0      _  w = NE.unfoldr toWord8s' (bs, w)
+    toWord8s offset w0 w =
+        if 8 - bs - offset >= 0
+            then
+                let w1 = w0 .|. fromIntegral (w `shiftL` offset)
+                in w1 NE.:| []
+            else
+                let mask = Prelude.pred (1 `shiftL` (8 - offset))
+                    w1 = w0 .|. fromIntegral ((w .&. mask) `shiftL` offset)
+                    w' = w `shiftR` (8 - offset)
+                in NE.cons w1 $ NE.unfoldr toWord8s' (bs + offset - 8, w')
+    toWord8s' (n, w) =
+        ( fromIntegral (w .&. 0xff)
+        , if n - 8 > 0
+            then Just (n - 8, w `shiftR` 8)
+            else Nothing
+        )
+
+    addChar8 :: String -> Word8 -> String
+    addChar8 cs x = chr (fromIntegral x) : cs
+
+    padWord cs = foldl' addChar8 cs (toWord8s 0 0 0)
 
 -- This bit of code is duplicated but this duplication allows us to reduce 2
 -- dependencies on the executable.
@@ -174,6 +240,37 @@ isHangul c = n >= hangulFirst && n <= hangulLast
 -------------------------------------------------------------------------------
 -- Parsing UnicodeData.txt
 -------------------------------------------------------------------------------
+
+genGeneralCategoryModule
+    :: Monad m
+    => String
+    -> Fold m DetailedChar String
+genGeneralCategoryModule moduleName =
+    done <$> Fold.foldl' step initial
+
+    where
+
+    -- (categories, expected char)
+    initial = ([], '\0')
+
+    step (acc, p) a = if p < (_char a)
+        -- Fill missing char entry with default category Cn
+        -- See: https://www.unicode.org/reports/tr44/#Default_Values_Table
+        then step (Cn : acc, succ p) a
+        -- Regular entry
+        else (_generalCategory a : acc, succ (_char a))
+
+    done (acc, _) = unlines
+        [ apacheLicense moduleName
+        , "module " <> moduleName
+        , "(generalCategory)"
+        , "where"
+        , ""
+        , "import Data.Char (ord)"
+        , "import Unicode.Internal.Bits (lookupIntN)"
+        , ""
+        , genEnumBitmap "generalCategory" (reverse acc)
+        ]
 
 readDecomp :: String -> (Maybe DecompType, Decomp)
 readDecomp s =
@@ -611,6 +708,7 @@ genModules indir outdir props = do
         , decompositions
         , decompositionsK2
         , decompositionsK
+        , generalCategory
         ]
 
     runGenerator
@@ -666,3 +764,7 @@ genModules indir outdir props = do
             post = ["decompose c = DK2.decompose c"]
          in ( "Unicode.Internal.Char.UnicodeData.DecompositionsK"
             , \m -> genDecomposeDefModule m pre post Kompat (< 60000))
+
+    generalCategory =
+         ( "Unicode.Internal.Char.UnicodeData.GeneralCategory"
+         , genGeneralCategoryModule)

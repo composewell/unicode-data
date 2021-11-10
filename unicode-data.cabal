@@ -95,6 +95,7 @@ library
       Unicode.Internal.Char.UnicodeData.Decompositions
       Unicode.Internal.Char.UnicodeData.DecompositionsK
       Unicode.Internal.Char.UnicodeData.DecompositionsK2
+      Unicode.Internal.Char.UnicodeData.GeneralCategory
   hs-source-dirs: lib
   ghc-options: -O2
   build-depends:
