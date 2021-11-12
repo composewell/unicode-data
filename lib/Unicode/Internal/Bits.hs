@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 -- |
 -- Module      : Unicode.Internal.Bits
 -- Copyright   : (c) 2020 Andrew Lelechenko
@@ -21,6 +23,9 @@ import GHC.Exts
         indexWordOffAddr#, indexWord8OffAddr#,
         andI#, uncheckedIShiftRL#,
         and#, word2Int#, uncheckedShiftL#)
+#if MIN_VERSION_base(4,16,0)
+import GHC.Exts (word8ToWord#)
+#endif
 
 -- | @lookup64 addr index@ looks up the bit stored at bit index @index@ using a
 -- bitmap starting at the address @addr@. Looks up the 64-bit word containing
@@ -55,4 +60,8 @@ lookupIntN
   -> Int   -- ^ Resulting word as 'Int'
 lookupIntN addr# (I# index#) = I# (word2Int# word##)
   where
+#if MIN_VERSION_base(4,16,0)
+    word## = word8ToWord# (indexWord8OffAddr# addr# index#)
+#else
     word## = indexWord8OffAddr# addr# index#
+#endif
