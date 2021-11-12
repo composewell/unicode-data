@@ -150,4 +150,4 @@ benchmark Unicode.Char
     tasty-bench >= 0.2.5 && < 0.3,
     tasty       >= 1.4.1,
     unicode-data
-  ghc-options: -O2 -fdicts-strict
+  ghc-options: -O2 -fdicts-strict -rtsopts

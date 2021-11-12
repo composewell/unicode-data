@@ -19,21 +19,17 @@ module Parser.Text (genModules) where
 import Control.Exception (catch, IOException)
 import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO(liftIO))
-import Data.Bits (Bits(..), FiniteBits(..))
+import Data.Bits (Bits(..))
 import Data.Word (Word8)
 import Data.Char (chr, ord, isSpace)
 import Data.Function ((&))
 import Data.List (unfoldr, intersperse)
-import Data.Foldable (foldl')
 import Data.Maybe (fromMaybe)
-import Data.Proxy (Proxy(..))
 import Streamly.Data.Fold (Fold)
 import Streamly.Prelude (IsStream, SerialT)
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getEnv)
 
-import qualified Prelude as Prelude
-import qualified Data.List.NonEmpty as NE
 import qualified Data.Set as Set
 import qualified Streamly.Prelude as Stream
 import qualified Streamly.Data.Fold as Fold
@@ -151,7 +147,7 @@ bitMapToAddrLiteral = map (chr . toByte . padTo8) . unfoldr go
     toByte :: [Bool] -> Int
     toByte xs = sum $ map (\i -> if xs !! i then 1 `shiftL` i else 0) [0..7]
 
-genEnumBitmap :: forall a. (Bounded a, Enum a) => String -> [a] -> String
+genEnumBitmap :: forall a. (Bounded a, Enum a, Show a) => String -> [a] -> String
 genEnumBitmap funcName as = unlines
     [ "{-# INLINE " ++ funcName ++ " #-}"
     , funcName <> " :: Char -> Int"
@@ -159,59 +155,33 @@ genEnumBitmap funcName as = unlines
                <> show (length as)
                <> " then "
                <> show (fromEnum Cn)
-               <> " else lookupIntN bitmap# "
-               <> (show $ enumBitSize (Proxy :: Proxy a))
-               <> " n"
+               <> " else lookupIntN bitmap# n"
     , "  where"
     , "    bitmap# = "
         <> show (enumMapToAddrLiteral as) <> "#"
     ]
 
-enumBitSize :: forall a. (Bounded a, Enum a) => Proxy a -> Int
-enumBitSize _ =
-    let m = fromEnum (maxBound :: a)
-    in finiteBitSize m - countLeadingZeros m
+{-| Encode a list of values as a byte map, using their 'Enum' instance.
 
-enumMapToAddrLiteral :: forall a. (Bounded a, Enum a) => [a] -> String
-enumMapToAddrLiteral = reverse . finalize . foldl' go (mempty, 0, 0)
+__Note:__ 'Enum' instance must respect the following:
+
+* @fromEnum minBound >= 0x00@
+* @fromEnum maxBound <= 0xff@
+-}
+enumMapToAddrLiteral :: forall a. (Bounded a, Enum a, Show a) => [a] -> String
+enumMapToAddrLiteral = padWord . fmap go
 
     where
-    bs = enumBitSize (Proxy :: Proxy a)
 
-    finalize (cs, _, 0) = padWord cs
-    finalize (cs, i, _) = padWord (addChar8 cs i)
+    go :: a -> Char
+    go = chr . fromIntegral . toWord8
 
-    go :: (String, Word8, Int) -> a -> (String, Word8, Int)
-    go (cs, x, offset) a =
-        let is = toWord8s offset x (fromIntegral $ fromEnum a)
-            (n, offset') = quotRem (offset + bs) 8
-            x' = if offset' == 0 then 0 else NE.last is
-        in let cs' = foldl' addChar8 cs (NE.take n is)
-           in (cs', x', offset')
+    toWord8 :: a -> Word8
+    toWord8 a = let w = fromEnum a in if 0 <= w && w <= 0xff
+        then fromIntegral w
+        else error $ "Cannot convert to Word8: " <> show a
 
-    toWord8s :: Int -> Word8 -> Word -> NE.NonEmpty Word8
-    toWord8s 0      _  w = NE.unfoldr toWord8s' (bs, w)
-    toWord8s offset w0 w =
-        if 8 - bs - offset >= 0
-            then
-                let w1 = w0 .|. fromIntegral (w `shiftL` offset)
-                in w1 NE.:| []
-            else
-                let mask = Prelude.pred (1 `shiftL` (8 - offset))
-                    w1 = w0 .|. fromIntegral ((w .&. mask) `shiftL` offset)
-                    w' = w `shiftR` (8 - offset)
-                in NE.cons w1 $ NE.unfoldr toWord8s' (bs + offset - 8, w')
-    toWord8s' (n, w) =
-        ( fromIntegral (w .&. 0xff)
-        , if n - 8 > 0
-            then Just (n - 8, w `shiftR` 8)
-            else Nothing
-        )
-
-    addChar8 :: String -> Word8 -> String
-    addChar8 cs x = chr (fromIntegral x) : cs
-
-    padWord cs = foldl' addChar8 cs (toWord8s 0 0 0)
+    padWord = (<> "\0\0\0\0\0\0\0\0")
 
 -- This bit of code is duplicated but this duplication allows us to reduce 2
 -- dependencies on the executable.
