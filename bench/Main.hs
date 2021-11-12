@@ -151,4 +151,4 @@ main = defaultMain
   ]
   where
     fold_ :: forall a. (NFData a) => (Char -> a) -> (Char, Char) -> ()
-    fold_ f = \r -> foldr (\c -> deepseq (f c)) () (range r)
+    fold_ f = foldr (deepseq . f) () . range
