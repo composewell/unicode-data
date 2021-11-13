@@ -48,6 +48,6 @@ $ cabal-docspec --check-properties --property-variables c
 `unicode-data` is an [open source](https://github.com/composewell/unicode-data)
 project available under a liberal [Apache-2.0 license](LICENSE).
 
-## Contributing to Streamly
+## Contributing
 
 As an open project we welcome contributions.
