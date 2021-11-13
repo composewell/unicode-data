@@ -71,8 +71,6 @@ env: &env
 
 preinstall: &preinstall
   run: |
-        # Kill rogue apt processess
-        killall -9 apt-get || true
         # Check for PACKCHECK_GITHUB_COMMIT
         if test -z "$PACKCHECK_GITHUB_COMMIT"
         then
