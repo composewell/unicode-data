@@ -42,55 +42,77 @@ jobs:
       fail-fast: false
       matrix:
         name:
-          [ Ubuntu+GHC822, Ubuntu+GHC865, Ubuntu+GHC844
-          , Ubuntu+GHC884, Ubuntu+GHC8102+exe
-          , MacOS+GHC884+exe
-          , Hlint ]
-        cabal_version: [3.2]
+          - 7.10.3
+          - 8.0.2
+          - 8.2.2
+          - 8.4.4
+          - 8.8.4+macOS+exe
+          - 8.6.5
+          - 8.8.4
+          - 8.10.7+exe
+          - 9.0.1+exe
+          - 9.2.1
+          - hlint
+
         include:
 
-          - name: Ubuntu+GHC7103
+          - name: 7.10.3
             ghc_version: 7.10.3
             runner: ubuntu-latest
+            cabal_version: 3.2
 
-          - name: Ubuntu+GHC802
+          - name: 8.0.2
             ghc_version: 8.0.2
             runner: ubuntu-latest
+            cabal_version: 3.2
 
-          - name: Ubuntu+GHC822
+          - name: 8.2.2
             ghc_version: 8.2.2
             runner: ubuntu-latest
+            cabal_version: 3.2
 
-          - name: Ubuntu+GHC844
+          - name: 8.4.4
             ghc_version: 8.4.4
             runner: ubuntu-latest
+            cabal_version: 3.2
 
-          - name: Ubuntu+GHC865
+          - name: 8.6.5
             ghc_version: 8.6.5
             runner: ubuntu-latest
+            cabal_version: 3.2
 
-          - name: Ubuntu+GHC884
+          - name: 8.8.4
             ghc_version: 8.8.4
             runner: ubuntu-latest
+            cabal_version: 3.2
 
-          - name: Ubuntu+GHC8102+exe
-            ghc_version: 8.10.2
-            pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
-            runner: ubuntu-latest
-
-          - name: Ubuntu+GHC901+exe
-            ghc_version: 9.0.1
-            pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
-            runner: ubuntu-latest
-
-          - name: Hlint
-            pack_options: HLINT_OPTIONS="lint" HLINT_TARGETS="lib exe"
-            runner: ubuntu-latest
-
-          - name: MacOS+GHC884+exe
+          - name: 8.8.4+macOS+exe
             ghc_version: 8.8.4
             pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
             runner: macos-latest
+            cabal_version: 3.2
+
+          - name: 8.10.7+exe
+            ghc_version: 8.10.7
+            pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
+            runner: ubuntu-latest
+            cabal_version: 3.2
+
+          - name: 9.0.1+exe
+            ghc_version: 9.0.1
+            pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
+            runner: ubuntu-latest
+            cabal_version: 3.2
+
+          - name: 9.2.1
+            ghc_version: 9.2.1
+            runner: ubuntu-latest
+            cabal_version: 3.6
+
+          - name: hlint
+            pack_options: HLINT_OPTIONS="lint" HLINT_TARGETS="lib exe"
+            runner: ubuntu-latest
+            cabal_version: 3.2
 
     steps:
     - uses: actions/checkout@v2
