@@ -46,13 +46,12 @@ isXIDContinue = P.isXID_Continue
 isXIDStart :: Char -> Bool
 isXIDStart = P.isXID_Start
 
--- | Returns 'True' is a pattern syntax character.
+-- | Returns 'True' if a character is a pattern syntax character.
 {-# INLINE isPatternSyntax #-}
 isPatternSyntax :: Char -> Bool
 isPatternSyntax = P.isPattern_Syntax
 
--- | Returns 'True' is a pattern whitespace character.
+-- | Returns 'True' if a character is a pattern whitespace character.
 {-# INLINE isPatternWhitespace #-}
 isPatternWhitespace :: Char -> Bool
 isPatternWhitespace = P.isPattern_White_Space
-

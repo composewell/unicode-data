@@ -17,6 +17,8 @@ module Unicode.Internal.Bits
       lookupIntN
     ) where
 
+#include "MachDeps.h"
+
 import Data.Bits (finiteBitSize, popCount)
 import GHC.Exts
        (Addr#, Int(..), Word(..),
@@ -25,6 +27,9 @@ import GHC.Exts
         and#, word2Int#, uncheckedShiftL#)
 #if MIN_VERSION_base(4,16,0)
 import GHC.Exts (word8ToWord#)
+#endif
+#ifdef WORDS_BIGENDIAN
+import GHC.Exts (byteSwap#)
 #endif
 
 -- | @lookup64 addr index@ looks up the bit stored at bit index @index@ using a
@@ -43,7 +48,11 @@ lookupBit64 addr# (I# index#) = W# (word## `and#` bitMask##) /= 0
       _  -> popCount fbs -- this is a really weird architecture
 
     wordIndex# = index# `uncheckedIShiftRL#` logFbs#
+#ifdef WORDS_BIGENDIAN
+    word## = byteSwap# (indexWordOffAddr# addr# wordIndex#)
+#else
     word## = indexWordOffAddr# addr# wordIndex#
+#endif
     bitIndex# = index# `andI#` fbs#
     bitMask## = 1## `uncheckedShiftL#` bitIndex#
 
