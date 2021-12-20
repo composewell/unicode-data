@@ -1,6 +1,6 @@
 # Changelog
 
-## Next
+## 0.3.0 (December 2021)
 
 - Support for big-endian architectures.
 - Added `GeneralCategory` data type and corresponding `generalCategoryAbbr`,

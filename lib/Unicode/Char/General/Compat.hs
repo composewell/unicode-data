@@ -20,6 +20,8 @@ module Unicode.Char.General.Compat
 import Unicode.Char.General (GeneralCategory(..), generalCategory)
 
 -- | Same as 'isLetter'.
+--
+-- @since 0.3.0
 {-# INLINE isAlpha #-}
 isAlpha :: Char -> Bool
 isAlpha = isLetter
@@ -40,6 +42,8 @@ __Note:__ this function is /not/ equivalent to 'Unicode.Char.General.isAlphabeti
 See the description of 'Unicode.Char.General.isAlphabetic' for further details.
 
 prop> isLetter c == Data.Char.isLetter c
+
+@since 0.3.0
 -}
 {-# INLINE isLetter #-}
 isLetter :: Char -> Bool
@@ -63,6 +67,8 @@ plus the following:
 * @U+2029@ PARAGRAPH SEPARATOR
 
 prop> isSpace c == Data.Char.isSpace c
+
+@since 0.3.0
 -}
 isSpace :: Char -> Bool
 isSpace '\t' = True

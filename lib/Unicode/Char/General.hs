@@ -109,6 +109,8 @@ part of the Unicode standard
 
 __Note:__ the classes must be in the same order they are listed in the Unicode Standard,
 because some functions (e.g. 'generalCategory') rely on the 'Enum' instance.
+
+@since 0.3.0
 -}
 data GeneralCategory
     -- L: Letter
@@ -163,6 +165,8 @@ data GeneralCategory
             )
 
 -- | Abbreviation of 'GeneralCategory' used in the Unicode standard.
+--
+-- @since 0.3.0
 generalCategoryAbbr :: GeneralCategory -> String
 generalCategoryAbbr = \case
     UppercaseLetter      -> "Lu"
@@ -204,6 +208,8 @@ This relies on the 'Enum' instance of 'GeneralCategory', which must remain in th
 same order as the categories are presented in the Unicode standard.
 
 prop> show (generalCategory c) == show (Data.Char.generalCategory c)
+
+@since 0.3.0
 -}
 {-# INLINE generalCategory #-}
 generalCategory :: Char -> GeneralCategory
@@ -233,6 +239,8 @@ __Note:__ this function is /not/ equivalent to 'Unicode.Char.General.Compat.isAl
     * 'OtherLetter' (@Lo@)
     * 'LetterNumber' (@Nl@)
     * @Other_Alphabetic@ [property](https://www.unicode.org/reports/tr44/#Other_Alphabetic)
+
+@since 0.3.0
 -}
 {-# INLINE isAlphabetic #-}
 isAlphabetic :: Char -> Bool
@@ -253,6 +261,8 @@ following 'GeneralCategory's, or 'False' otherwise:
 * 'OtherNumber'
 
 prop> isAlphaNum c == Data.Char.isAlphaNum c
+
+@since 0.3.0
 -}
 isAlphaNum :: Char -> Bool
 isAlphaNum c = case generalCategory c of
@@ -272,6 +282,8 @@ of the Latin-1 subset of Unicode.
 This function returns 'True' if its argument has the 'GeneralCategory' 'Control'.
 
 prop> isControl c == Data.Char.isControl c
+
+@since 0.3.0
 -}
 isControl :: Char -> Bool
 isControl c = case generalCategory c of
@@ -289,6 +301,8 @@ following 'GeneralCategory's, or 'False' otherwise:
 * 'EnclosingMark'
 
 prop> isMark c == Data.Char.isMark c
+
+@since 0.3.0
 -}
 isMark :: Char -> Bool
 isMark c = case generalCategory c of
@@ -312,6 +326,8 @@ following 'GeneralCategory's, or 'True' otherwise:
 * 'NotAssigned'
 
 prop> isPrint c == Data.Char.isPrint c
+
+@since 0.3.0
 -}
 isPrint :: Char -> Bool
 isPrint c = case generalCategory c of
@@ -339,6 +355,8 @@ following 'GeneralCategory's, or 'False' otherwise:
 * 'OtherPunctuation'
 
 prop> isPunctuation c == Data.Char.isPunctuation c
+
+@since 0.3.0
 -}
 isPunctuation :: Char -> Bool
 isPunctuation c = case generalCategory c of
@@ -362,6 +380,8 @@ __Note:__ 'isWhiteSpace' is /not/ equivalent to 'Unicode.Char.General.Compat.isS
 * @U+0085@ NEXT LINE (NEL)
 * @U+2028@ LINE SEPARATOR
 * @U+2029@ PARAGRAPH SEPARATOR
+
+@since 0.3.0
 -}
 {-# INLINE isWhiteSpace #-}
 isWhiteSpace :: Char -> Bool
@@ -377,6 +397,8 @@ following 'GeneralCategory's, or 'False' otherwise:
 * 'ParagraphSeparator'
 
 prop> isSeparator c == Data.Char.isSeparator c
+
+@since 0.3.0
 -}
 isSeparator :: Char -> Bool
 isSeparator c = case generalCategory c of
@@ -395,6 +417,8 @@ following 'GeneralCategory's, or 'False' otherwise:
 * 'OtherSymbol'
 
 prop> isSymbol c == Data.Char.isSymbol c
+
+@since 0.3.0
 -}
 isSymbol :: Char -> Bool
 isSymbol c = case generalCategory c of

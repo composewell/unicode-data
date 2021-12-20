@@ -30,6 +30,8 @@ following 'GeneralCategory's, or 'False' otherwise:
 * 'OtherNumber'
 
 prop> isNumber c == Data.Char.isNumber c
+
+@since 0.3.0
 -}
 isNumber :: Char -> Bool
 isNumber c = case generalCategory c of
