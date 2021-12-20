@@ -1,154 +1,180 @@
-import Data.Ix (Ix(..))
 import Control.DeepSeq (NFData, deepseq)
-import Test.Tasty.Bench
+import Data.Ix (Ix(..))
+import Test.Tasty.Bench (Benchmark, bgroup, bench, bcompare, nf, defaultMain)
 
 import qualified Data.Char as B
 import qualified Unicode.Char.Case as C
 import qualified Unicode.Char.General as G
+import qualified Unicode.Char.General.Compat as GC
 import qualified Unicode.Char.Identifiers as I
 import qualified Unicode.Char.Normalization as N
+import qualified Unicode.Char.Numeric as Num
+
+-- | A unit benchmark
+data Bench a = Bench
+  { _title :: !String  -- ^ Name
+  , _func :: Char -> a -- ^ Function to benchmark
+  }
 
 main :: IO ()
 main = defaultMain
   [ bgroup "Unicode.Char.Case"
-    [ bgroup "isLower"
-      [ bench "base"         $ nf (fold_ B.isLower) (minBound, maxBound)
-      , bench "unicode-data" $ nf (fold_ C.isLower) (minBound, maxBound)
+    [ bgroup' "isLower"
+      [ Bench "base"         B.isLower
+      , Bench "unicode-data" C.isLower
       ]
-    , bgroup "isUpper"
-      [ bench "base"         $ nf (fold_ B.isUpper) (minBound, maxBound)
-      , bench "unicode-data" $ nf (fold_ C.isUpper) (minBound, maxBound)
+    , bgroup' "isUpper"
+      [ Bench "base"         B.isUpper
+      , Bench "unicode-data" C.isUpper
       ]
     ]
   , bgroup "Unicode.Char.General"
     -- Character classification
-    [ bgroup "generalCategory"
-      [ bench "base"         $ nf (fold_ (show . B.generalCategory)) (minBound, maxBound)
-      , bench "unicode-data" $ nf (fold_ (show . G.generalCategory)) (minBound, maxBound)
+    [ bgroup' "generalCategory"
+      [ Bench "base"          (show . B.generalCategory)
+      , Bench "unicode-data"  (show . G.generalCategory)
       ]
-    , bgroup "isAlpa"
-      [ bench "base"         $ nf (fold_ B.isAlpha) (minBound, maxBound)
-      , bench "unicode-data" $ nf (fold_ G.isAlpha) (minBound, maxBound)
+    , bgroup "isAlphabetic"
+      [ benchNF "unicode-data"  G.isAlphabetic
       ]
-    , bgroup "isAlpabetic"
-      [ bench "unicode-data" $ nf (fold_ G.isAlphabetic) (minBound, maxBound)
+    , bgroup' "isAlphaNum"
+      [ Bench "base"          B.isAlphaNum
+      , Bench "unicode-data"  G.isAlphaNum
       ]
-    , bgroup "isAlpaNum"
-      [ bench "base"         $ nf (fold_ B.isAlphaNum) (minBound, maxBound)
-      , bench "unicode-data" $ nf (fold_ G.isAlphaNum) (minBound, maxBound)
+    , bgroup' "isControl"
+      [ Bench "base"          B.isControl
+      , Bench "unicode-data"  G.isControl
       ]
-    , bgroup "isControl"
-      [ bench "base"         $ nf (fold_ B.isControl) (minBound, maxBound)
-      , bench "unicode-data" $ nf (fold_ G.isControl) (minBound, maxBound)
+    , bgroup' "isMark"
+      [ Bench "base"          B.isMark
+      , Bench "unicode-data"  G.isMark
       ]
-    , bgroup "isLetter"
-      [ bench "base"         $ nf (fold_ G.isLetter) (minBound, maxBound)
-      , bench "unicode-data" $ nf (fold_ G.isLetter) (minBound, maxBound)
+    , bgroup' "isPrint"
+      [ Bench "base"          B.isPrint
+      , Bench "unicode-data"  G.isPrint
       ]
-    , bgroup "isMark"
-      [ bench "base"         $ nf (fold_ B.isMark) (minBound, maxBound)
-      , bench "unicode-data" $ nf (fold_ G.isMark) (minBound, maxBound)
+    , bgroup' "isPunctuation"
+      [ Bench "base"          B.isPunctuation
+      , Bench "unicode-data"  G.isPunctuation
       ]
-    , bgroup "isNumber"
-      [ bench "base"         $ nf (fold_ B.isNumber) (minBound, maxBound)
-      , bench "unicode-data" $ nf (fold_ G.isNumber) (minBound, maxBound)
+    , bgroup' "isSeparator"
+      [ Bench "base"          B.isSeparator
+      , Bench "unicode-data"  G.isSeparator
       ]
-    , bgroup "isPrint"
-      [ bench "base"         $ nf (fold_ B.isPrint) (minBound, maxBound)
-      , bench "unicode-data" $ nf (fold_ G.isPrint) (minBound, maxBound)
-      ]
-    , bgroup "isPunctuation"
-      [ bench "base"         $ nf (fold_ B.isPunctuation) (minBound, maxBound)
-      , bench "unicode-data" $ nf (fold_ G.isPunctuation) (minBound, maxBound)
-      ]
-    , bgroup "isSeparator"
-      [ bench "base"         $ nf (fold_ B.isSeparator) (minBound, maxBound)
-      , bench "unicode-data" $ nf (fold_ G.isSeparator) (minBound, maxBound)
-      ]
-    , bgroup "isSpace"
-      [ bench "base"         $ nf (fold_ G.isSpace) (minBound, maxBound)
-      , bench "unicode-data" $ nf (fold_ G.isSpace) (minBound, maxBound)
-      ]
-    , bgroup "isSymbol"
-      [ bench "base"         $ nf (fold_ B.isSymbol) (minBound, maxBound)
-      , bench "unicode-data" $ nf (fold_ G.isSymbol) (minBound, maxBound)
+    , bgroup' "isSymbol"
+      [ Bench "base"          B.isSymbol
+      , Bench "unicode-data"  G.isSymbol
       ]
     , bgroup "isWhiteSpace"
-      [ bench "unicode-data" $ nf (fold_ G.isWhiteSpace) (minBound, maxBound)
+      [ benchNF "unicode-data"  G.isWhiteSpace
       ]
     -- Korean Hangul Characters
     , bgroup "isHangul"
-      [ bench "unicode-data" $ nf (fold_ G.isHangul) (minBound, maxBound)
+      [ benchNF "unicode-data"  G.isHangul
       ]
     , bgroup "isHangulLV"
-      [ bench "unicode-data" $ nf (fold_ G.isHangul) (minBound, maxBound)
+      [ benchNF "unicode-data"  G.isHangul
       ]
     , bgroup "isJamo"
-      [ bench "unicode-data" $ nf (fold_ G.isJamo) (minBound, maxBound)
+      [ benchNF "unicode-data"  G.isJamo
       ]
     , bgroup "jamoLIndex"
-      [ bench "unicode-data" $ nf (fold_ G.jamoLIndex) (minBound, maxBound)
+      [ benchNF "unicode-data"  G.jamoLIndex
       ]
     , bgroup "jamoVIndex"
-      [ bench "unicode-data" $ nf (fold_ G.jamoVIndex) (minBound, maxBound)
+      [ benchNF "unicode-data"  G.jamoVIndex
       ]
     , bgroup "jamoTIndex"
-      [ bench "unicode-data" $ nf (fold_ G.jamoTIndex) (minBound, maxBound)
+      [ benchNF "unicode-data"  G.jamoTIndex
+      ]
+    ]
+  , bgroup "Unicode.Char.General.Compat"
+    [ bgroup' "isAlpha"
+      [ Bench "base"          B.isAlpha
+      , Bench "unicode-data"  GC.isAlpha
+      ]
+    , bgroup' "isLetter"
+      [ Bench "base"          B.isLetter
+      , Bench "unicode-data"  GC.isLetter
+      ]
+    , bgroup' "isSpace"
+      [ Bench "base"          B.isSpace
+      , Bench "unicode-data"  GC.isSpace
       ]
     ]
   , bgroup "Unicode.Char.Identifiers"
     [ bgroup "isIDContinue"
-      [ bench "unicode-data" $ nf (fold_ I.isIDContinue) (minBound, maxBound)
+      [ benchNF "unicode-data"  I.isIDContinue
       ]
     , bgroup "isIDStart"
-      [ bench "unicode-data" $ nf (fold_ I.isIDStart) (minBound, maxBound)
+      [ benchNF "unicode-data"  I.isIDStart
       ]
     , bgroup "isXIDContinue"
-      [ bench "unicode-data" $ nf (fold_ I.isXIDContinue) (minBound, maxBound)
+      [ benchNF "unicode-data"  I.isXIDContinue
       ]
     , bgroup "isXIDStart"
-      [ bench "unicode-data" $ nf (fold_ I.isXIDStart) (minBound, maxBound)
+      [ benchNF "unicode-data"  I.isXIDStart
       ]
     , bgroup "isPatternSyntax"
-      [ bench "unicode-data" $ nf (fold_ I.isPatternSyntax) (minBound, maxBound)
+      [ benchNF "unicode-data"  I.isPatternSyntax
       ]
     , bgroup "isPatternWhitespace"
-      [ bench "unicode-data" $ nf (fold_ I.isPatternWhitespace) (minBound, maxBound)
+      [ benchNF "unicode-data"  I.isPatternWhitespace
       ]
     ]
   , bgroup "Unicode.Char.Normalization"
     [ bgroup "isCombining"
-      [ bench "unicode-data" $ nf (fold_ N.isCombining) (minBound, maxBound)
+      [ benchNF "unicode-data"  N.isCombining
       ]
     , bgroup "combiningClass"
-      [ bench "unicode-data" $ nf (fold_ N.combiningClass) (minBound, maxBound)
+      [ benchNF "unicode-data"  N.combiningClass
       ]
     , bgroup "isCombiningStarter"
-      [ bench "unicode-data" $ nf (fold_ N.isCombiningStarter) (minBound, maxBound)
+      [ benchNF "unicode-data"  N.isCombiningStarter
       ]
     -- [TODO] compose, composeStarters
     , bgroup "isDecomposable"
       [ bgroup "Canonical"
-        [ bench "unicode-data" $ nf (fold_ (N.isDecomposable N.Canonical)) (minBound, maxBound)
+        [ benchNF "unicode-data" (N.isDecomposable N.Canonical)
         ]
       , bgroup "Kompat"
-        [ bench "unicode-data" $ nf (fold_ (N.isDecomposable N.Kompat)) (minBound, maxBound)
+        [ benchNF "unicode-data" (N.isDecomposable N.Kompat)
         ]
       ]
     -- [FIXME] Fail due to non-exhaustive pattern matching
     -- , bgroup "decompose"
     --   [ bgroup "Canonical"
-    --     [ bench "unicode-data" $ nf (fold_ (N.decompose N.Canonical)) (minBound, maxBound)
+    --     [ benchNF "unicode-data" (N.decompose N.Canonical)
     --     ]
     --   , bgroup "Kompat"
-    --     [ bench "unicode-data" $ nf (fold_ (N.decompose N.Kompat)) (minBound, maxBound)
+    --     [ benchNF "unicode-data" (N.decompose N.Kompat)
     --     ]
     --   ]
     , bgroup "decomposeHangul"
-      [ bench "unicode-data" $ nf (fold_ N.decomposeHangul) (minBound, maxBound)
+      [ benchNF "unicode-data" N.decomposeHangul
+      ]
+    ]
+  , bgroup "Unicode.Char.Numeric"
+    [ bgroup' "isNumber"
+      [ Bench "base"          B.isNumber
+      , Bench "unicode-data"  Num.isNumber
       ]
     ]
   ]
   where
+    bgroup' groupTitle bs = bgroup groupTitle
+      [ benchNF' groupTitle title f
+      | Bench title f <- bs
+      ]
+
+    -- [NOTE] Works if groupTitle uniquely identifies the benchmark group.
+    benchNF' groupTitle title = case title of
+      "base" -> benchNF title
+      _      -> bcompare ("$NF == \"base\" && $(NF-1) == \"" ++ groupTitle ++ "\"")
+              . benchNF title
+
+    benchNF :: forall a. (NFData a) => String -> (Char -> a) -> Benchmark
+    benchNF t f = bench t $ nf (fold_ f) (minBound, maxBound)
+
     fold_ :: forall a. (NFData a) => (Char -> a) -> (Char, Char) -> ()
     fold_ f = foldr (deepseq . f) () . range

@@ -77,8 +77,10 @@ library
       -- https://www.unicode.org/reports/tr44/#Property_Index_Table
       Unicode.Char.Normalization
       Unicode.Char.General
+      Unicode.Char.General.Compat
       Unicode.Char.Case
       Unicode.Char.Identifiers
+      Unicode.Char.Numeric
 
       -- Internal files
       Unicode.Internal.Bits
@@ -140,12 +142,12 @@ test-suite test
     cpp-options: -DCOMPATIBLE_GHC_UNICODE
   default-language: Haskell2010
 
-benchmark Unicode.Char
+benchmark bench
   import: default-extensions, compile-options
   type: exitcode-stdio-1.0
   hs-source-dirs: bench
   main-is: Main.hs
-  build-depends:   
+  build-depends:
     base        >= 4.7   && < 5,
     deepseq     >= 1.1   && < 1.5,
     tasty-bench >= 0.2.5 && < 0.3,

@@ -12,8 +12,7 @@
 -- Fast, static bitmap lookup utilities
 
 module Unicode.Internal.Bits
-    (
-      lookupBit64,
+    ( lookupBit64,
       lookupIntN
     ) where
 

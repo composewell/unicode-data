@@ -171,7 +171,7 @@ __Note:__ 'Enum' instance must respect the following:
 * @fromEnum maxBound <= 0xff@
 -}
 enumMapToAddrLiteral :: forall a. (Bounded a, Enum a, Show a) => [a] -> String
-enumMapToAddrLiteral = padWord . fmap go
+enumMapToAddrLiteral = fmap go
 
     where
 
@@ -182,8 +182,6 @@ enumMapToAddrLiteral = padWord . fmap go
     toWord8 a = let w = fromEnum a in if 0 <= w && w <= 0xff
         then fromIntegral w
         else error $ "Cannot convert to Word8: " <> show a
-
-    padWord = (<> "\0\0\0\0\0\0\0\0")
 
 -- This bit of code is duplicated but this duplication allows us to reduce 2
 -- dependencies on the executable.
@@ -575,17 +573,17 @@ data UnicodeDataRange
     -- ^ A partial range for entry with a name as: @\<RANGE_IDENTIFIER, First\>@
     | CompleteRange !String !DetailedChar !DetailedChar
     -- ^ A complete range, requiring 2 continuous entries with respective names:
-    -- 
+    --
     -- * @\<RANGE_IDENTIFIER, First\>@
     -- * @\<RANGE_IDENTIFIER, Last\>@
 
 {-| Parse UnicodeData.txt lines
- 
+
 Parse ranges according to https://www.unicode.org/reports/tr44/#Code_Point_Ranges.
 
 __Note:__ this does /not/ fill missing char entries,
 i.e. entries with no explicit entry nor within a range.
--} 
+-}
 parseUnicodeDataLines :: forall t m. (IsStream t, Monad m) => t m String -> t m DetailedChar
 parseUnicodeDataLines
     = Stream.unfoldMany (Unfold.unfoldr unitToRange)

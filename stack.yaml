@@ -3,3 +3,6 @@ packages:
 - '.'
 extra-deps:
 - streamly-0.8.0
+flags:
+  mintty:
+    Win32-2-13-1: false
