@@ -1,3 +1,10 @@
 lib/Unicode/Internal/Division.hs
 lib/Unicode/Internal/Char/PropList.hs
 lib/Unicode/Internal/Char/DerivedCoreProperties.hs
+lib/Unicode/Internal/Char/UnicodeData/CombiningClass.hs
+lib/Unicode/Internal/Char/UnicodeData/Compositions.hs
+lib/Unicode/Internal/Char/UnicodeData/Decomposable.hs
+lib/Unicode/Internal/Char/UnicodeData/DecomposableK.hs
+lib/Unicode/Internal/Char/UnicodeData/Decompositions.hs
+lib/Unicode/Internal/Char/UnicodeData/DecompositionsK2.hs
+lib/Unicode/Internal/Char/UnicodeData/GeneralCategory.hs

@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 -- |
 -- Module      : Parser.Text
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
@@ -19,7 +21,8 @@ module Parser.Text (genModules) where
 import Control.Exception (catch, IOException)
 import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO(liftIO))
-import Data.Bits (shiftL)
+import Data.Bits (Bits(..))
+import Data.Word (Word8)
 import Data.Char (chr, ord, isSpace)
 import Data.Function ((&))
 import Data.List (unfoldr, intersperse)
@@ -32,6 +35,8 @@ import System.Environment (getEnv)
 import qualified Data.Set as Set
 import qualified Streamly.Prelude as Stream
 import qualified Streamly.Data.Fold as Fold
+import qualified Streamly.Internal.Data.Fold as Fold
+import qualified Streamly.Data.Unfold as Unfold
 import qualified Streamly.FileSystem.Handle as Handle
 import qualified System.IO as Sys
 import qualified Streamly.Unicode.Stream as Unicode
@@ -51,7 +56,7 @@ data GeneralCategory =
     Sm|Sc|Sk|So|          --S
     Zs|Zl|Zp|             --Z
     Cc|Cf|Cs|Co|Cn        --C
-    deriving (Show, Read)
+    deriving (Show, Bounded, Enum, Read)
 
 data DecompType =
        DTCanonical | DTCompat  | DTFont
@@ -95,7 +100,7 @@ readCodePoint :: String -> Char
 readCodePoint = chr . read . ("0x"++)
 
 genSignature :: String -> String
-genSignature testBit = testBit <> " :: Char -> Bool"
+genSignature = (<> " :: Char -> Bool")
 
 -- | Check that var is between minimum and maximum of orderList
 genRangeCheck :: String -> [Int] -> String
@@ -144,6 +149,39 @@ bitMapToAddrLiteral = map (chr . toByte . padTo8) . unfoldr go
     toByte :: [Bool] -> Int
     toByte xs = sum $ map (\i -> if xs !! i then 1 `shiftL` i else 0) [0..7]
 
+genEnumBitmap :: forall a. (Bounded a, Enum a, Show a) => String -> [a] -> String
+genEnumBitmap funcName as = unlines
+    [ "{-# INLINE " ++ funcName ++ " #-}"
+    , funcName <> " :: Char -> Int"
+    , funcName <> " c = let n = ord c in if n >= "
+               <> show (length as)
+               <> " then "
+               <> show (fromEnum Cn)
+               <> " else lookupIntN bitmap# n"
+    , "  where"
+    , "    bitmap# = "
+        <> show (enumMapToAddrLiteral as) <> "#"
+    ]
+
+{-| Encode a list of values as a byte map, using their 'Enum' instance.
+
+__Note:__ 'Enum' instance must respect the following:
+
+* @fromEnum minBound >= 0x00@
+* @fromEnum maxBound <= 0xff@
+-}
+enumMapToAddrLiteral :: forall a. (Bounded a, Enum a, Show a) => [a] -> String
+enumMapToAddrLiteral = fmap go
+
+    where
+
+    go :: a -> Char
+    go = chr . fromIntegral . toWord8
+
+    toWord8 :: a -> Word8
+    toWord8 a = let w = fromEnum a in if 0 <= w && w <= 0xff
+        then fromIntegral w
+        else error $ "Cannot convert to Word8: " <> show a
 
 -- This bit of code is duplicated but this duplication allows us to reduce 2
 -- dependencies on the executable.
@@ -174,6 +212,37 @@ isHangul c = n >= hangulFirst && n <= hangulLast
 -------------------------------------------------------------------------------
 -- Parsing UnicodeData.txt
 -------------------------------------------------------------------------------
+
+genGeneralCategoryModule
+    :: Monad m
+    => String
+    -> Fold m DetailedChar String
+genGeneralCategoryModule moduleName =
+    done <$> Fold.foldl' step initial
+
+    where
+
+    -- (categories, expected char)
+    initial = ([], '\0')
+
+    step (acc, p) a = if p < _char a
+        -- Fill missing char entry with default category Cn
+        -- See: https://www.unicode.org/reports/tr44/#Default_Values_Table
+        then step (Cn : acc, succ p) a
+        -- Regular entry
+        else (_generalCategory a : acc, succ (_char a))
+
+    done (acc, _) = unlines
+        [ apacheLicense moduleName
+        , "module " <> moduleName
+        , "(generalCategory)"
+        , "where"
+        , ""
+        , "import Data.Char (ord)"
+        , "import Unicode.Internal.Bits (lookupIntN)"
+        , ""
+        , genEnumBitmap "generalCategory" (reverse acc)
+        ]
 
 readDecomp :: String -> (Maybe DecompType, Decomp)
 readDecomp s =
@@ -496,6 +565,59 @@ parsePropertyLines =
         $ Fold.lmap parsePropertyLine
         $ Fold.foldl' combinePropertyLines emptyPropertyLine
 
+-- | A range entry in @UnicodeData.txt@.
+data UnicodeDataRange
+    = SingleCode    !DetailedChar
+    -- ^ Regular entry for one code point
+    | FirstCode     !String !DetailedChar
+    -- ^ A partial range for entry with a name as: @\<RANGE_IDENTIFIER, First\>@
+    | CompleteRange !String !DetailedChar !DetailedChar
+    -- ^ A complete range, requiring 2 continuous entries with respective names:
+    --
+    -- * @\<RANGE_IDENTIFIER, First\>@
+    -- * @\<RANGE_IDENTIFIER, Last\>@
+
+{-| Parse UnicodeData.txt lines
+
+Parse ranges according to https://www.unicode.org/reports/tr44/#Code_Point_Ranges.
+
+__Note:__ this does /not/ fill missing char entries,
+i.e. entries with no explicit entry nor within a range.
+-}
+parseUnicodeDataLines :: forall t m. (IsStream t, Monad m) => t m String -> t m DetailedChar
+parseUnicodeDataLines
+    = Stream.unfoldMany (Unfold.unfoldr unitToRange)
+    . Stream.foldMany ( Fold.lmap parseDetailedChar
+                      $ Fold.mkFold_ step initial )
+
+    where
+
+    step :: Maybe UnicodeDataRange
+         -> DetailedChar
+         -> Fold.Step (Maybe UnicodeDataRange) (Maybe UnicodeDataRange)
+    step Nothing dc = case span (/= ',') (_name dc) of
+        (range, ", First>") -> Fold.Partial (Just (FirstCode range dc))
+        _                   -> Fold.Done (Just (SingleCode dc))
+    step (Just (FirstCode range1 dc1)) dc2 = case span (/= ',') (_name dc2) of
+        (range2, ", Last>") -> if range1 == range2 && _char dc1 < _char dc2
+            then Fold.Done (Just (CompleteRange range1 dc1 dc2))
+            else error $ "Cannot create range: incompatible ranges" <> show (dc1, dc2)
+        _ -> error $ "Cannot create range: missing <range, Last> entry correspong to: " <> show range1
+    step _ _ = error "impossible case"
+
+    initial :: Fold.Step (Maybe UnicodeDataRange) (Maybe UnicodeDataRange)
+    initial = Fold.Partial Nothing
+
+    unitToRange :: Maybe UnicodeDataRange -> Maybe (DetailedChar, Maybe UnicodeDataRange)
+    unitToRange = fmap $ \case
+        SingleCode          dc      -> (dc, Nothing)
+        FirstCode     _     dc      -> error $ "Incomplete range: " <> show dc
+        CompleteRange range dc1 dc2 -> if _char dc1 < _char dc2
+            -- [TODO] Create the proper name
+            then (dc1{_name="TODO"}, Just (CompleteRange range dc1{_char=succ (_char dc1)} dc2))
+            else (dc2{_name="TODO"}, Nothing)
+
+-- | Parse a single entry of @UnicodeData.txt@
 parseDetailedChar :: String -> DetailedChar
 parseDetailedChar line =
     DetailedChar
@@ -555,9 +677,13 @@ fileEmitter file outdir (modName, fldGen) = Fold.rmapM action $ fldGen modName
 
     where
 
-    pretext version =
-        "-- autogenerated from https://www.unicode.org/Public/"
-            ++ version ++ "/ucd/" ++ file ++ "\n"
+    pretext version = mconcat
+        [ "-- autogenerated from https://www.unicode.org/Public/"
+        , version
+        , "/ucd/"
+        , file
+        ,"\n"
+        ]
     outfile = outdir <> moduleToFileName modName <> ".hs"
     outfiledir = dirFromFileName outfile
     action c = do
@@ -602,7 +728,7 @@ genModules indir outdir props = do
     runGenerator
         indir
         "UnicodeData.txt"
-        (Stream.map parseDetailedChar)
+        parseUnicodeDataLines
         outdir
         [ compositions compExclu non0CC
         , combiningClass
@@ -611,6 +737,7 @@ genModules indir outdir props = do
         , decompositions
         , decompositionsK2
         , decompositionsK
+        , generalCategory
         ]
 
     runGenerator
@@ -666,3 +793,7 @@ genModules indir outdir props = do
             post = ["decompose c = DK2.decompose c"]
          in ( "Unicode.Internal.Char.UnicodeData.DecompositionsK"
             , \m -> genDecomposeDefModule m pre post Kompat (< 60000))
+
+    generalCategory =
+         ( "Unicode.Internal.Char.UnicodeData.GeneralCategory"
+         , genGeneralCategoryModule)

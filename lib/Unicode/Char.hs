@@ -27,13 +27,22 @@
 
 module Unicode.Char
     ( module Unicode.Char.General
+    , module Unicode.Char.General.Compat
     , module Unicode.Char.Case
+    , module Unicode.Char.Numeric
     , module Unicode.Char.Normalization
     , module Unicode.Char.Identifiers
+
+    -- * Re-export
+    , ord
+    , chr
     )
 where
 
+import Data.Char (chr, ord)
 import Unicode.Char.Case
 import Unicode.Char.General
-import Unicode.Char.Normalization
+import Unicode.Char.General.Compat
 import Unicode.Char.Identifiers
+import Unicode.Char.Numeric
+import Unicode.Char.Normalization

@@ -1,4 +1,5 @@
 .packcheck.ignore
+.editorconfig
 .github/workflows/haskell.yml
 appveyor.yml
 stack.yaml

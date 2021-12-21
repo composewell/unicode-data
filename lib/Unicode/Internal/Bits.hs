@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 -- |
 -- Module      : Unicode.Internal.Bits
 -- Copyright   : (c) 2020 Andrew Lelechenko
@@ -9,19 +11,22 @@
 --
 -- Fast, static bitmap lookup utilities
 
-{-# LANGUAGE CPP #-}
-
 module Unicode.Internal.Bits
-    (
-      lookupBit64
+    ( lookupBit64,
+      lookupIntN
     ) where
 
 #include "MachDeps.h"
 
 import Data.Bits (finiteBitSize, popCount)
 import GHC.Exts
-       (Addr#, Int(..), Word(..), indexWordOffAddr#, and#, andI#,
-        uncheckedIShiftRL#, uncheckedShiftL#)
+       (Addr#, Int(..), Word(..),
+        indexWordOffAddr#, indexWord8OffAddr#,
+        andI#, uncheckedIShiftRL#,
+        and#, word2Int#, uncheckedShiftL#)
+#if MIN_VERSION_base(4,16,0)
+import GHC.Exts (word8ToWord#)
+#endif
 #ifdef WORDS_BIGENDIAN
 import GHC.Exts (byteSwap#)
 #endif
@@ -49,3 +54,24 @@ lookupBit64 addr# (I# index#) = W# (word## `and#` bitMask##) /= 0
 #endif
     bitIndex# = index# `andI#` fbs#
     bitMask## = 1## `uncheckedShiftL#` bitIndex#
+
+{-| @lookupIntN addr index@ looks up for the @index@-th @8@-bits word in
+the bitmap starting at @addr@, then convert it to an Int.
+
+The caller must make sure that:
+
+* @ceiling (addr + (n * 8))@ is legally accessible @Word8@.
+
+@since 0.3.0
+-}
+lookupIntN
+  :: Addr# -- ^ Bitmap address
+  -> Int   -- ^ Word index
+  -> Int   -- ^ Resulting word as 'Int'
+lookupIntN addr# (I# index#) = I# (word2Int# word##)
+  where
+#if MIN_VERSION_base(4,16,0)
+    word## = word8ToWord# (indexWord8OffAddr# addr# index#)
+#else
+    word## = indexWord8OffAddr# addr# index#
+#endif

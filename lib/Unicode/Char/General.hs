@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 -- |
 -- Module      : Unicode.Char.General
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
@@ -9,9 +11,26 @@
 --
 module Unicode.Char.General
     (
-    -- * Character Properties
-      isLetter
-    , isSpace
+    -- * Unicode general categories
+      GeneralCategory(..)
+    , generalCategoryAbbr
+    , generalCategory
+
+    -- * Character classification
+    , isAlphabetic
+    , isAlphaNum
+    , isControl
+    , isMark
+    , isPrint
+    , isPunctuation
+    , isSeparator
+    , isSymbol
+    , isWhiteSpace
+    -- ** Re-export
+    , isAscii
+    , isLatin1
+    , isAsciiUpper
+    , isAsciiLower
 
     -- * Korean Hangul Characters
     -- | The Hangul script used in the Korean writing system consists of
@@ -74,30 +93,340 @@ module Unicode.Char.General
 where
 
 import Control.Exception (assert)
-import Data.Char (ord)
+import Data.Char (isAscii, isLatin1, isAsciiUpper, isAsciiLower, ord)
+import Data.Ix (Ix)
 import Unicode.Internal.Division (quotRem28)
 
 import qualified Unicode.Internal.Char.DerivedCoreProperties as P
 import qualified Unicode.Internal.Char.PropList as P
+import qualified Unicode.Internal.Char.UnicodeData.GeneralCategory as UC
 
--- | Returns 'True' for alphabetic Unicode characters (lower-case, upper-case
--- and title-case letters, plus letters of caseless scripts and modifiers
--- letters).
---
--- prop> isLetter c == Data.Char.isLetter c
---
-{-# INLINE isLetter #-}
-isLetter :: Char -> Bool
-isLetter = P.isAlphabetic
+{-| Unicode General Categories.
 
--- | Returns 'True' for any whitespace characters, and the control
--- characters @\\t@, @\\n@, @\\r@, @\\f@, @\\v@.
+These classes are defined in the
+[Unicode Character Database](http://www.unicode.org/reports/tr44/tr44-14.html#GC_Values_Table),
+part of the Unicode standard
+
+__Note:__ the classes must be in the same order they are listed in the Unicode Standard,
+because some functions (e.g. 'generalCategory') rely on the 'Enum' instance.
+
+@since 0.3.0
+-}
+data GeneralCategory
+    -- L: Letter
+    = UppercaseLetter       -- ^ @Lu@: Letter, Uppercase
+    | LowercaseLetter       -- ^ @Ll@: Letter, Lowercase
+    | TitlecaseLetter       -- ^ @Lt@: Letter, Titlecase
+    | ModifierLetter        -- ^ @Lm@: Letter, Modifier
+    | OtherLetter           -- ^ @Lo@: Letter, Other
+
+    -- M: Mark
+    | NonSpacingMark        -- ^ @Mn@: Mark, Non-Spacing
+    | SpacingCombiningMark  -- ^ @Mc@: Mark, Spacing Combining
+    | EnclosingMark         -- ^ @Me@: Mark, Enclosing
+
+    -- N: Number
+    | DecimalNumber         -- ^ @Nd@: Number, Decimal
+    | LetterNumber          -- ^ @Nl@: Number, Letter
+    | OtherNumber           -- ^ @No@: Number, Other
+
+    -- P: Punctuation
+    | ConnectorPunctuation  -- ^ @Pc@: Punctuation, Connector
+    | DashPunctuation       -- ^ @Pd@: Punctuation, Dash
+    | OpenPunctuation       -- ^ @Ps@: Punctuation, Open
+    | ClosePunctuation      -- ^ @Pe@: Punctuation, Close
+    | InitialQuote          -- ^ @Pi@: Punctuation, Initial quote
+    | FinalQuote            -- ^ @Pf@: Punctuation, Final quote
+    | OtherPunctuation      -- ^ @Po@: Punctuation, Other
+
+    -- S: Symbol
+    | MathSymbol            -- ^ @Sm@: Symbol, Math
+    | CurrencySymbol        -- ^ @Sc@: Symbol, Currency
+    | ModifierSymbol        -- ^ @Sk@: Symbol, Modifier
+    | OtherSymbol           -- ^ @So@: Symbol, Other
+
+    -- Z: Separator
+    | Space                 -- ^ @Zs@: Separator, Space
+    | LineSeparator         -- ^ @Zl@: Separator, Line
+    | ParagraphSeparator    -- ^ @Zp@: Separator, Paragraph
+
+    -- C: Other
+    | Control               -- ^ @Cc@: Other, Control
+    | Format                -- ^ @Cf@: Other, Format
+    | Surrogate             -- ^ @Cs@: Other, Surrogate
+    | PrivateUse            -- ^ @Co@: Other, Private Use
+    | NotAssigned           -- ^ @Cn@: Other, Not Assigned
+    deriving ( Show
+            , Eq
+            , Ord
+            , Enum
+            , Bounded
+            , Ix
+            )
+
+-- | Abbreviation of 'GeneralCategory' used in the Unicode standard.
 --
--- prop> isSpace c == Data.Char.isSpace c
---
-{-# INLINE isSpace #-}
-isSpace :: Char -> Bool
-isSpace = P.isWhite_Space
+-- @since 0.3.0
+generalCategoryAbbr :: GeneralCategory -> String
+generalCategoryAbbr = \case
+    UppercaseLetter      -> "Lu"
+    LowercaseLetter      -> "Ll"
+    TitlecaseLetter      -> "Lt"
+    ModifierLetter       -> "Lm"
+    OtherLetter          -> "Lo"
+    NonSpacingMark       -> "Mn"
+    SpacingCombiningMark -> "Mc"
+    EnclosingMark        -> "Me"
+    DecimalNumber        -> "Nd"
+    LetterNumber         -> "Nl"
+    OtherNumber          -> "No"
+    ConnectorPunctuation -> "Pc"
+    DashPunctuation      -> "Pd"
+    OpenPunctuation      -> "Ps"
+    ClosePunctuation     -> "Pe"
+    InitialQuote         -> "Pi"
+    FinalQuote           -> "Pf"
+    OtherPunctuation     -> "Po"
+    MathSymbol           -> "Sm"
+    CurrencySymbol       -> "Sc"
+    ModifierSymbol       -> "Sk"
+    OtherSymbol          -> "So"
+    Space                -> "Zs"
+    LineSeparator        -> "Zl"
+    ParagraphSeparator   -> "Zp"
+    Control              -> "Cc"
+    Format               -> "Cf"
+    Surrogate            -> "Cs"
+    PrivateUse           -> "Co"
+    NotAssigned          -> "Cn"
+
+{-| The Unicode general category of the character.
+
+This property is defined in the column 2 of the @UnicodeData@ table.
+
+This relies on the 'Enum' instance of 'GeneralCategory', which must remain in the
+same order as the categories are presented in the Unicode standard.
+
+prop> show (generalCategory c) == show (Data.Char.generalCategory c)
+
+@since 0.3.0
+-}
+{-# INLINE generalCategory #-}
+generalCategory :: Char -> GeneralCategory
+generalCategory = toEnum . UC.generalCategory
+
+{-| Returns 'True' for alphabetic Unicode characters (lower-case, upper-case
+and title-case letters, plus letters of caseless scripts and modifiers
+letters).
+
+__Note:__ this function is /not/ equivalent to 'Unicode.Char.General.Compat.isAlpha'
+/'Unicode.Char.General.Compat.isLetter':
+
+* 'isAlpha' matches the following general categories:
+
+    * 'UppercaseLetter' (@Lu@)
+    * 'LowercaseLetter' (@Ll@)
+    * 'TitlecaseLetter' (@Lt@)
+    * 'ModifierLetter' (@Lm@)
+    * 'OtherLetter' (@Lo@)
+
+* whereas 'isAlphabetic' matches:
+
+    * @Uppercase@ [property](https://www.unicode.org/reports/tr44/#Uppercase)
+    * @Lowercase@ [property](https://www.unicode.org/reports/tr44/#Lowercase)
+    * 'TitlecaseLetter' (@Lt@)
+    * 'ModifierLetter' (@Lm@)
+    * 'OtherLetter' (@Lo@)
+    * 'LetterNumber' (@Nl@)
+    * @Other_Alphabetic@ [property](https://www.unicode.org/reports/tr44/#Other_Alphabetic)
+
+@since 0.3.0
+-}
+{-# INLINE isAlphabetic #-}
+isAlphabetic :: Char -> Bool
+isAlphabetic = P.isAlphabetic
+
+{-| Selects alphabetic or numeric Unicode characters.
+
+This function returns 'True' if its argument has one of the
+following 'GeneralCategory's, or 'False' otherwise:
+
+* 'UppercaseLetter'
+* 'LowercaseLetter'
+* 'TitlecaseLetter'
+* 'ModifierLetter'
+* 'OtherLetter'
+* 'DecimalNumber'
+* 'LetterNumber'
+* 'OtherNumber'
+
+prop> isAlphaNum c == Data.Char.isAlphaNum c
+
+@since 0.3.0
+-}
+isAlphaNum :: Char -> Bool
+isAlphaNum c = case generalCategory c of
+    UppercaseLetter -> True
+    LowercaseLetter -> True
+    TitlecaseLetter -> True
+    ModifierLetter  -> True
+    OtherLetter     -> True
+    DecimalNumber   -> True
+    LetterNumber    -> True
+    OtherNumber     -> True
+    _               -> False
+
+{-| Selects control characters, which are the non-printing characters
+of the Latin-1 subset of Unicode.
+
+This function returns 'True' if its argument has the 'GeneralCategory' 'Control'.
+
+prop> isControl c == Data.Char.isControl c
+
+@since 0.3.0
+-}
+isControl :: Char -> Bool
+isControl c = case generalCategory c of
+    Control -> True
+    _       -> False
+
+{-| Selects Unicode mark characters, for example accents and the
+like, which combine with preceding characters.
+
+This function returns 'True' if its argument has one of the
+following 'GeneralCategory's, or 'False' otherwise:
+
+* 'NonSpacingMark'
+* 'SpacingCombiningMark'
+* 'EnclosingMark'
+
+prop> isMark c == Data.Char.isMark c
+
+@since 0.3.0
+-}
+isMark :: Char -> Bool
+isMark c = case generalCategory c of
+    NonSpacingMark       -> True
+    SpacingCombiningMark -> True
+    EnclosingMark        -> True
+    _                    -> False
+
+{-| Selects printable Unicode characters (letters, numbers, marks, punctuation,
+symbols and spaces).
+
+This function returns 'False' if its argument has one of the
+following 'GeneralCategory's, or 'True' otherwise:
+
+* 'LineSeparator'
+* 'ParagraphSeparator'
+* 'Control'
+* 'Format'
+* 'Surrogate'
+* 'PrivateUse'
+* 'NotAssigned'
+
+prop> isPrint c == Data.Char.isPrint c
+
+@since 0.3.0
+-}
+isPrint :: Char -> Bool
+isPrint c = case generalCategory c of
+    LineSeparator      -> False
+    ParagraphSeparator -> False
+    Control            -> False
+    Format             -> False
+    Surrogate          -> False
+    PrivateUse         -> False
+    NotAssigned        -> False
+    _                  -> True
+
+{-| Selects Unicode punctuation characters, including various kinds
+of connectors, brackets and quotes.
+
+This function returns 'True' if its argument has one of the
+following 'GeneralCategory's, or 'False' otherwise:
+
+* 'ConnectorPunctuation'
+* 'DashPunctuation'
+* 'OpenPunctuation'
+* 'ClosePunctuation'
+* 'InitialQuote'
+* 'FinalQuote'
+* 'OtherPunctuation'
+
+prop> isPunctuation c == Data.Char.isPunctuation c
+
+@since 0.3.0
+-}
+isPunctuation :: Char -> Bool
+isPunctuation c = case generalCategory c of
+    ConnectorPunctuation -> True
+    DashPunctuation      -> True
+    OpenPunctuation      -> True
+    ClosePunctuation     -> True
+    InitialQuote         -> True
+    FinalQuote           -> True
+    OtherPunctuation     -> True
+    _                    -> False
+
+{- | Returns 'True' for any whitespace characters, and the control
+characters @\\t@, @\\n@, @\\r@, @\\f@, @\\v@.
+
+See: [Unicode @White_Space@](https://www.unicode.org/reports/tr44/#White_Space).
+
+__Note:__ 'isWhiteSpace' is /not/ equivalent to 'Unicode.Char.General.Compat.isSpace'.
+'isWhiteSpace' selects the same characters from 'isSpace' plus the following:
+
+* @U+0085@ NEXT LINE (NEL)
+* @U+2028@ LINE SEPARATOR
+* @U+2029@ PARAGRAPH SEPARATOR
+
+@since 0.3.0
+-}
+{-# INLINE isWhiteSpace #-}
+isWhiteSpace :: Char -> Bool
+isWhiteSpace = P.isWhite_Space
+
+{-| Selects Unicode space and separator characters.
+
+This function returns 'True' if its argument has one of the
+following 'GeneralCategory's, or 'False' otherwise:
+
+* 'Space'
+* 'LineSeparator'
+* 'ParagraphSeparator'
+
+prop> isSeparator c == Data.Char.isSeparator c
+
+@since 0.3.0
+-}
+isSeparator :: Char -> Bool
+isSeparator c = case generalCategory c of
+    Space              -> True
+    LineSeparator      -> True
+    ParagraphSeparator -> True
+    _                  -> False
+
+{-| Selects Unicode symbol characters, including mathematical and currency symbols.
+
+This function returns 'True' if its argument has one of the
+following 'GeneralCategory's, or 'False' otherwise:
+* 'MathSymbol'
+* 'CurrencySymbol'
+* 'ModifierSymbol'
+* 'OtherSymbol'
+
+prop> isSymbol c == Data.Char.isSymbol c
+
+@since 0.3.0
+-}
+isSymbol :: Char -> Bool
+isSymbol c = case generalCategory c of
+    MathSymbol     -> True
+    CurrencySymbol -> True
+    ModifierSymbol -> True
+    OtherSymbol    -> True
+    _              -> False
 
 -------------------------------------------------------------------------------
 -- Korean Hangul
