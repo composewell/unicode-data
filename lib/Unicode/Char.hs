@@ -32,6 +32,7 @@ module Unicode.Char
     , module Unicode.Char.Numeric
     , module Unicode.Char.Normalization
     , module Unicode.Char.Identifiers
+    , unicodeVersion
 
     -- * Re-export
     , ord
@@ -40,9 +41,16 @@ module Unicode.Char
 where
 
 import Data.Char (chr, ord)
+import Data.Version (Version, makeVersion)
 import Unicode.Char.Case
 import Unicode.Char.General
 import Unicode.Char.General.Compat
 import Unicode.Char.Identifiers
 import Unicode.Char.Numeric
 import Unicode.Char.Normalization
+
+-- | Version of Unicode standard used by @unicode-data@.
+--
+-- @since 0.3.0
+unicodeVersion :: Version
+unicodeVersion = makeVersion [14, 0, 0]

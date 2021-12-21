@@ -53,8 +53,9 @@ download_files() {
     done
 }
 
-# Compile and run ucd2haskell
+# Generate the Haskell files.
 run_generator() {
+    # Compile and run ucd2haskell
     cabal run --flag ucd2haskell ucd2haskell -- \
           --input ./ucd/ \
           --output ./lib/ \
@@ -68,6 +69,9 @@ run_generator() {
           --core-prop XID_Continue \
           --core-prop Pattern_Syntax \
           --core-prop Pattern_White_Space
+    # Update unicodeVersion in Unicode.Char
+    VERSION_AS_LIST=$(echo "$VERSION" | sed "s/\./, /g")
+    sed -ri "s/^(unicodeVersion = makeVersion \[)[^]]*\]/\1$VERSION_AS_LIST\]/" "lib/Unicode/Char.hs"
 }
 
 # Print help text
