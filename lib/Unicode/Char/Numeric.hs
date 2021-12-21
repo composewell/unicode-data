@@ -14,9 +14,11 @@ module Unicode.Char.Numeric
     , isDigit
     , isOctDigit
     , isHexDigit
+    , digitToInt
+    , intToDigit
     ) where
 
-import Data.Char (isDigit, isHexDigit, isOctDigit)
+import Data.Char (digitToInt, intToDigit, isDigit, isHexDigit, isOctDigit)
 import Unicode.Char.General (GeneralCategory(..), generalCategory)
 
 {-| Selects Unicode numeric characters, including digits from various
