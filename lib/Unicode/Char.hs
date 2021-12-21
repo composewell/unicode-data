@@ -29,6 +29,7 @@ module Unicode.Char
     ( module Unicode.Char.General
     , module Unicode.Char.General.Compat
     , module Unicode.Char.Case
+    , module Unicode.Char.Case.Compat
     , module Unicode.Char.Numeric
     , module Unicode.Char.Normalization
     , module Unicode.Char.Identifiers
@@ -41,6 +42,7 @@ where
 
 import Data.Char (chr, ord)
 import Unicode.Char.Case
+import Unicode.Char.Case.Compat
 import Unicode.Char.General
 import Unicode.Char.General.Compat
 import Unicode.Char.Identifiers

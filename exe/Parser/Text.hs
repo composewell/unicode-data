@@ -24,6 +24,7 @@ import Control.Monad.IO.Class (MonadIO(liftIO))
 import Data.Bits (Bits(..))
 import Data.Word (Word8)
 import Data.Char (chr, ord, isSpace)
+import Data.Functor ((<&>))
 import Data.Function ((&))
 import Data.List (unfoldr, intersperse)
 import Data.Maybe (fromMaybe)
@@ -78,6 +79,9 @@ data DetailedChar =
         , _combiningClass :: Int
         , _decompositionType :: Maybe DecompType
         , _decomposition :: Decomp
+        , _simpleUppercaseMapping :: Maybe Char
+        , _simpleLowercaseMapping :: Maybe Char
+        , _simpleTitlecaseMapping :: Maybe Char
         }
     deriving (Show)
 
@@ -98,6 +102,10 @@ apacheLicense modName =
 
 readCodePoint :: String -> Char
 readCodePoint = chr . read . ("0x"++)
+
+readCodePointM :: String -> Maybe Char
+readCodePointM "" = Nothing
+readCodePointM u  = Just (readCodePoint u)
 
 genSignature :: String -> String
 genSignature = (<> " :: Char -> Bool")
@@ -390,8 +398,8 @@ genDecomposeDefModule moduleName before after dtype pred =
     step st dc = genDecomposeDef dc : st
 
     done st =
-        let body = genHeader ++ before ++ genSign ++ reverse st ++ after
-         in unlines body
+        let body = mconcat [genHeader, before, genSign, reverse st, after]
+        in unlines body
 
     genDecomposeDef dc =
         "decompose "
@@ -487,6 +495,48 @@ genCompositionsModule moduleName compExclu non0CC =
             ++ composePair (reverse dec)
             ++ composeStarterPair (reverse sp)
             ++ isSecondStarter (Set.toList (Set.fromList ss))
+
+genSimpleCaseMappingModule
+    :: Monad m
+    => String
+    -> String
+    -> (DetailedChar -> Maybe Char)
+    -> Fold m DetailedChar String
+genSimpleCaseMappingModule moduleName funcName field =
+    done <$> Fold.foldl' step initial
+
+    where
+
+    genHeader =
+        [ apacheLicense moduleName
+        , "module " <> moduleName
+        , "(" ++ funcName ++ ")"
+        , "where"
+        , ""
+        ]
+    genSign =
+        [ "{-# NOINLINE " ++ funcName ++ " #-}"
+        , funcName ++ " :: Char -> Char"
+        ]
+    initial = []
+
+    step ds dc = case genUpper dc of
+        Nothing -> ds
+        Just d  -> d : ds
+
+    after = [funcName ++ " c = c"]
+
+    done st =
+        let body = mconcat [genHeader, genSign, reverse st, after]
+        in unlines body
+
+    genUpper dc = field dc <&> \c -> mconcat
+        [ funcName
+        , " "
+        , show (_char dc)
+        , " = "
+        , show c
+        ]
 
 genCorePropertiesModule ::
        Monad m => String -> (String -> Bool) -> Fold m (String, [Int]) String
@@ -621,7 +671,16 @@ parseUnicodeDataLines
 parseDetailedChar :: String -> DetailedChar
 parseDetailedChar line =
     DetailedChar
-        (readCodePoint char) name (read gc) (read combining) dctype dcval
+        { _char = readCodePoint char
+        , _name = name
+        , _generalCategory = read gc
+        , _combiningClass = read combining
+        , _decompositionType = dctype
+        , _decomposition = dcval
+        , _simpleUppercaseMapping = readCodePointM sUpper
+        , _simpleLowercaseMapping = readCodePointM sLower
+        , _simpleTitlecaseMapping = readCodePointM sTitle
+        }
 
     where
 
@@ -632,13 +691,15 @@ parseDetailedChar line =
     (_bidi, line5) = span (/= ';') (tail line4)
     (decomposition, line6) = span (/= ';') (tail line5)
     (dctype, dcval) = readDecomp decomposition
-    (_numeric, line7) = span (/= ';') (tail line6)
-    (_bidiM, line8) = span (/= ';') (tail line7)
-    (_uni1Name, line9) = span (/= ';') (tail line8)
-    (_iso, line10) = span (/= ';') (tail line9)
-    (_sUpper, line11) = span (/= ';') (tail line10)
-    (_sLower, line12) = span (/= ';') (tail line11)
-    _sTitle = tail line12
+    (_decimal, line7) = span (/= ';') (tail line6)
+    (_digit, line8) = span (/= ';') (tail line7)
+    (_numeric, line9) = span (/= ';') (tail line8)
+    (_bidiM, line10) = span (/= ';') (tail line9)
+    (_uni1Name, line11) = span (/= ';') (tail line10)
+    (_iso, line12) = span (/= ';') (tail line11)
+    (sUpper, line13) = span (/= ';') (tail line12)
+    (sLower, line14) = span (/= ';') (tail line13)
+    sTitle = tail line14
 
 -------------------------------------------------------------------------------
 -- Generation
@@ -738,6 +799,9 @@ genModules indir outdir props = do
         , decompositionsK2
         , decompositionsK
         , generalCategory
+        , simpleUpperCaseMapping
+        , simpleLowerCaseMapping
+        , simpleTitleCaseMapping
         ]
 
     runGenerator
@@ -797,3 +861,15 @@ genModules indir outdir props = do
     generalCategory =
          ( "Unicode.Internal.Char.UnicodeData.GeneralCategory"
          , genGeneralCategoryModule)
+
+    simpleUpperCaseMapping =
+         ( "Unicode.Internal.Char.UnicodeData.SimpleUpperCaseMapping"
+         , \m -> genSimpleCaseMappingModule m "toSimpleUpperCase" _simpleUppercaseMapping)
+
+    simpleLowerCaseMapping =
+         ( "Unicode.Internal.Char.UnicodeData.SimpleLowerCaseMapping"
+         , \m -> genSimpleCaseMappingModule m "toSimpleLowerCase" _simpleLowercaseMapping)
+
+    simpleTitleCaseMapping =
+         ( "Unicode.Internal.Char.UnicodeData.SimpleTitleCaseMapping"
+         , \m -> genSimpleCaseMappingModule m "toSimpleTitleCase" _simpleTitlecaseMapping)

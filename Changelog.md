@@ -3,6 +3,7 @@
 ## 0.3.0 (December 2021)
 
 - Support for big-endian architectures.
+- Added the module `Unicode.Char.Case.Compat`.
 - Added `GeneralCategory` data type and corresponding `generalCategoryAbbr`,
   `generalCategory` functions.
 - Added the following functions to `Unicode.Char.General`:

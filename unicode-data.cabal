@@ -79,6 +79,7 @@ library
       Unicode.Char.General
       Unicode.Char.General.Compat
       Unicode.Char.Case
+      Unicode.Char.Case.Compat
       Unicode.Char.Identifiers
       Unicode.Char.Numeric
 
@@ -99,6 +100,10 @@ library
       Unicode.Internal.Char.UnicodeData.DecompositionsK
       Unicode.Internal.Char.UnicodeData.DecompositionsK2
       Unicode.Internal.Char.UnicodeData.GeneralCategory
+      Unicode.Internal.Char.UnicodeData.SimpleLowerCaseMapping
+      Unicode.Internal.Char.UnicodeData.SimpleTitleCaseMapping
+      Unicode.Internal.Char.UnicodeData.SimpleUpperCaseMapping
+
   hs-source-dirs: lib
   ghc-options: -O2
   build-depends:
