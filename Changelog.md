@@ -4,6 +4,7 @@
 
 - Support for big-endian architectures.
 - Added `unicodeVersion`.
+- Added the module `Unicode.Char.Case.Compat`.
 - Added `GeneralCategory` data type and corresponding `generalCategoryAbbr`,
   `generalCategory` functions.
 - Added the following functions to `Unicode.Char.General`:

@@ -67,6 +67,12 @@ spec = do
       UChar.isLower `shouldBeEqualTo` Char.isLower
     it' "isUpper" do
       UChar.isUpper `shouldBeEqualTo` Char.isUpper
+    it "toLower" do
+      UChar.toLower `shouldBeEqualTo` Char.toLower
+    it "toUpper" do
+      UChar.toUpper `shouldBeEqualTo` Char.toUpper
+    it "toTitle" do
+      UChar.toTitle `shouldBeEqualTo` Char.toTitle
   where
     shouldBeEqualTo
         :: forall a b. (Bounded a, Enum a, Show a, Eq b, Show b)
