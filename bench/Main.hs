@@ -4,6 +4,7 @@ import Test.Tasty.Bench (Benchmark, bgroup, bench, bcompare, nf, defaultMain)
 
 import qualified Data.Char as B
 import qualified Unicode.Char.Case as C
+import qualified Unicode.Char.Case.Compat as CC
 import qualified Unicode.Char.General as G
 import qualified Unicode.Char.General.Compat as GC
 import qualified Unicode.Char.Identifiers as I
@@ -26,6 +27,20 @@ main = defaultMain
     , bgroup' "isUpper"
       [ Bench "base"         B.isUpper
       , Bench "unicode-data" C.isUpper
+      ]
+    ]
+  , bgroup "Unicode.Char.Case.Compat"
+    [ bgroup' "toLower"
+      [ Bench "base"         B.toLower
+      , Bench "unicode-data" CC.toLower
+      ]
+    , bgroup' "toTitle"
+      [ Bench "base"         B.toTitle
+      , Bench "unicode-data" CC.toTitle
+      ]
+    , bgroup' "toUpper"
+      [ Bench "base"         B.toUpper
+      , Bench "unicode-data" CC.toUpper
       ]
     ]
   , bgroup "Unicode.Char.General"
