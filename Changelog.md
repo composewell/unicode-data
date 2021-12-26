@@ -18,6 +18,7 @@
   `isAlphabetic` and `isWhiteSpace` respectively.
 - Re-export some functions from `Data.Char` in order to make `Unicode.Char`
   a drop-in replacement.
+- Drop support for GHC 7.10.3
 
 ## 0.2.0 (November 2021)
 

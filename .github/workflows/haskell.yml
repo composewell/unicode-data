@@ -42,7 +42,6 @@ jobs:
       fail-fast: false
       matrix:
         name:
-          - 7.10.3
           - 8.0.2
           - 8.2.2
           - 8.4.4
@@ -55,11 +54,6 @@ jobs:
           - hlint
 
         include:
-
-          - name: 7.10.3
-            ghc_version: 7.10.3
-            runner: ubuntu-latest
-            cabal_version: 3.2
 
           - name: 8.0.2
             ghc_version: 8.0.2
