@@ -8,11 +8,6 @@ The Haskell data structures are generated programmatically from the
 Unicode character database (UCD) files.  The latest Unicode version
 supported by this library is 14.0.0.
 
-This package is far from complete. Currently it supports normalization
-related functions and a few other properties, primarily to support
-`unicode-transforms` package. More properties can be added as needed by
-any other packages or use cases.
-
 Please see the haddock documentation for reference documentation.
 
 ## Performance
