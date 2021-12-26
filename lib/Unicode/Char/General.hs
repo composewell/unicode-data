@@ -70,6 +70,7 @@ module Unicode.Char.General
 
     -- *** Jamo Leading (L)
     , jamoLFirst
+    , jamoLCount
     , jamoLIndex
     , jamoLLast
 
@@ -460,6 +461,8 @@ jamoLFirst, jamoLCount, jamoLLast :: Int
 jamoLFirst  = 0x1100
 
 -- | Total count of leading consonant jamo.
+--
+-- @since 0.3.0
 jamoLCount = 19
 
 -- | Last leading consonant jamo.
