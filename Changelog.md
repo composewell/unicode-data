@@ -4,7 +4,6 @@
 
 - Support for big-endian architectures.
 - Added `unicodeVersion`.
-- Added the module `Unicode.Char.Case.Compat`.
 - Added `GeneralCategory` data type and corresponding `generalCategoryAbbr`,
   `generalCategory` functions.
 - Added the following functions to `Unicode.Char.General`:
@@ -12,13 +11,25 @@
   `isControl`, `isMark`, `isPrint`, `isPunctuation`, `isSeparator`,
   `isSymbol` and `isWhiteSpace`.
 - Added the module `Unicode.Char.Numeric`.
-- **Breaking change:** Changed the behavior of `isLetter` and `isSpace` to match
-  `base`’s `Data.Char` behavior. Move these functions to the compatibility module
-  `Unicode.Char.General.Compat`. The previous behavior is obtained using
-  `isAlphabetic` and `isWhiteSpace` respectively.
+- Add compatibility modules:
+
+  - `Unicode.Char.General.Compat`
+  - `Unicode.Char.Case.Compat`
+
+  These modules are compatible with `base:Data.Char`.
 - Re-export some functions from `Data.Char` in order to make `Unicode.Char`
   a drop-in replacement.
 - Drop support for GHC 7.10.3
+
+### Deprecations
+
+- In `Unicode.Char.General`.
+
+  - `isLetter`
+  - `isSpace`
+
+  Preserve the behavior of these functions in `isAlphabetic` and `isWhiteSpace`
+  respectively.
 
 ## 0.2.0 (November 2021)
 

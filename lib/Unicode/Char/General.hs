@@ -26,6 +26,8 @@ module Unicode.Char.General
     , isSeparator
     , isSymbol
     , isWhiteSpace
+    , isLetter
+    , isSpace
     -- ** Re-export
     , isAscii
     , isLatin1
@@ -427,6 +429,23 @@ isSymbol c = case generalCategory c of
     ModifierSymbol -> True
     OtherSymbol    -> True
     _              -> False
+
+-- | Returns 'True' for alphabetic Unicode characters.
+--
+-- @since 0.1.0
+{-# INLINE isLetter #-}
+{-# DEPRECATED isLetter "Use isAlphabetic instead. Note that the behavior of this function does not match base:Data.Char.isLetter. See Unicode.Char.General.Compat for behavior compatible with base:Data.Char." #-}
+isLetter :: Char -> Bool
+isLetter = P.isAlphabetic
+
+-- | Returns 'True' for any whitespace characters, and the control
+-- characters @\\t@, @\\n@, @\\r@, @\\f@, @\\v@.
+--
+-- @since 0.1.0
+{-# INLINE isSpace #-}
+{-# DEPRECATED isSpace "Use isWhiteSpace instead. Note that the behavior of this function does not match base:Data.Char.isSpace. See Unicode.Char.General.Compat for behavior compatible with base:Data.Char." #-}
+isSpace :: Char -> Bool
+isSpace = P.isWhite_Space
 
 -------------------------------------------------------------------------------
 -- Korean Hangul
