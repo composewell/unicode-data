@@ -436,24 +436,34 @@ isSymbol c = case generalCategory c of
 jamoLFirst, jamoLCount, jamoLLast :: Int
 
 -- | First leading consonant jamo.
+--
+-- @since 0.1.0
 jamoLFirst  = 0x1100
 
 -- | Total count of leading consonant jamo.
 jamoLCount = 19
 
 -- | Last leading consonant jamo.
+--
+-- @since 0.1.0
 jamoLLast = jamoLFirst + jamoLCount - 1
 
 -- jamo vowel
 jamoVFirst, jamoVCount, jamoVLast :: Int
 
 -- | First vowel jamo.
+--
+-- @since 0.1.0
 jamoVFirst  = 0x1161
 
 -- | Total count of vowel jamo.
+--
+-- @since 0.1.0
 jamoVCount = 21
 
 -- | Last vowel jamo.
+--
+-- @since 0.1.0
 jamoVLast = jamoVFirst + jamoVCount - 1
 
 -- jamo trailing
@@ -463,18 +473,26 @@ jamoTFirst, jamoTCount :: Int
 --
 -- Note that 'jamoTFirst' does not represent a valid T, it represents a missing
 -- T i.e. LV without a T. See comments under 'jamoTIndex' .
+--
+-- @since 0.1.0
 jamoTFirst  = 0x11a7
 
 -- | Total count of trailing consonant jamo.
+--
+-- @since 0.1.0
 jamoTCount = 28
 
 -- | Last trailing consonant jamo.
+--
+-- @since 0.1.0
 jamoTLast :: Int
 jamoTLast = jamoTFirst + jamoTCount - 1
 
 -- | Total count of all jamo characters.
 --
 -- @jamoNCount = jamoVCount * jamoTCount@
+--
+-- @since 0.1.0
 jamoNCount :: Int
 jamoNCount = 588
 
@@ -482,28 +500,40 @@ jamoNCount = 588
 hangulFirst, hangulLast :: Int
 
 -- | Codepoint of the first pre-composed Hangul character.
+--
+-- @since 0.1.0
 hangulFirst = 0xac00
 
 -- | Codepoint of the last Hangul character.
+--
+-- @since 0.1.0
 hangulLast = hangulFirst + jamoLCount * jamoVCount * jamoTCount - 1
 
 -- | Determine if the given character is a precomposed Hangul syllable.
+--
+-- @since 0.1.0
 isHangul :: Char -> Bool
 isHangul c = n >= hangulFirst && n <= hangulLast
     where n = ord c
 
 -- | Determine if the given character is a Hangul LV syllable.
+--
+-- @since 0.1.0
 isHangulLV :: Char -> Bool
 isHangulLV c = assert (jamoTCount == 28)
     snd (quotRem28 (ord c - hangulFirst)) == 0
 
 -- | Determine whether a character is a jamo L, V or T character.
+--
+-- @since 0.1.0
 isJamo :: Char -> Bool
 isJamo c = n >= jamoLFirst && n <= jamoTLast
     where n = ord c
 
 -- | Given a Unicode character, if it is a leading jamo, return its index in
 -- the list of leading jamo consonants, otherwise return 'Nothing'.
+--
+-- @since 0.1.0
 jamoLIndex :: Char -> Maybe Int
 jamoLIndex c
   | index >= 0 && index < jamoLCount = Just index
@@ -512,6 +542,8 @@ jamoLIndex c
 
 -- | Given a Unicode character, if it is a vowel jamo, return its index in the
 -- list of vowel jamo, otherwise return 'Nothing'.
+--
+-- @since 0.1.0
 jamoVIndex :: Char -> Maybe Int
 jamoVIndex c
   | index >= 0 && index < jamoVCount = Just index
@@ -526,6 +558,7 @@ jamoVIndex c
 -- Decomposition" in the Conformance chapter of the Unicode standard for more
 -- details.
 --
+-- @since 0.1.0
 jamoTIndex :: Char -> Maybe Int
 jamoTIndex c
   | index > 0 && index < jamoTCount = Just index

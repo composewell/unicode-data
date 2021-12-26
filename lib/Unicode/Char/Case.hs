@@ -19,6 +19,7 @@ import qualified Unicode.Internal.Char.DerivedCoreProperties as P
 --
 -- prop> isLower c == Data.Char.isLower c
 --
+-- @since 0.1.0
 {-# INLINE isLower #-}
 isLower :: Char -> Bool
 isLower = P.isLowercase
@@ -28,6 +29,7 @@ isLower = P.isLowercase
 --
 -- prop> isUpper c == Data.Char.isUpper c
 --
+-- @since 0.1.0
 {-# INLINE isUpper #-}
 isUpper :: Char -> Bool
 isUpper = P.isUppercase
