@@ -20,159 +20,95 @@ Machine: 8 × AMD Ryzen 5 2500U on Linux.
 
 ```
 All
-  Unicode.Char.Case
-    isLower
-      base:           OK (1.59s)
-         25 ms ± 583 μs
-      unicode-data:   OK (2.01s)
-        3.9 ms ±  22 μs, 0.15x
-    isUpper
-      base:           OK (1.62s)
-         26 ms ± 1.0 ms
-      unicode-data:   OK (2.00s)
-        3.9 ms ±  24 μs, 0.15x
   Unicode.Char.Case.Compat
+    isLower
+      base:           OK (1.53s)
+         24 ms ± 3.8 ms
+      unicode-data:   OK (2.25s)
+        4.4 ms ±  88 μs, 0.19x
+    isUpper
+      base:           OK (1.50s)
+         24 ms ± 450 μs
+      unicode-data:   OK (2.37s)
+        4.7 ms ± 200 μs, 0.19x
     toLower
-      base:           OK (1.46s)
-         23 ms ± 512 μs
+      base:           OK (1.40s)
+         22 ms ± 1.8 ms
       unicode-data:   OK (1.89s)
-        7.4 ms ± 112 μs, 0.32x
+        7.2 ms ± 297 μs, 0.32x
     toTitle
-      base:           OK (1.49s)
-         24 ms ± 399 μs
-      unicode-data:   OK (1.92s)
-        7.5 ms ±  67 μs, 0.32x
+      base:           OK (1.25s)
+         20 ms ± 2.0 ms
+      unicode-data:   OK (1.65s)
+        6.4 ms ± 509 μs, 0.32x
     toUpper
-      base:           OK (1.46s)
-         23 ms ± 468 μs
-      unicode-data:   OK (1.75s)
-        6.9 ms ±  99 μs, 0.30x
+      base:           OK (1.26s)
+         20 ms ± 2.5 ms
+      unicode-data:   OK (1.72s)
+        6.8 ms ± 335 μs, 0.34x
   Unicode.Char.General
     generalCategory
-      base:           OK (1.95s)
-        129 ms ± 733 μs
-      unicode-data:   OK (1.63s)
-        108 ms ± 1.1 ms, 0.84x
-    isAlphabetic
-      unicode-data:   OK (1.28s)
-        312 μs ± 3.2 μs
+      base:           OK (2.02s)
+        134 ms ± 1.6 ms
+      unicode-data:   OK (1.75s)
+        116 ms ± 1.6 ms, 0.87x
     isAlphaNum
-      base:           OK (1.56s)
-         25 ms ± 252 μs
-      unicode-data:   OK (2.35s)
-        4.6 ms ±  31 μs, 0.19x
-    isControl
-      base:           OK (1.57s)
-         25 ms ± 551 μs
+      base:           OK (1.53s)
+         24 ms ± 1.7 ms
       unicode-data:   OK (2.16s)
-        4.2 ms ±  33 μs, 0.17x
+        4.2 ms ±  29 μs, 0.18x
+    isControl
+      base:           OK (1.47s)
+         23 ms ± 2.6 ms
+      unicode-data:   OK (2.23s)
+        4.4 ms ±  22 μs, 0.19x
     isMark
-      base:           OK (1.63s)
-         26 ms ± 689 μs
-      unicode-data:   OK (2.34s)
-        4.6 ms ±  27 μs, 0.18x
+      base:           OK (1.47s)
+         23 ms ± 624 μs
+      unicode-data:   OK (2.28s)
+        4.5 ms ±  48 μs, 0.19x
     isPrint
-      base:           OK (1.62s)
-         26 ms ± 788 μs
-      unicode-data:   OK (2.13s)
-        4.2 ms ±  73 μs, 0.16x
+      base:           OK (1.53s)
+         25 ms ± 2.4 ms
+      unicode-data:   OK (2.27s)
+        4.4 ms ±  50 μs, 0.18x
     isPunctuation
-      base:           OK (1.61s)
-         26 ms ± 170 μs
-      unicode-data:   OK (2.04s)
-        4.0 ms ±  30 μs, 0.16x
+      base:           OK (1.51s)
+         24 ms ± 459 μs
+      unicode-data:   OK (2.24s)
+        4.4 ms ±  25 μs, 0.18x
     isSeparator
-      base:           OK (1.71s)
-         27 ms ± 247 μs
-      unicode-data:   OK (2.20s)
-        4.3 ms ±  25 μs, 0.16x
+      base:           OK (1.52s)
+         24 ms ± 407 μs
+      unicode-data:   OK (2.43s)
+        4.8 ms ±  94 μs, 0.20x
     isSymbol
-      base:           OK (1.68s)
-         27 ms ± 312 μs
-      unicode-data:   OK (2.32s)
-        4.5 ms ±  41 μs, 0.17x
-    isWhiteSpace
-      unicode-data:   OK (1.28s)
-        312 μs ± 3.5 μs
-    isHangul
-      unicode-data:   OK (1.28s)
-        312 μs ± 2.6 μs
-    isHangulLV
-      unicode-data:   OK (1.28s)
-        312 μs ± 2.8 μs
-    isJamo
-      unicode-data:   OK (1.28s)
-        312 μs ± 2.7 μs
-    jamoLIndex
-      unicode-data:   OK (1.28s)
-        312 μs ± 3.1 μs
-    jamoVIndex
-      unicode-data:   OK (1.28s)
-        312 μs ± 2.9 μs
-    jamoTIndex
-      unicode-data:   OK (1.28s)
-        312 μs ± 2.9 μs
+      base:           OK (1.49s)
+         24 ms ± 863 μs
+      unicode-data:   OK (1.34s)
+        5.2 ms ±  92 μs, 0.22x
   Unicode.Char.General.Compat
     isAlpha
-      base:           OK (1.59s)
-         25 ms ± 446 μs
+      base:           OK (1.46s)
+         23 ms ± 322 μs
       unicode-data:   OK (2.14s)
-        4.2 ms ±  25 μs, 0.17x
+        4.1 ms ±  36 μs, 0.18x
     isLetter
-      base:           OK (1.72s)
-         27 ms ± 677 μs
-      unicode-data:   OK (2.14s)
-        4.2 ms ±  59 μs, 0.15x
+      base:           OK (1.44s)
+         22 ms ± 640 μs
+      unicode-data:   OK (2.17s)
+        4.3 ms ±  58 μs, 0.19x
     isSpace
-      base:           OK (1.48s)
-         12 ms ±  99 μs
-      unicode-data:   OK (2.30s)
-        4.5 ms ±  30 μs, 0.39x
-  Unicode.Char.Identifiers
-    isIDContinue
-      unicode-data:   OK (1.28s)
-        312 μs ± 2.7 μs
-    isIDStart
-      unicode-data:   OK (1.29s)
-        312 μs ± 2.7 μs
-    isXIDContinue
-      unicode-data:   OK (1.28s)
-        312 μs ± 3.2 μs
-    isXIDStart
-      unicode-data:   OK (1.28s)
-        312 μs ± 3.2 μs
-    isPatternSyntax
-      unicode-data:   OK (1.28s)
-        312 μs ± 3.4 μs
-    isPatternWhitespace
-      unicode-data:   OK (1.28s)
-        312 μs ± 2.9 μs
-  Unicode.Char.Normalization
-    isCombining
-      unicode-data:   OK (1.28s)
-        313 μs ± 5.1 μs
-    combiningClass
-      unicode-data:   OK (1.66s)
-        3.2 ms ± 113 μs
-    isCombiningStarter
-      unicode-data:   OK (1.29s)
-        312 μs ± 3.2 μs
-    isDecomposable
-      Canonical
-        unicode-data: OK (1.29s)
-          312 μs ± 3.5 μs
-      Kompat
-        unicode-data: OK (1.28s)
-          312 μs ± 3.5 μs
-    decomposeHangul
-      unicode-data:   OK (1.28s)
-        312 μs ± 3.0 μs
+      base:           OK (1.44s)
+         11 ms ± 1.2 ms
+      unicode-data:   OK (1.36s)
+        5.3 ms ± 243 μs, 0.49x
   Unicode.Char.Numeric
     isNumber
-      base:           OK (1.66s)
-         26 ms ± 404 μs
-      unicode-data:   OK (2.47s)
-        4.8 ms ±  22 μs, 0.18x
+      base:           OK (1.52s)
+         24 ms ± 368 μs
+      unicode-data:   OK (2.41s)
+        4.7 ms ±  41 μs, 0.19x
 ```
 
 ## Unicode database version update
