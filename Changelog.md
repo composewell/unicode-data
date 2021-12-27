@@ -18,18 +18,24 @@
 
   These modules are compatible with `base:Data.Char`.
 - Re-export some functions from `Data.Char` in order to make `Unicode.Char`
-  a drop-in replacement.
+  a drop-in replacement in a _future_ version of this package.
 - Drop support for GHC 7.10.3
 
 ### Deprecations
 
-- In `Unicode.Char.General`.
+- In `Unicode.Char.Case`:
 
-  - `isLetter`
-  - `isSpace`
+  - `isUpper`: use `isUpperCase` instead.
+  - `isLower`: use `isLowerCase` instead.
 
-  Preserve the behavior of these functions in `isAlphabetic` and `isWhiteSpace`
-  respectively.
+- In `Unicode.Char.General`:
+
+  - `isLetter`: use `isAlphabetic` instead.
+  - `isSpace`: use `isWhiteSpace` instead.
+
+- In `Unicode.Char`: same as hereinabove. These functions will be replaced in a
+  _future_ release with the functions with the same names from
+  `Unicode.Char.Case.Compat` and `Unicode.Char.General.Compat`.
 
 ## 0.2.0 (November 2021)
 
