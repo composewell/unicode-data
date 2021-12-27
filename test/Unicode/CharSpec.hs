@@ -7,6 +7,12 @@ module Unicode.CharSpec
 
 import qualified Data.Char as Char
 import qualified Unicode.Char as UChar
+-- [TODO] Remove the following qualified imports once isLetter and isSpace
+--        are removed from Unicode.Char.General
+import qualified Unicode.Char.General.Compat as UCharCompat
+-- [TODO] Remove the following qualified imports once isUpper and isLower
+--        are removed from Unicode.Char.Case
+import qualified Unicode.Char.Case.Compat as UCharCompat
 import Data.Foldable (traverse_)
 import Test.Hspec
 
@@ -45,7 +51,7 @@ spec = do
     it "isControl" do
       UChar.isControl `shouldBeEqualTo` Char.isControl
     it "isLetter" do
-      UChar.isLetter `shouldBeEqualTo` Char.isLetter
+      UCharCompat.isLetter `shouldBeEqualTo` Char.isLetter
     it "isMark" do
       UChar.isMark `shouldBeEqualTo` Char.isMark
     it "isNumber" do
@@ -57,14 +63,14 @@ spec = do
     it "isSeparator" do
       UChar.isSeparator `shouldBeEqualTo` Char.isSeparator
     it "isSpace" do
-      UChar.isSpace `shouldBeEqualTo` Char.isSpace
+      UCharCompat.isSpace `shouldBeEqualTo` Char.isSpace
     it "isSymbol" do
       UChar.isSymbol `shouldBeEqualTo` Char.isSymbol
   describe' "Case" do
     it "isLower" do
-      UChar.isLower `shouldBeEqualTo` Char.isLower
+      UCharCompat.isLower `shouldBeEqualTo` Char.isLower
     it "isUpper" do
-      UChar.isUpper `shouldBeEqualTo` Char.isUpper
+      UCharCompat.isUpper `shouldBeEqualTo` Char.isUpper
     it "toLower" do
       UChar.toLower `shouldBeEqualTo` Char.toLower
     it "toUpper" do
