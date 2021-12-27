@@ -61,11 +61,9 @@ spec = do
     it "isSymbol" do
       UChar.isSymbol `shouldBeEqualTo` Char.isSymbol
   describe' "Case" do
-    let it' t = before_ (pendingWith "Incompatible implementation with Data.Char")
-              . it t
-    it' "isLower" do
+    it "isLower" do
       UChar.isLower `shouldBeEqualTo` Char.isLower
-    it' "isUpper" do
+    it "isUpper" do
       UChar.isUpper `shouldBeEqualTo` Char.isUpper
     it "toLower" do
       UChar.toLower `shouldBeEqualTo` Char.toLower

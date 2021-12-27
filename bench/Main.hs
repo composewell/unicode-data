@@ -20,17 +20,23 @@ data Bench a = Bench
 main :: IO ()
 main = defaultMain
   [ bgroup "Unicode.Char.Case"
-    [ bgroup' "isLower"
-      [ Bench "base"         B.isLower
-      , Bench "unicode-data" C.isLower
+    [ bgroup "isLowerCase"
+      [ benchNF "unicode-data" C.isLowerCase
       ]
-    , bgroup' "isUpper"
-      [ Bench "base"         B.isUpper
-      , Bench "unicode-data" C.isUpper
+    , bgroup "isUpperCase"
+      [ benchNF "unicode-data" C.isUpperCase
       ]
     ]
   , bgroup "Unicode.Char.Case.Compat"
-    [ bgroup' "toLower"
+    [ bgroup' "isLower"
+      [ Bench "base"         B.isLower
+      , Bench "unicode-data" CC.isLower
+      ]
+    , bgroup' "isUpper"
+      [ Bench "base"         B.isUpper
+      , Bench "unicode-data" CC.isUpper
+      ]
+    , bgroup' "toLower"
       [ Bench "base"         B.toLower
       , Bench "unicode-data" CC.toLower
       ]
