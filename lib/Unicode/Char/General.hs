@@ -431,7 +431,9 @@ isSymbol c = case generalCategory c of
     OtherSymbol    -> True
     _              -> False
 
--- | Returns 'True' for alphabetic Unicode characters.
+-- | Returns 'True' for alphabetic Unicode characters (lower-case, upper-case
+-- and title-case letters, plus letters of caseless scripts and modifiers
+-- letters).
 --
 -- @since 0.1.0
 {-# INLINE isLetter #-}
