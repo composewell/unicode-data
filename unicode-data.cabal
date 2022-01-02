@@ -154,7 +154,7 @@ benchmark bench
   build-depends:
     base        >= 4.7   && < 5,
     deepseq     >= 1.1   && < 1.5,
-    tasty-bench >= 0.2.5 && < 0.3,
+    tasty-bench >= 0.2.5 && < 0.4,
     tasty       >= 1.4.1,
     unicode-data
   ghc-options: -O2 -fdicts-strict -rtsopts
