@@ -136,10 +136,10 @@ test-suite test
       Unicode.CharSpec
   build-depends:
       base             >= 4.7   && < 4.17
-    , hspec            >= 2.0   && < 3
+    , hspec            >= 2.0   && < 2.10
     , unicode-data
   build-tool-depends:
-      hspec-discover:hspec-discover >= 2.0 && < 3
+      hspec-discover:hspec-discover >= 2.0 && < 2.10
   -- We need to match a GHC version with the same Unicode version.
   -- See: test/Unicode/CharSpec.hs for compatibility table.
   if impl(ghc >= 9.2.1)
