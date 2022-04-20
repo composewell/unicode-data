@@ -10,7 +10,9 @@ module Unicode.Internal.Char.PropList
 (isPattern_Syntax , isPattern_White_Space , isWhite_Space)
 where
 
-import Data.Char (ord)
+import Data.Bool (Bool)
+import Data.Char (Char, ord)
+import GHC.Base ((>=), (<=), (&&))
 import Unicode.Internal.Bits (lookupBit64)
 {-# INLINE isPattern_Syntax #-}
 isPattern_Syntax :: Char -> Bool

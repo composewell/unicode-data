@@ -10,7 +10,10 @@ module Unicode.Internal.Char.UnicodeData.CombiningClass
 (combiningClass, isCombining)
 where
 
-import Data.Char (ord)
+import Data.Bool (Bool)
+import Data.Char (Char, ord)
+import Data.Int (Int)
+import GHC.Base ((>=), (<=), (&&))
 import Unicode.Internal.Bits (lookupBit64)
 
 combiningClass :: Char -> Int

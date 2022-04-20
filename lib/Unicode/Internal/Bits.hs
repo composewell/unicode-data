@@ -19,6 +19,8 @@ module Unicode.Internal.Bits
 #include "MachDeps.h"
 
 import Data.Bits (finiteBitSize, popCount)
+import Data.Bool (Bool)
+import GHC.Base ((/=))
 import GHC.Exts
        (Addr#, Int(..), Word(..),
         indexWordOffAddr#, indexWord8OffAddr#,
@@ -30,6 +32,7 @@ import GHC.Exts (word8ToWord#)
 #ifdef WORDS_BIGENDIAN
 import GHC.Exts (byteSwap#)
 #endif
+import GHC.Num ((-))
 
 -- | @lookup64 addr index@ looks up the bit stored at bit index @index@ using a
 -- bitmap starting at the address @addr@. Looks up the 64-bit word containing

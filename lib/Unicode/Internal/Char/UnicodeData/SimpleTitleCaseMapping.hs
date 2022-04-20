@@ -10,6 +10,8 @@ module Unicode.Internal.Char.UnicodeData.SimpleTitleCaseMapping
 (toSimpleTitleCase)
 where
 
+import Data.Char (Char)
+
 {-# NOINLINE toSimpleTitleCase #-}
 toSimpleTitleCase :: Char -> Char
 toSimpleTitleCase 'a' = 'A'

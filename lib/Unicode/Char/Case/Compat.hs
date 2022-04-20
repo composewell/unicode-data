@@ -21,6 +21,8 @@ module Unicode.Char.Case.Compat
     , toTitle
     ) where
 
+import Data.Bool (Bool(..))
+import Data.Char (Char)
 import Unicode.Char.General (GeneralCategory(..), generalCategory)
 import qualified Unicode.Internal.Char.UnicodeData.SimpleLowerCaseMapping as C
 import qualified Unicode.Internal.Char.UnicodeData.SimpleTitleCaseMapping as C

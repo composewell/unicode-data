@@ -11,6 +11,8 @@ module Unicode.Internal.Char.UnicodeData.Decompositions
 (decompose)
 where
 
+import Data.Char (Char)
+
 -- Note: this is a partial function we do not expect to call
 -- this if isDecomposable returns false.
 {-# NOINLINE decompose #-}

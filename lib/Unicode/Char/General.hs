@@ -96,8 +96,15 @@ module Unicode.Char.General
 where
 
 import Control.Exception (assert)
-import Data.Char (isAscii, isLatin1, isAsciiUpper, isAsciiLower, ord)
+import Data.Bool (Bool (..))
+import Data.Char (Char, isAscii, isLatin1, isAsciiUpper, isAsciiLower, ord)
+import Data.Int (Int)
 import Data.Ix (Ix)
+import Data.Maybe (Maybe(..))
+import Data.Tuple (snd)
+import GHC.Base ((<), (>), (>=), (<=), (==), (&&), (.), otherwise)
+import GHC.Enum (Enum(..))
+import GHC.Num ((-), (+), (*))
 import Unicode.Internal.Division (quotRem28)
 
 import qualified Unicode.Internal.Char.DerivedCoreProperties as P
@@ -159,18 +166,19 @@ data GeneralCategory
     | Surrogate             -- ^ @Cs@: Other, Surrogate
     | PrivateUse            -- ^ @Co@: Other, Private Use
     | NotAssigned           -- ^ @Cn@: Other, Not Assigned
-    deriving ( Show
+    deriving ( {- Show
             , Eq
             , Ord
-            , Enum
-            , Bounded
+            , -} Enum
+            {- , Bounded
             , Ix
+    -}
             )
 
 -- | Abbreviation of 'GeneralCategory' used in the Unicode standard.
 --
 -- @since 0.3.0
-generalCategoryAbbr :: GeneralCategory -> String
+generalCategoryAbbr :: GeneralCategory -> [Char]
 generalCategoryAbbr = \case
     UppercaseLetter      -> "Lu"
     LowercaseLetter      -> "Ll"

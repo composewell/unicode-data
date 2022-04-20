@@ -52,8 +52,13 @@ module Unicode.Char.Normalization
     )
 where
 
+import GHC.Base ((==))
+import GHC.Num ((+), (-))
 import Control.Exception (assert)
-import Data.Char (ord)
+import Data.Bool (Bool)
+import Data.Char (Char, ord)
+import Data.Int (Int)
+import Data.Maybe (Maybe)
 import GHC.Base (unsafeChr)
 import Unicode.Internal.Division (quotRem21, quotRem28)
 import Unicode.Char.General

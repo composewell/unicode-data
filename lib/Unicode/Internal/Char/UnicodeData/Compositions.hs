@@ -11,7 +11,10 @@ module Unicode.Internal.Char.UnicodeData.Compositions
 (compose, composeStarters, isSecondStarter)
 where
 
-import Data.Char (ord)
+import Data.Bool (Bool)
+import Data.Char (Char, ord)
+import Data.Maybe (Maybe(..))
+import GHC.Base ((>=), (<=), (&&))
 import Unicode.Internal.Bits (lookupBit64)
 
 {-# NOINLINE compose #-}

@@ -10,6 +10,8 @@ module Unicode.Internal.Char.UnicodeData.SimpleLowerCaseMapping
 (toSimpleLowerCase)
 where
 
+import Data.Char (Char)
+
 {-# NOINLINE toSimpleLowerCase #-}
 toSimpleLowerCase :: Char -> Char
 toSimpleLowerCase 'A' = 'a'

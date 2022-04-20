@@ -29,7 +29,11 @@ module Unicode.Internal.Division
     ) where
 
 import Data.Bits (Bits(..), FiniteBits(..))
+import Data.Int (Int)
+import GHC.Base ((/=), otherwise)
 import GHC.Exts (Word(..), timesWord2#)
+import GHC.Num ((-), (*))
+import GHC.Real (fromIntegral, quotRem)
 
 highMul :: Word -> Word -> Word
 highMul (W# x#) (W# y#) = W# high#

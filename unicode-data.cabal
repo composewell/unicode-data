@@ -53,6 +53,7 @@ common default-extensions
       ScopedTypeVariables
       TupleSections
       FlexibleContexts
+      NoImplicitPrelude
 
       -- Experimental, may lead to issues
       DeriveAnyClass

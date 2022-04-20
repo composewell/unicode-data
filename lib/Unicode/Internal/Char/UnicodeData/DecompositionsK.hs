@@ -11,6 +11,7 @@ module Unicode.Internal.Char.UnicodeData.DecompositionsK
 (decompose)
 where
 
+import Data.Char (Char)
 import qualified Unicode.Internal.Char.UnicodeData.DecompositionsK2 as DK2
 
 -- Note: this is a partial function we do not expect to call

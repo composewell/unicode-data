@@ -18,6 +18,8 @@ module Unicode.Char.Identifiers
     )
 where
 
+import Data.Bool (Bool)
+import Data.Char (Char)
 import qualified Unicode.Internal.Char.DerivedCoreProperties as P
 import qualified Unicode.Internal.Char.PropList as P
 

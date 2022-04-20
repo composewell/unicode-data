@@ -10,7 +10,9 @@ module Unicode.Internal.Char.UnicodeData.DecomposableK
 (isDecomposable)
 where
 
-import Data.Char (ord)
+import Data.Bool (Bool)
+import Data.Char (Char, ord)
+import GHC.Base ((>=), (<=), (&&))
 import Unicode.Internal.Bits (lookupBit64)
 
 {-# INLINE isDecomposable #-}

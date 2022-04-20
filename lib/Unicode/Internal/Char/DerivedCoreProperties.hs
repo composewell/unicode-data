@@ -10,7 +10,9 @@ module Unicode.Internal.Char.DerivedCoreProperties
 (isXID_Continue , isXID_Start , isID_Continue , isID_Start , isUppercase , isLowercase , isAlphabetic)
 where
 
-import Data.Char (ord)
+import Data.Bool (Bool)
+import Data.Char (Char, ord)
+import GHC.Base ((>=), (<=), (&&))
 import Unicode.Internal.Bits (lookupBit64)
 {-# INLINE isXID_Continue #-}
 isXID_Continue :: Char -> Bool

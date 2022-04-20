@@ -18,7 +18,8 @@ module Unicode.Char.Numeric
     , intToDigit
     ) where
 
-import Data.Char (digitToInt, intToDigit, isDigit, isHexDigit, isOctDigit)
+import Data.Bool (Bool(..))
+import Data.Char (Char, digitToInt, intToDigit, isDigit, isHexDigit, isOctDigit)
 import Unicode.Char.General (GeneralCategory(..), generalCategory)
 
 {-| Selects Unicode numeric characters, including digits from various

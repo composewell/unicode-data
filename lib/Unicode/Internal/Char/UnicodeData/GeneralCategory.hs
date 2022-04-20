@@ -10,7 +10,9 @@ module Unicode.Internal.Char.UnicodeData.GeneralCategory
 (generalCategory)
 where
 
-import Data.Char (ord)
+import Data.Char (Char, ord)
+import Data.Int (Int)
+import GHC.Base ((>=))
 import Unicode.Internal.Bits (lookupIntN)
 
 {-# INLINE generalCategory #-}

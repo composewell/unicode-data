@@ -17,6 +17,8 @@ module Unicode.Char.General.Compat
     , isSpace
     ) where
 
+import Data.Bool (Bool(..))
+import Data.Char (Char)
 import Unicode.Char.General (GeneralCategory(..), generalCategory)
 
 -- | Same as 'isLetter'.
