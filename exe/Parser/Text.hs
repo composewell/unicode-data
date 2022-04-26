@@ -121,13 +121,12 @@ genRangeCheck var ordList =
 genBitmap :: String -> [Int] -> String
 genBitmap funcName ordList =
     unlines
-        [ "{-# INLINE " ++ funcName ++ " #-}"
+        [ "{-# INLINE " <> funcName <> " #-}"
         , genSignature funcName
         , funcName <> " = \\c -> let n = ord c in "
-              ++ genRangeCheck "n" ordList ++ " && lookupBit64 bitmap# n"
+              <> genRangeCheck "n" ordList <> " && lookupBit64 bitmap# n"
         , "  where"
-        , "    bitmap# = "
-              ++ show (bitMapToAddrLiteral (positionsToBitMap ordList)) ++ "#"
+        , "    bitmap# = \"" <> bitMapToAddrLiteral (positionsToBitMap ordList) "\"#"
         ]
 
 positionsToBitMap :: [Int] -> [Bool]
@@ -140,14 +139,22 @@ positionsToBitMap = go 0
         | i < x = False : go (i + 1) xxs
         | otherwise = True : go (i + 1) xs
 
-bitMapToAddrLiteral :: [Bool] -> String
-bitMapToAddrLiteral = map (chr . toByte . padTo8) . unfoldr go
+bitMapToAddrLiteral
+  :: [Bool]
+  -- ^ Values to encode
+  -> String
+  -- ^ String to append
+  -> String
+bitMapToAddrLiteral bs cs = foldr encode cs (unfoldr mkChunks bs)
 
     where
 
-    go :: [a] -> Maybe ([a], [a])
-    go [] = Nothing
-    go xs = Just $ splitAt 8 xs
+    mkChunks :: [a] -> Maybe ([a], [a])
+    mkChunks [] = Nothing
+    mkChunks xs = Just $ splitAt 8 xs
+
+    encode :: [Bool] -> String -> String
+    encode chunk acc = '\\' : shows (toByte (padTo8 chunk)) acc
 
     padTo8 :: [Bool] -> [Bool]
     padTo8 xs
@@ -159,7 +166,7 @@ bitMapToAddrLiteral = map (chr . toByte . padTo8) . unfoldr go
 
 genEnumBitmap :: forall a. (Bounded a, Enum a, Show a) => String -> [a] -> String
 genEnumBitmap funcName as = unlines
-    [ "{-# INLINE " ++ funcName ++ " #-}"
+    [ "{-# INLINE " <> funcName <> " #-}"
     , funcName <> " :: Char -> Int"
     , funcName <> " c = let n = ord c in if n >= "
                <> show (length as)
@@ -167,8 +174,7 @@ genEnumBitmap funcName as = unlines
                <> show (fromEnum Cn)
                <> " else lookupIntN bitmap# n"
     , "  where"
-    , "    bitmap# = "
-        <> show (enumMapToAddrLiteral as) <> "#"
+    , "    bitmap# = \"" <> enumMapToAddrLiteral as "\"#"
     ]
 
 {-| Encode a list of values as a byte map, using their 'Enum' instance.
@@ -178,13 +184,19 @@ __Note:__ 'Enum' instance must respect the following:
 * @fromEnum minBound >= 0x00@
 * @fromEnum maxBound <= 0xff@
 -}
-enumMapToAddrLiteral :: forall a. (Bounded a, Enum a, Show a) => [a] -> String
-enumMapToAddrLiteral = fmap go
+enumMapToAddrLiteral
+  :: forall a. (Bounded a, Enum a, Show a)
+  => [a]
+  -- ^ Values to encode
+  -> String
+  -- ^ String to append
+  -> String
+enumMapToAddrLiteral xs cs = foldr go cs xs
 
     where
 
-    go :: a -> Char
-    go = chr . fromIntegral . toWord8
+    go :: a -> String -> String
+    go x acc = '\\' : shows (toWord8 x) acc
 
     toWord8 :: a -> Word8
     toWord8 a = let w = fromEnum a in if 0 <= w && w <= 0xff
