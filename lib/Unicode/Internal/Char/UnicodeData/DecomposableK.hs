@@ -6,6 +6,8 @@
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 
+{-# OPTIONS_HADDOCK hide #-}
+
 module Unicode.Internal.Char.UnicodeData.DecomposableK
 (isDecomposable)
 where

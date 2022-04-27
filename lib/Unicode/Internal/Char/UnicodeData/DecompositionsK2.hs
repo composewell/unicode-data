@@ -7,6 +7,8 @@
 -- Stability   : experimental
 
 {-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}
+{-# OPTIONS_HADDOCK hide #-}
+
 module Unicode.Internal.Char.UnicodeData.DecompositionsK2
 (decompose)
 where
