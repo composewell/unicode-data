@@ -6,6 +6,8 @@
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 
+{-# OPTIONS_HADDOCK hide #-}
+
 module Unicode.Internal.Char.DerivedCoreProperties
 (isXID_Continue , isXID_Start , isID_Continue , isID_Start , isUppercase , isLowercase , isAlphabetic)
 where

@@ -254,6 +254,8 @@ genGeneralCategoryModule moduleName =
 
     done (acc, _) = unlines
         [ apacheLicense moduleName
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
         , "module " <> moduleName
         , "(generalCategory)"
         , "where"
@@ -331,6 +333,8 @@ genDecomposableModule moduleName dtype =
     done st =
         unlines
             [ apacheLicense moduleName
+            , "{-# OPTIONS_HADDOCK hide #-}"
+            , ""
             , "module " <> moduleName
             , "(isDecomposable)"
             , "where"
@@ -355,6 +359,7 @@ genCombiningClassModule moduleName =
     done (st1, st2) =
         unlines
             [ apacheLicense moduleName
+            , "{-# OPTIONS_HADDOCK hide #-}"
             , "module " <> moduleName
             , "(combiningClass, isCombining)"
             , "where"
@@ -394,6 +399,8 @@ genDecomposeDefModule moduleName before after dtype pred =
     genHeader =
         [ apacheLicense moduleName
         , "{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}"
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
         , "module " <> moduleName
         , "(decompose)"
         , "where"
@@ -474,6 +481,8 @@ genCompositionsModule moduleName compExclu non0CC =
     header =
         [ apacheLicense moduleName
         , "{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}"
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
         , "module " <> moduleName
         , "(compose, composeStarters, isSecondStarter)"
         , "where"
@@ -521,6 +530,8 @@ genSimpleCaseMappingModule moduleName funcName field =
 
     genHeader =
         [ apacheLicense moduleName
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
         , "module " <> moduleName
         , "(" ++ funcName ++ ")"
         , "where"
@@ -568,6 +579,8 @@ genCorePropertiesModule moduleName isProp =
 
     header exports =
         [ apacheLicense moduleName
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
         , "module " <> moduleName
         , "(" ++ unwords (intersperse "," (map prop2FuncName exports)) ++ ")"
         , "where"
