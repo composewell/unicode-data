@@ -164,14 +164,22 @@ bitMapToAddrLiteral bs cs = foldr encode cs (unfoldr mkChunks bs)
     toByte :: [Bool] -> Int
     toByte xs = sum $ map (\i -> if xs !! i then 1 `shiftL` i else 0) [0..7]
 
-genEnumBitmap :: forall a. (Bounded a, Enum a, Show a) => String -> [a] -> String
-genEnumBitmap funcName as = unlines
+genEnumBitmap
+  :: forall a. (Bounded a, Enum a, Show a)
+  => String
+  -- ^ Function name
+  -> a
+  -- ^ Default value
+  -> [a]
+  -- ^ List of values to encode
+  -> String
+genEnumBitmap funcName def as = unlines
     [ "{-# INLINE " <> funcName <> " #-}"
     , funcName <> " :: Char -> Int"
     , funcName <> " c = let n = ord c in if n >= "
                <> show (length as)
                <> " then "
-               <> show (fromEnum Cn)
+               <> show (fromEnum def)
                <> " else lookupIntN bitmap# n"
     , "  where"
     , "    bitmap# = \"" <> enumMapToAddrLiteral as "\"#"
@@ -263,7 +271,7 @@ genGeneralCategoryModule moduleName =
         , "import Data.Char (ord)"
         , "import Unicode.Internal.Bits (lookupIntN)"
         , ""
-        , genEnumBitmap "generalCategory" (reverse acc)
+        , genEnumBitmap "generalCategory" Cn (reverse acc)
         ]
 
 readDecomp :: String -> (Maybe DecompType, Decomp)
@@ -359,6 +367,7 @@ genCombiningClassModule moduleName =
     done (st1, st2) =
         unlines
             [ apacheLicense moduleName
+            , "{-# LANGUAGE LambdaCase #-}"
             , "{-# OPTIONS_HADDOCK hide #-}"
             , "module " <> moduleName
             , "(combiningClass, isCombining)"
@@ -368,15 +377,19 @@ genCombiningClassModule moduleName =
             , "import Unicode.Internal.Bits (lookupBit64)"
             , ""
             , "combiningClass :: Char -> Int"
+            , "combiningClass = \\case"
             , unlines (reverse st1)
-            , "combiningClass _ = 0\n"
+            , "  _ -> 0\n"
             , ""
             , genBitmap "isCombining" (reverse st2)
             ]
 
-    genCombiningClassDef dc =
-        "combiningClass "
-            <> show (_char dc) <> " = " <> show (_combiningClass dc)
+    genCombiningClassDef dc = mconcat
+        [ "  "
+        , show (_char dc)
+        , " -> "
+        , show (_combiningClass dc)
+        ]
 
 genDecomposeDefModule ::
        Monad m
@@ -398,6 +411,7 @@ genDecomposeDefModule moduleName before after dtype pred =
 
     genHeader =
         [ apacheLicense moduleName
+        , "{-# LANGUAGE LambdaCase #-}"
         , "{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
@@ -411,6 +425,7 @@ genDecomposeDefModule moduleName before after dtype pred =
         , "-- this if isDecomposable returns false."
         , "{-# NOINLINE decompose #-}"
         , "decompose :: Char -> [Char]"
+        , "decompose = \\case"
         ]
     initial = []
 
@@ -420,10 +435,12 @@ genDecomposeDefModule moduleName before after dtype pred =
         let body = mconcat [genHeader, before, genSign, reverse st, after]
         in unlines body
 
-    genDecomposeDef dc =
-        "decompose "
-            <> show (_char dc)
-            <> " = " <> show (decomposeChar (_char dc) (_decomposition dc))
+    genDecomposeDef dc = mconcat
+        [ "  "
+        , show (_char dc)
+        , " -> "
+        , show (decomposeChar (_char dc) (_decomposition dc))
+        ]
 
 genCompositionsModule ::
        Monad m
@@ -530,34 +547,35 @@ genSimpleCaseMappingModule moduleName funcName field =
 
     genHeader =
         [ apacheLicense moduleName
+        , "{-# LANGUAGE LambdaCase #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
-        , "(" ++ funcName ++ ")"
+        , "(" <> funcName <> ")"
         , "where"
         , ""
         ]
     genSign =
-        [ "{-# NOINLINE " ++ funcName ++ " #-}"
-        , funcName ++ " :: Char -> Char"
+        [ "{-# NOINLINE " <> funcName <> " #-}"
+        , funcName <> " :: Char -> Char"
+        , funcName <> " = \\case"
         ]
     initial = []
 
-    step ds dc = case genUpper dc of
+    step ds dc = case mkEntry dc of
         Nothing -> ds
         Just d  -> d : ds
 
-    after = [funcName ++ " c = c"]
+    after = ["  c -> c"]
 
     done st =
         let body = mconcat [genHeader, genSign, reverse st, after]
         in unlines body
 
-    genUpper dc = field dc <&> \c -> mconcat
-        [ funcName
-        , " "
+    mkEntry dc = field dc <&> \c -> mconcat
+        [ "  "
         , show (_char dc)
-        , " = "
+        , " -> "
         , show c
         ]
 
@@ -879,7 +897,7 @@ genModules indir outdir props = do
 
     decompositionsK =
         let pre = ["import qualified " <> fst decompositionsK2 <> " as DK2", ""]
-            post = ["decompose c = DK2.decompose c"]
+            post = ["  c -> DK2.decompose c"]
          in ( "Unicode.Internal.Char.UnicodeData.DecompositionsK"
             , \m -> genDecomposeDefModule m pre post Kompat (< 60000))
 
