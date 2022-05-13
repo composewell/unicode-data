@@ -677,7 +677,7 @@ parseUnicodeDataLines
         (range2, ", Last>") -> if range1 == range2 && _char dc1 < _char dc2
             then Fold.Done (Just (CompleteRange range1 dc1 dc2))
             else error $ "Cannot create range: incompatible ranges" <> show (dc1, dc2)
-        _ -> error $ "Cannot create range: missing <range, Last> entry correspong to: " <> show range1
+        _ -> error $ "Cannot create range: missing <range, Last> entry corresponding to: " <> show range1
     step _ _ = error "impossible case"
 
     initial :: Fold.Step (Maybe UnicodeDataRange) (Maybe UnicodeDataRange)
