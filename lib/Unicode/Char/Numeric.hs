@@ -46,13 +46,18 @@ isNumber c = case generalCategory c of
     OtherNumber   -> True
     _             -> False
 
-
 -- | Numeric value of a character, if relevant.
+--
+-- __Note:__ a character may have a numeric value but return 'False' with
+-- the predicate 'isNumber', because 'isNumber' only tests 'GeneralCategory'.
 {-# INLINE numericValue #-}
 numericValue :: Char -> Maybe Rational
 numericValue = V.numericValue
 
 -- | Integer value of a character, if relevant.
+--
+-- __Note:__ a character may have a numeric value but return 'False' with
+-- the predicate 'isNumber', because 'isNumber' only tests 'GeneralCategory'.
 intValue :: Char -> Maybe Int
 intValue c = V.numericValue c >>= \r -> if denominator r == 1
     then Just (fromIntegral (numerator r))
