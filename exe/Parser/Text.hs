@@ -23,11 +23,13 @@ import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Data.Bits (Bits(..))
 import Data.Word (Word8)
+import Data.Bifunctor (Bifunctor(..))
 import Data.Char (chr, ord, isSpace)
 import Data.Functor ((<&>))
 import Data.Function ((&))
-import Data.List (unfoldr, intersperse)
+import Data.List (intersperse, dropWhileEnd, unfoldr, sort)
 import Data.Maybe (fromMaybe)
+import Data.Ratio ((%))
 import Streamly.Data.Fold (Fold)
 import Streamly.Prelude (IsStream, SerialT)
 import System.Directory (createDirectoryIfMissing)
@@ -607,12 +609,48 @@ genCorePropertiesModule moduleName isProp =
         , "import Unicode.Internal.Bits (lookupBit64)"
         ]
 
+genNumericValuesModule
+    :: Monad m
+    => String
+    -> Fold m CharNumericValue String
+genNumericValuesModule moduleName =
+    done . foldMap mkNumericValue . sort <$> Fold.toListRev
+
+    where
+
+    mkNumericValue (char, value) = mconcat
+        [ "\n  "
+        , show char
+        , " -> "
+        , either show show (bimap Just Just value)
+        ]
+
+
+    done values = unlines
+        [ apacheLicense moduleName
+        , "{-# LANGUAGE LambdaCase #-}"
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
+        , "module " <> moduleName
+        , "(numericValue)"
+        , "where"
+        , ""
+        , "import Data.Ratio ((%))"
+        , ""
+        , "numericValue :: Char -> Maybe Rational"
+        , "numericValue = \\case" <> values
+        , "  _ -> Nothing"
+        ]
+
 -------------------------------------------------------------------------------
 -- Parsing property files
 -------------------------------------------------------------------------------
 
 trim :: String -> String
 trim = takeWhile (not . isSpace) . dropWhile isSpace
+
+trim' :: String -> String
+trim' = dropWhileEnd isSpace . dropWhile isSpace
 
 type PropertyLine = (String, [Int])
 
@@ -745,6 +783,65 @@ parseDetailedChar line =
     sTitle = tail line14
 
 -------------------------------------------------------------------------------
+-- Parsing DerivedNumericValues.txt
+-------------------------------------------------------------------------------
+
+type NumericValue = Either Int Rational
+type CharNumericValue = (Char, NumericValue)
+type CharRangeNumericValue = (Char, Char, NumericValue)
+type DerivedNumericValuesLine = Either CharNumericValue CharRangeNumericValue
+
+parseDerivedNumericValuesLine :: String -> Maybe DerivedNumericValuesLine
+parseDerivedNumericValuesLine line
+    | null line        = Nothing
+    | head line == '#' = Nothing
+    | otherwise        =
+        let (range  , line1) = span (/= ';') line
+            (_field1, line2) = span (/= ';') (tail line1)
+            (_field2, line3) = span (/= ';') (tail line2)
+            value            = takeWhile (/= '#') (tail line3)
+            value' = parseValue (trim' value)
+        in Just (bimap (,value') (mkRange value') (parseRange range))
+
+    where
+
+    parseRange :: String -> Either Char (Char, Char)
+    parseRange
+        = (\(c1, c2) -> maybe (Left c1) (Right . (c1,)) c2)
+        . bimap readCodePoint (readCodePointM . drop 2)
+        . span (/= '.')
+
+    mkRange :: NumericValue -> (Char, Char) -> CharRangeNumericValue
+    mkRange value (c1, c2) = (c1, c2, value)
+
+    parseValue :: String -> NumericValue
+    parseValue raw =
+        let (numerator, denominator) = span (/= '/') raw
+        in if null denominator
+            then Left  (read numerator)
+            else Right (read numerator % read (tail denominator))
+
+
+parseDerivedNumericValuesLines
+    :: (IsStream t, Monad m)
+    => t m String
+    -> t m CharNumericValue
+parseDerivedNumericValuesLines
+    = Stream.unfoldMany (Unfold.unfoldr mkCharNumericValue)
+    . Stream.mapMaybe parseDerivedNumericValuesLine
+
+    where
+
+    mkCharNumericValue
+        :: DerivedNumericValuesLine
+        -> Maybe (CharNumericValue, DerivedNumericValuesLine)
+    mkCharNumericValue = \case
+        Left charValue -> Just (charValue, Right ((fst charValue),  '\0', Left 0))
+        Right (c1, c2, value) -> if c1 <= c2
+            then Just ((c1, value), Right (succ c1, c2, value))
+            else Nothing
+
+-------------------------------------------------------------------------------
 -- Generation
 -------------------------------------------------------------------------------
 
@@ -861,6 +958,13 @@ genModules indir outdir props = do
         outdir
         [ derivedCoreProperties ]
 
+    runGenerator
+        indir
+        "extracted/DerivedNumericValues.txt"
+        parseDerivedNumericValuesLines
+        outdir
+        [ derivedNumericValues ]
+
     where
 
     propList =
@@ -916,3 +1020,7 @@ genModules indir outdir props = do
     simpleTitleCaseMapping =
          ( "Unicode.Internal.Char.UnicodeData.SimpleTitleCaseMapping"
          , \m -> genSimpleCaseMappingModule m "toSimpleTitleCase" _simpleTitlecaseMapping)
+
+    derivedNumericValues =
+         ( "Unicode.Internal.Char.DerivedNumericValues"
+         , \m -> genNumericValuesModule m)
