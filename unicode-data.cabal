@@ -90,6 +90,7 @@ library
       -- This module structure is largely based on the UCD file names from which
       -- the properties are generated.
       Unicode.Internal.Char.DerivedCoreProperties
+      Unicode.Internal.Char.DerivedNumericValues
       Unicode.Internal.Char.PropList
       Unicode.Internal.Char.UnicodeData.CombiningClass
       Unicode.Internal.Char.UnicodeData.Compositions

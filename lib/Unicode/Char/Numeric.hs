@@ -9,6 +9,8 @@
 --
 module Unicode.Char.Numeric
     ( isNumber
+    , numericValue
+    , intValue
 
     -- * Re-export
     , isDigit
@@ -19,7 +21,9 @@ module Unicode.Char.Numeric
     ) where
 
 import Data.Char (digitToInt, intToDigit, isDigit, isHexDigit, isOctDigit)
+import Data.Ratio (numerator, denominator)
 import Unicode.Char.General (GeneralCategory(..), generalCategory)
+import qualified Unicode.Internal.Char.DerivedNumericValues as V
 
 {-| Selects Unicode numeric characters, including digits from various
 scripts, Roman numerals, et cetera.
@@ -41,3 +45,15 @@ isNumber c = case generalCategory c of
     LetterNumber  -> True
     OtherNumber   -> True
     _             -> False
+
+
+-- | Numeric value of a character, if relevant.
+{-# INLINE numericValue #-}
+numericValue :: Char -> Maybe Rational
+numericValue = V.numericValue
+
+-- | Integer value of a character, if relevant.
+intValue :: Char -> Maybe Int
+intValue c = V.numericValue c >>= \r -> if denominator r == 1
+    then Just (fromIntegral (numerator r))
+    else Nothing
