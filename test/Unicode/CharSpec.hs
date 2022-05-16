@@ -41,8 +41,8 @@ spec = do
 #else
   let describe' t = before_ (pendingWith "Incompatible GHC Unicode version")
                   . describe t
-  let it' = before_ (pendingWith "Incompatible GHC Unicode version")
-          . it t
+  let it' t = before_ (pendingWith "Incompatible GHC Unicode version")
+            . it t
 #endif
   describe' "Unicode general categories" do
     it "generalCategory" do
