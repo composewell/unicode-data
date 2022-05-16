@@ -10,7 +10,7 @@
 module Unicode.Char.Numeric
     ( isNumber
     , numericValue
-    , intValue
+    , integerValue
 
     -- * Re-export
     , isDigit
@@ -35,6 +35,10 @@ following 'GeneralCategory's, or 'False' otherwise:
 * 'LetterNumber'
 * 'OtherNumber'
 
+__Note:__ a character may have a numeric value (see 'numericValue') but return
+'False', because 'isNumber' only tests 'GeneralCategory':
+some CJK characters are 'OtherLetter' and do have a numeric value.
+
 prop> isNumber c == Data.Char.isNumber c
 
 @since 0.3.0
@@ -49,7 +53,8 @@ isNumber c = case generalCategory c of
 -- | Numeric value of a character, if relevant.
 --
 -- __Note:__ a character may have a numeric value but return 'False' with
--- the predicate 'isNumber', because 'isNumber' only tests 'GeneralCategory'.
+-- the predicate 'isNumber', because 'isNumber' only tests 'GeneralCategory':
+-- some CJK characters are 'OtherLetter' and do have a numeric value.
 {-# INLINE numericValue #-}
 numericValue :: Char -> Maybe Rational
 numericValue = V.numericValue
@@ -57,8 +62,11 @@ numericValue = V.numericValue
 -- | Integer value of a character, if relevant.
 --
 -- __Note:__ a character may have a numeric value but return 'False' with
--- the predicate 'isNumber', because 'isNumber' only tests 'GeneralCategory'.
-intValue :: Char -> Maybe Int
-intValue c = V.numericValue c >>= \r -> if denominator r == 1
-    then Just (fromIntegral (numerator r))
-    else Nothing
+-- the predicate 'isNumber', because 'isNumber' only tests 'GeneralCategory':
+-- some CJK characters are 'OtherLetter' and do have a numeric value.
+integerValue :: Char -> Maybe Int
+integerValue c = do
+    r <- V.numericValue c
+    if denominator r == 1
+        then Just (fromIntegral (numerator r))
+        else Nothing

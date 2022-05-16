@@ -46,7 +46,7 @@ spec = do
 #endif
   describe' "Unicode general categories" do
     it "generalCategory" do
-      -- Note: we cannot compare the categories directly, so use 'show'.
+      -- [NOTE] We cannot compare the categories directly, so use 'show'.
       (show . UChar.generalCategory) `shouldBeEqualTo` (show . Char.generalCategory)
   describe' "Character classification" do
     it "isAlpha" do
@@ -85,6 +85,7 @@ spec = do
       UNumeric.isNumber `shouldBeEqualTo` Char.isNumber
     it "isNumber implies a numeric value" do
       -- [NOTE] the following does not hold with the current predicate `isNumber`.
+      --        As of Unicode 14.0.0, there are 81 such characters (all CJK).
       -- 'let check c = (UNumeric.isNumber c `xor` isNothing (UNumeric.numericValue c))
       let check c = not (UNumeric.isNumber c) || isJust (UNumeric.numericValue c)
       traverse_ (`shouldSatisfy` check) [minBound..maxBound]
