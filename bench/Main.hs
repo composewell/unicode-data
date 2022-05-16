@@ -180,6 +180,12 @@ main = defaultMain
       [ Bench "base"          B.isNumber
       , Bench "unicode-data"  Num.isNumber
       ]
+    , bgroup "numericValue"
+      [ benchNF "unicode-data" Num.numericValue
+      ]
+    , bgroup "integerValue"
+      [ benchNF "unicode-data" Num.integerValue
+      ]
     ]
   ]
   where
