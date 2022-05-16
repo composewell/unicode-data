@@ -25,24 +25,23 @@ import Data.Ratio (numerator, denominator)
 import Unicode.Char.General (GeneralCategory(..), generalCategory)
 import qualified Unicode.Internal.Char.DerivedNumericValues as V
 
-{-| Selects Unicode numeric characters, including digits from various
-scripts, Roman numerals, et cetera.
-
-This function returns 'True' if its argument has one of the
-following 'GeneralCategory's, or 'False' otherwise:
-
-* 'DecimalNumber'
-* 'LetterNumber'
-* 'OtherNumber'
-
-__Note:__ a character may have a numeric value (see 'numericValue') but return
-'False', because 'isNumber' only tests 'GeneralCategory':
-some CJK characters are 'OtherLetter' and do have a numeric value.
-
-prop> isNumber c == Data.Char.isNumber c
-
-@since 0.3.0
--}
+-- | Selects Unicode numeric characters, including digits from various
+-- scripts, Roman numerals, et cetera.
+--
+-- This function returns 'True' if its argument has one of the
+-- following 'GeneralCategory's, or 'False' otherwise:
+--
+-- * 'DecimalNumber'
+-- * 'LetterNumber'
+-- * 'OtherNumber'
+--
+-- __Note:__ a character may have a numeric value (see 'numericValue') but return
+-- 'False', because 'isNumber' only tests 'GeneralCategory':
+-- some CJK characters are 'OtherLetter' and do have a numeric value.
+--
+-- prop> isNumber c == Data.Char.isNumber c
+--
+-- @since 0.3.0
 isNumber :: Char -> Bool
 isNumber c = case generalCategory c of
     DecimalNumber -> True
@@ -50,6 +49,7 @@ isNumber c = case generalCategory c of
     OtherNumber   -> True
     _             -> False
 
+-- [TODO] @since
 -- | Numeric value of a character, if relevant.
 --
 -- __Note:__ a character may have a numeric value but return 'False' with
@@ -59,6 +59,7 @@ isNumber c = case generalCategory c of
 numericValue :: Char -> Maybe Rational
 numericValue = V.numericValue
 
+-- [TODO] @since
 -- | Integer value of a character, if relevant.
 --
 -- __Note:__ a character may have a numeric value but return 'False' with

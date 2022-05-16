@@ -1,5 +1,9 @@
 # Changelog
 
+## Next
+
+- Added `numericValue` and `integerValue` to `Unicode.Char.Numeric`.
+
 ## 0.3.0 (December 2021)
 
 - Support for big-endian architectures.
