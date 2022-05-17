@@ -15,6 +15,7 @@ import qualified Unicode.Char.General.Compat as UCharCompat
 --        are removed from Unicode.Char.Case
 import qualified Unicode.Char.Case.Compat as UCharCompat
 import qualified Unicode.Char.Numeric as UNumeric
+import qualified Unicode.Char.Numeric.Compat as UNumericCompat
 import Data.Foldable (traverse_)
 import Test.Hspec
 
@@ -82,12 +83,12 @@ spec = do
       UChar.toTitle `shouldBeEqualTo` Char.toTitle
   describe "Numeric" do
     it' "isNumber" do
-      UNumeric.isNumber `shouldBeEqualTo` Char.isNumber
+      UNumericCompat.isNumber `shouldBeEqualTo` Char.isNumber
     it "isNumber implies a numeric value" do
       -- [NOTE] the following does not hold with the current predicate `isNumber`.
       --        As of Unicode 14.0.0, there are 81 such characters (all CJK).
       -- 'let check c = (UNumeric.isNumber c `xor` isNothing (UNumeric.numericValue c))
-      let check c = not (UNumeric.isNumber c) || isJust (UNumeric.numericValue c)
+      let check c = not (UNumericCompat.isNumber c) || isJust (UNumeric.numericValue c)
       traverse_ (`shouldSatisfy` check) [minBound..maxBound]
   where
     shouldBeEqualTo

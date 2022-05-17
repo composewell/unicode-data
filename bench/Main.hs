@@ -10,6 +10,7 @@ import qualified Unicode.Char.General.Compat as GC
 import qualified Unicode.Char.Identifiers as I
 import qualified Unicode.Char.Normalization as N
 import qualified Unicode.Char.Numeric as Num
+import qualified Unicode.Char.Numeric.Compat as NumCompat
 
 -- | A unit benchmark
 data Bench a = Bench
@@ -176,15 +177,21 @@ main = defaultMain
       ]
     ]
   , bgroup "Unicode.Char.Numeric"
-    [ bgroup' "isNumber"
-      [ Bench "base"          B.isNumber
-      , Bench "unicode-data"  Num.isNumber
+    -- [TODO] Replace with 'isNumber' once the migration is done.
+    [ bgroup "hasNumericValue"
+      [ benchNF "unicode-data"  Num.hasNumericValue
       ]
     , bgroup "numericValue"
       [ benchNF "unicode-data" Num.numericValue
       ]
     , bgroup "integerValue"
       [ benchNF "unicode-data" Num.integerValue
+      ]
+    ]
+  , bgroup "Unicode.Char.Numeric.Compat"
+    [ bgroup' "isNumber"
+      [ Bench "base"          B.isNumber
+      , Bench "unicode-data"  NumCompat.isNumber
       ]
     ]
   ]

@@ -81,6 +81,7 @@ library
       Unicode.Char.Case.Compat
       Unicode.Char.Identifiers
       Unicode.Char.Numeric
+      Unicode.Char.Numeric.Compat
 
       -- Internal files
       Unicode.Internal.Bits
