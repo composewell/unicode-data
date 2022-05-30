@@ -10,7 +10,7 @@
 module Unicode.Char.Numeric
     ( -- * Predicates
       isNumber
-    , hasNumericValue
+    , isNumeric
 
       -- * Numeric values
     , numericValue
@@ -43,12 +43,12 @@ import qualified Unicode.Internal.Char.DerivedNumericValues as V
 -- __Note:__ a character may have a numeric value (see 'numericValue') but return
 -- 'False', because 'isNumber' only tests 'Unicode.Char.General.GeneralCategory':
 -- some CJK characters are 'Unicode.Char.General.OtherLetter' and do have a
--- numeric value. Use 'hasNumericValue' to cover those cases as well.
+-- numeric value. Use 'isNumeric' to cover those cases as well.
 --
 -- prop> isNumber c == Data.Char.isNumber c
 --
 -- @since 0.3.0
-{-# DEPRECATED isNumber "Use Unicode.Char.Numeric.Compat.isNumber instead. This function will be a synonym for hasNumericValue in a future release. See Unicode.Char.Numeric.Compat for behavior compatible with base:Data.Char." #-}
+{-# DEPRECATED isNumber "Use Unicode.Char.Numeric.Compat.isNumber instead. This function will be a synonym for isNumeric in a future release. See Unicode.Char.Numeric.Compat for behavior compatible with base:Data.Char." #-}
 {-# INLINE isNumber #-}
 isNumber :: Char -> Bool
 isNumber = Compat.isNumber
@@ -62,10 +62,10 @@ isNumber = Compat.isNumber
 -- 'Unicode.Char.General.GeneralCategory': some CJK characters are
 -- 'Unicode.Char.General.OtherLetter' and do have a numeric value.
 --
--- prop> hasNumericValue c == isJust (numericValue c)
-{-# INLINE hasNumericValue #-}
-hasNumericValue :: Char -> Bool
-hasNumericValue = isJust . V.numericValue
+-- prop> isNumeric c == isJust (numericValue c)
+{-# INLINE isNumeric #-}
+isNumeric :: Char -> Bool
+isNumeric = isJust . V.numericValue
 
 -- [TODO] @since
 -- | Numeric value of a character, if relevant.

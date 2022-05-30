@@ -28,7 +28,7 @@ import Unicode.Char.General (GeneralCategory(..), generalCategory)
 -- __Note:__ a character may have a numeric value (see 'numericValue') but return
 -- 'False', because 'isNumber' only tests 'GeneralCategory':
 -- some CJK characters are 'OtherLetter' and do have a numeric value.
--- Use 'hasNumericValue' to cover those cases as well.
+-- Use 'Unicode.Char.Numeric.isNumeric' to cover those cases as well.
 --
 -- prop> isNumber c == Data.Char.isNumber c
 isNumber :: Char -> Bool

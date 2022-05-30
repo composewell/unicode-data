@@ -178,8 +178,8 @@ main = defaultMain
     ]
   , bgroup "Unicode.Char.Numeric"
     -- [TODO] Replace with 'isNumber' once the migration is done.
-    [ bgroup "hasNumericValue"
-      [ benchNF "unicode-data"  Num.hasNumericValue
+    [ bgroup "isNumeric"
+      [ benchNF "unicode-data"  Num.isNumeric
       ]
     , bgroup "numericValue"
       [ benchNF "unicode-data" Num.numericValue

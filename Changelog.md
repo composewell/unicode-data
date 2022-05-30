@@ -2,7 +2,7 @@
 
 ## Next
 
-- Added `hasNumericValue`, `numericValue` and `integerValue`
+- Added `isNumeric`, `numericValue` and `integerValue`
   to `Unicode.Char.Numeric`.
 - Add compatibility module:
 
@@ -10,7 +10,7 @@
 
 ### Deprecations
 
-- `Unicode.Char.Numeric.isNumber`: it will be replaced by `hasNumericValue`
+- `Unicode.Char.Numeric.isNumber`: it will be replaced by `isNumeric`
   in a _future_ version of this package.
   Use the function in `Unicode.Char.Numeric.Compat` instead.
 
