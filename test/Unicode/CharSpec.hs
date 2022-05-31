@@ -6,6 +6,7 @@ module Unicode.CharSpec
   ) where
 
 import qualified Data.Char as Char
+import Data.Maybe (isJust)
 import qualified Unicode.Char as UChar
 -- [TODO] Remove the following qualified imports once isLetter and isSpace
 --        are removed from Unicode.Char.General
@@ -13,6 +14,8 @@ import qualified Unicode.Char.General.Compat as UCharCompat
 -- [TODO] Remove the following qualified imports once isUpper and isLower
 --        are removed from Unicode.Char.Case
 import qualified Unicode.Char.Case.Compat as UCharCompat
+import qualified Unicode.Char.Numeric as UNumeric
+import qualified Unicode.Char.Numeric.Compat as UNumericCompat
 import Data.Foldable (traverse_)
 import Test.Hspec
 
@@ -35,13 +38,16 @@ spec :: Spec
 spec = do
 #ifdef COMPATIBLE_GHC_UNICODE
   let describe' = describe
+  let it' = it
 #else
   let describe' t = before_ (pendingWith "Incompatible GHC Unicode version")
                   . describe t
+  let it' t = before_ (pendingWith "Incompatible GHC Unicode version")
+            . it t
 #endif
   describe' "Unicode general categories" do
     it "generalCategory" do
-      -- Note: we cannot compare the categories directly, so use 'show'.
+      -- [NOTE] We cannot compare the categories directly, so use 'show'.
       (show . UChar.generalCategory) `shouldBeEqualTo` (show . Char.generalCategory)
   describe' "Character classification" do
     it "isAlpha" do
@@ -54,8 +60,6 @@ spec = do
       UCharCompat.isLetter `shouldBeEqualTo` Char.isLetter
     it "isMark" do
       UChar.isMark `shouldBeEqualTo` Char.isMark
-    it "isNumber" do
-      UChar.isNumber `shouldBeEqualTo` Char.isNumber
     it "isPrint" do
       UChar.isPrint `shouldBeEqualTo` Char.isPrint
     it "isPunctuation" do
@@ -77,6 +81,15 @@ spec = do
       UChar.toUpper `shouldBeEqualTo` Char.toUpper
     it "toTitle" do
       UChar.toTitle `shouldBeEqualTo` Char.toTitle
+  describe "Numeric" do
+    it' "isNumber" do
+      UNumericCompat.isNumber `shouldBeEqualTo` Char.isNumber
+    it "isNumber implies a numeric value" do
+      -- [NOTE] the following does not hold with the current predicate `isNumber`.
+      --        As of Unicode 14.0.0, there are 81 such characters (all CJK).
+      -- 'let check c = (UNumeric.isNumber c `xor` isNothing (UNumeric.numericValue c))
+      let check c = not (UNumericCompat.isNumber c) || isJust (UNumeric.numericValue c)
+      traverse_ (`shouldSatisfy` check) [minBound..maxBound]
   where
     shouldBeEqualTo
         :: forall a b. (Bounded a, Enum a, Show a, Eq b, Show b)

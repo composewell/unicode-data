@@ -1,5 +1,19 @@
 # Changelog
 
+## Next
+
+- Added `isNumeric`, `numericValue` and `integerValue`
+  to `Unicode.Char.Numeric`.
+- Add compatibility module:
+
+  - `Unicode.Char.Numeric.Compat`
+
+### Deprecations
+
+- `Unicode.Char.Numeric.isNumber`: it will be replaced by `isNumeric`
+  in a _future_ version of this package.
+  Use the function in `Unicode.Char.Numeric.Compat` instead.
+
 ## 0.3.0 (December 2021)
 
 - Support for big-endian architectures.
