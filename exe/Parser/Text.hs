@@ -22,14 +22,14 @@ import Control.Exception (catch, IOException)
 import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Data.Bits (Bits(..))
-import Data.Word (Word8)
 import Data.Bifunctor (Bifunctor(..))
 import Data.Char (chr, ord, isSpace)
 import Data.Functor ((<&>))
 import Data.Function ((&))
-import Data.List (intersperse, dropWhileEnd, unfoldr, sort)
-import Data.Maybe (fromMaybe)
+import Data.List (intersperse, dropWhileEnd, unfoldr, sort, sortBy)
+import Data.Maybe (mapMaybe)
 import Data.Ratio ((%))
+import Data.Word (Word8)
 import Streamly.Data.Fold (Fold)
 import Streamly.Prelude (IsStream, SerialT)
 import System.Directory (createDirectoryIfMissing)
@@ -72,6 +72,9 @@ data DecompType =
 data Decomp = DCSelf | DC [Char] deriving (Show, Eq)
 
 data DType = Canonical | Kompat
+
+data QuickCheck = QuickCheckNo | QuickCheckYes | QuickCheckMaybe
+    deriving (Eq, Ord)
 
 data DetailedChar =
     DetailedChar
@@ -182,7 +185,7 @@ genEnumBitmap funcName def as = unlines
                <> show (length as)
                <> " then "
                <> show (fromEnum def)
-               <> " else lookupIntN bitmap# n"
+               <> " else lookupInt8 bitmap# n"
     , "  where"
     , "    bitmap# = \"" <> enumMapToAddrLiteral as "\"#"
     ]
@@ -271,7 +274,7 @@ genGeneralCategoryModule moduleName =
         , "where"
         , ""
         , "import Data.Char (ord)"
-        , "import Unicode.Internal.Bits (lookupIntN)"
+        , "import Unicode.Internal.Bits (lookupInt8)"
         , ""
         , genEnumBitmap "generalCategory" Cn (reverse acc)
         ]
@@ -362,11 +365,18 @@ genCombiningClassModule moduleName =
 
     where
 
-    initial = ([], [])
+    initial = ([], [], '\0')
 
-    step (st1, st2) a = (genCombiningClassDef a : st1, ord (_char a) : st2)
+    step (st1, st2, expected) dc = let c = _char dc in
+        ( addCC expected c (_combiningClass dc) st1
+        , ord c : st2
+        , succ c)
 
-    done (st1, st2) =
+    addCC expected c cc acc = if expected < c
+        then addCC (succ expected) c cc (0 : acc)
+        else cc : acc
+
+    done (st1, st2, _) =
         unlines
             [ apacheLicense moduleName
             , "{-# LANGUAGE LambdaCase #-}"
@@ -376,22 +386,12 @@ genCombiningClassModule moduleName =
             , "where"
             , ""
             , "import Data.Char (ord)"
-            , "import Unicode.Internal.Bits (lookupBit64)"
+            , "import Unicode.Internal.Bits (lookupInt8, lookupBit64)"
             , ""
-            , "combiningClass :: Char -> Int"
-            , "combiningClass = \\case"
-            , unlines (reverse st1)
-            , "  _ -> 0\n"
+            , genEnumBitmap "combiningClass" 0 (reverse st1)
             , ""
             , genBitmap "isCombining" (reverse st2)
             ]
-
-    genCombiningClassDef dc = mconcat
-        [ "  "
-        , show (_char dc)
-        , " -> "
-        , show (_combiningClass dc)
-        ]
 
 genDecomposeDefModule ::
        Monad m
@@ -582,7 +582,7 @@ genSimpleCaseMappingModule moduleName funcName field =
         ]
 
 genCorePropertiesModule ::
-       Monad m => String -> (String -> Bool) -> Fold m (String, [Int]) String
+       Monad m => String -> (String -> Bool) -> Fold m BinaryPropertyLine String
 genCorePropertiesModule moduleName isProp =
     Fold.filter (\(name, _) -> isProp name) $ done <$> Fold.foldl' step initial
 
@@ -608,6 +608,136 @@ genCorePropertiesModule moduleName isProp =
         , "import Data.Char (ord)"
         , "import Unicode.Internal.Bits (lookupBit64)"
         ]
+
+genNormalizationPropertiesModule
+    :: Monad m
+    => String
+    -> [NormalizationPropertyLine]
+    -> Fold m DetailedChar String
+genNormalizationPropertiesModule moduleName quickCheckValues =
+    done <$> Fold.foldl' step mempty
+
+    where
+
+    done ccs = let (exports, bitmaps) = mkProperties ccs in unlines
+        [ apacheLicense moduleName
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
+        , "module " <> moduleName
+        , "(" <> mconcat (intersperse ", " (prop2FuncName <$> exports)) <> ")"
+        , "where"
+        , ""
+        , "import Data.Char (ord)"
+        , "import Unicode.Internal.Bits (lookupBit64, lookupInt2)"
+        , ""
+        , mconcat bitmaps
+        ]
+
+    step acc dc = if _combiningClass dc == 0
+        -- starter
+        then acc
+        -- combining
+        else ord (_char dc) : acc
+
+    mkProperties :: [Int] -> ([String], [String])
+    mkProperties ccs = foldr (mkProp ccs) mempty quickCheckValues
+
+    mkProp ccs (name, values) (props, bitmaps) =
+        ( name : props
+        , (: bitmaps) $ case name of
+            "NFD_QC"  -> genQuickCheckBitMapD     (prop2FuncName name) values
+            "NFKD_QC" -> genQuickCheckBitMapD     (prop2FuncName name) values
+            _         -> genQuickCheckBitMapC ccs (prop2FuncName name) values
+        )
+
+    prop2FuncName = ("is" <>)
+
+    genQuickCheckBitMapD funcName
+        = genBitmapD funcName
+        . mapMaybe encodeD
+
+    genQuickCheckBitMapC ccs funcName
+        = genBitmapC funcName
+        . (\(acc, _, minCP, maxCP) -> (reverse acc, either id id minCP, maxCP))
+        . foldr (encodeC ccs) (mempty, 0, Right 0, 0)
+        . sortBy (flip compare)
+
+    -- NFD & NFKD: Encode Quick_Check value on 1 bit
+    encodeD (cp, quickCheck) = case quickCheck of
+        QuickCheckYes   -> Nothing
+        QuickCheckNo    -> Just cp
+        QuickCheckMaybe -> error ("Unexpected Maybe value for: " <> show cp)
+
+    -- NFC & NFKC: Encode Quick_Check value on 2 bits
+    -- • 00: No
+    -- • 01: Maybe
+    -- • 10: Yes, combining
+    -- • 11: Yes, starter
+    -- Note: here encoded reversed
+    encodeC
+        :: [Int]
+        -> (Int, QuickCheck)
+        -> ([Bool], Int, Either Int Int, Int)
+        -> ([Bool], Int, Either Int Int, Int)
+    encodeC ccs v@(cp, quickCheck) (acc, expected, minCP, maxCP) =
+        if cp > expected
+            -- Yes: check if starter
+            then if expected `elem` ccs
+                -- Yes, combining
+                then encodeC ccs v ( True : False : acc
+                                   , succ expected
+                                   , succ <$> minCP
+                                   , expected )
+                -- Yes, starter
+                else encodeC ccs v ( True : True : acc
+                                   , succ expected
+                                   , succ <$> minCP
+                                   , maxCP )
+            -- No or Maybe
+            else case quickCheck of
+                QuickCheckYes   -> error
+                    ("Unexpected Maybe value for: " <> show cp)
+                QuickCheckNo    -> ( False : False : acc
+                                   , succ expected
+                                   , minCP >>= Left
+                                   , cp )
+                QuickCheckMaybe -> ( False : True : acc
+                                   , succ expected
+                                   , minCP >>= Left
+                                   , cp )
+
+    -- Note: No maybe
+    genBitmapD :: String -> [Int] -> String
+    genBitmapD funcName bits =
+        unlines
+            [ "{-# INLINE " <> funcName <> " #-}"
+            , funcName <> " :: Char -> Bool"
+            , funcName <> " = \\c -> let n = ord c in not ("
+                <> genRangeCheck "n" bits
+                <> " && lookupBit64 bitmap# n)"
+            , "  where"
+            , "    bitmap# = \"" <> bitMapToAddrLiteral (positionsToBitMap bits) "\"#\n"
+            ]
+
+    genBitmapC :: String -> ([Bool], Int, Int) -> String
+    genBitmapC funcName (bits, minCP, maxCP) =
+        unlines
+            [ "{-# INLINE " <> funcName <> " #-}"
+            , funcName <> " :: Char -> Int"
+            , funcName <> " = \\c -> let n = ord c in if n >= "
+                <> show minCP
+                <> " && n <= "
+                <> show maxCP
+            , "  then lookupInt2 bitmap# n"
+            , "  else 3"
+            , "  where"
+            , "    -- Encoding on 2 bits:"
+            , "    -- • 00: No"
+            , "    -- • 01: Maybe"
+            , "    -- • 10: Yes, combining"
+            , "    -- • 11: Yes, starter"
+            , "    bitmap# = \"" <> bitMapToAddrLiteral bits "\"#\n"
+            ]
 
 genNumericValuesModule
     :: Monad m
@@ -652,27 +782,30 @@ trim = takeWhile (not . isSpace) . dropWhile isSpace
 trim' :: String -> String
 trim' = dropWhileEnd isSpace . dropWhile isSpace
 
-type PropertyLine = (String, [Int])
+type BinaryPropertyLine = (String, [Int])
 
-emptyPropertyLine :: PropertyLine
-emptyPropertyLine = ("", [])
+emptyBinaryPropertyLine :: BinaryPropertyLine
+emptyBinaryPropertyLine = ("", [])
 
-combinePropertyLines :: PropertyLine -> PropertyLine -> PropertyLine
-combinePropertyLines t1@(n1, o1) t2@(n2, o2)
+combineBinaryPropertyLines
+    :: BinaryPropertyLine
+    -> BinaryPropertyLine
+    -> BinaryPropertyLine
+combineBinaryPropertyLines t1@(n1, o1) t2@(n2, o2)
     | n1 == "" = t2
     | n2 == "" = t1
     | n1 == n2 = (n1, o1 ++ o2)
     | otherwise = error $ "Cannot group " ++ n1 ++ " with " ++ n2
 
-parsePropertyLine :: String -> PropertyLine
-parsePropertyLine ln
-    | null ln = emptyPropertyLine
-    | head ln == '#' = emptyPropertyLine
+parseBinaryPropertyLine :: String -> BinaryPropertyLine
+parseBinaryPropertyLine ln
+    | null ln = emptyBinaryPropertyLine
+    | head ln == '#' = emptyBinaryPropertyLine
     | otherwise = parseLineJ ln
 
     where
 
-    parseLineJ :: String -> (String, [Int])
+    parseLineJ :: String -> BinaryPropertyLine
     parseLineJ line =
         let (rangeLn, line1) = span (/= ';') line
             propLn = takeWhile (/= '#') (tail line1)
@@ -690,11 +823,78 @@ parsePropertyLine ln
 isDivider :: String -> Bool
 isDivider x = x == "# ================================================"
 
-parsePropertyLines :: (IsStream t, Monad m) => t m String -> t m PropertyLine
-parsePropertyLines =
+parseBinaryPropertyLines
+    :: (IsStream t, Monad m)
+    => t m String
+    -> t m BinaryPropertyLine
+parseBinaryPropertyLines =
     Stream.splitOn isDivider
-        $ Fold.lmap parsePropertyLine
-        $ Fold.foldl' combinePropertyLines emptyPropertyLine
+        $ Fold.lmap parseBinaryPropertyLine
+        $ Fold.foldl' combineBinaryPropertyLines emptyBinaryPropertyLine
+
+type NormalizationPropertyLine = (String, [(Int, QuickCheck)])
+
+parseNormalizationPropertyLine :: String -> Maybe NormalizationPropertyLine
+parseNormalizationPropertyLine ln
+    | null ln = Nothing
+    | head ln == '#' = Nothing
+    | otherwise = parseLineJ ln
+
+    where
+
+    isProp :: String -> Bool
+    isProp = \case
+        "NFD_QC"  -> True
+        "NFKD_QC" -> True
+        "NFC_QC"  -> True
+        "NFKC_QC" -> True
+        _         -> False
+
+    parseLineJ :: String -> Maybe NormalizationPropertyLine
+    parseLineJ line =
+        let (rangeLn, line1) = first trim (span (/= ';') line)
+            (propLn, line2) = first trim (span (/= ';') (tail line1))
+            value = trim (takeWhile (/= '#') (tail line2))
+        in if isProp propLn
+            then Just (propLn, (,parseValue value) <$> parseRange rangeLn)
+            else Nothing
+
+    parseValue :: String -> QuickCheck
+    parseValue = \case
+        "N" -> QuickCheckNo
+        "M" -> QuickCheckMaybe
+        "Y" -> QuickCheckYes
+        v   -> error ("Cannot parse QuickCheck value: " <> v)
+
+    parseRange :: String -> [Int]
+    parseRange rng =
+        if '.' `elem` rng
+        then let low = read $ "0x" ++ takeWhile (/= '.') rng
+                 high =
+                     read $ "0x" ++ reverse (takeWhile (/= '.') (reverse rng))
+              in [low .. high]
+        else [read $ "0x" ++ rng]
+
+parseNormalizationPropsLines
+    :: (IsStream t, Monad m)
+    => t m String
+    -> t m NormalizationPropertyLine
+parseNormalizationPropsLines
+    = Stream.groupsBy isSameProp (Fold.foldl' combine ("", []))
+    . Stream.mapMaybe parseNormalizationPropertyLine
+
+    where
+
+    isSameProp (n1, _) (n2, _) = n1 == n2
+
+    combine
+        :: NormalizationPropertyLine
+        -> NormalizationPropertyLine
+        -> NormalizationPropertyLine
+    combine l1@(n1, v1) l2@(n2, v2)
+        | n1 == "" = l2
+        | n2 == "" = l1
+        | otherwise = (n1, v1 <> v2)
 
 -- | A range entry in @UnicodeData.txt@.
 data UnicodeDataRange
@@ -915,16 +1115,21 @@ genModules indir outdir props = do
 
     compExclu <-
         readLinesFromFile (indir <> "DerivedNormalizationProps.txt")
-            & parsePropertyLines
+            & parseBinaryPropertyLines
             & Stream.find (\(name, _) -> name == "Full_Composition_Exclusion")
-            & fmap (snd . fromMaybe ("", []))
+            & fmap (maybe [] snd)
 
     non0CC <-
         readLinesFromFile (indir <> "extracted/DerivedCombiningClass.txt")
-            & parsePropertyLines
+            & parseBinaryPropertyLines
             & Stream.filter (\(name, _) -> name /= "0")
             & Stream.map snd
             & Stream.fold (Fold.foldl' (++) [])
+
+    quickCheck <-
+        readLinesFromFile (indir <> "DerivedNormalizationProps.txt")
+            & parseNormalizationPropsLines
+            & Stream.toList
 
     runGenerator
         indir
@@ -942,19 +1147,20 @@ genModules indir outdir props = do
         , simpleUpperCaseMapping
         , simpleLowerCaseMapping
         , simpleTitleCaseMapping
+        , derivedNormalizationProperties quickCheck
         ]
 
     runGenerator
         indir
         "PropList.txt"
-        parsePropertyLines
+        parseBinaryPropertyLines
         outdir
         [ propList ]
 
     runGenerator
         indir
         "DerivedCoreProperties.txt"
-        parsePropertyLines
+        parseBinaryPropertyLines
         outdir
         [ derivedCoreProperties ]
 
@@ -974,6 +1180,10 @@ genModules indir outdir props = do
     derivedCoreProperties =
         ("Unicode.Internal.Char.DerivedCoreProperties"
         , (`genCorePropertiesModule` (`elem` props)))
+
+    derivedNormalizationProperties quickCheck =
+        ("Unicode.Internal.Char.DerivedNormalizationProperties"
+        , \m -> genNormalizationPropertiesModule m quickCheck)
 
     compositions exc non0 =
         ( "Unicode.Internal.Char.UnicodeData.Compositions"

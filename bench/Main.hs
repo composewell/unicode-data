@@ -175,6 +175,18 @@ main = defaultMain
     , bgroup "decomposeHangul"
       [ benchNF "unicode-data" N.decomposeHangul
       ]
+    , bgroup "isNFD"
+      [ benchNF "unicode-data" (fromEnum . N.isNFD)
+      ]
+    , bgroup "isNFKD"
+      [ benchNF "unicode-data" (fromEnum . N.isNFKD)
+      ]
+    , bgroup "isNFC"
+      [ benchNF "unicode-data" (fromEnum . N.isNFC)
+      ]
+    , bgroup "isNFKC"
+      [ benchNF "unicode-data" (fromEnum . N.isNFKC)
+      ]
     ]
   , bgroup "Unicode.Char.Numeric"
     -- [TODO] Replace with 'isNumber' once the migration is done.

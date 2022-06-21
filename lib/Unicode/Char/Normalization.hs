@@ -49,6 +49,13 @@ module Unicode.Char.Normalization
 
     -- ** Hangul
     , decomposeHangul
+
+    -- * Quick check
+    , QuickCheck(..)
+    , isNFD
+    , isNFKD
+    , isNFC
+    , isNFKC
     )
 where
 
@@ -59,12 +66,13 @@ import Unicode.Internal.Division (quotRem21, quotRem28)
 import Unicode.Char.General
     (hangulFirst, jamoLFirst, jamoTCount, jamoTFirst, jamoVCount, jamoVFirst)
 
-import qualified Unicode.Internal.Char.UnicodeData.CombiningClass  as CC
-import qualified Unicode.Internal.Char.UnicodeData.Compositions    as C
-import qualified Unicode.Internal.Char.UnicodeData.Decomposable    as D
-import qualified Unicode.Internal.Char.UnicodeData.DecomposableK   as K
-import qualified Unicode.Internal.Char.UnicodeData.Decompositions  as D
-import qualified Unicode.Internal.Char.UnicodeData.DecompositionsK as K
+import qualified Unicode.Internal.Char.UnicodeData.CombiningClass     as CC
+import qualified Unicode.Internal.Char.UnicodeData.Compositions       as C
+import qualified Unicode.Internal.Char.UnicodeData.Decomposable       as D
+import qualified Unicode.Internal.Char.UnicodeData.DecomposableK      as K
+import qualified Unicode.Internal.Char.UnicodeData.Decompositions     as D
+import qualified Unicode.Internal.Char.UnicodeData.DecompositionsK    as K
+import qualified Unicode.Internal.Char.DerivedNormalizationProperties as QC
 
 -------------------------------------------------------------------------------
 -- Compose
@@ -166,3 +174,60 @@ combiningClass = CC.combiningClass
 {-# INLINE isCombining #-}
 isCombining :: Char -> Bool
 isCombining = CC.isCombining
+
+-------------------------------------------------------------------------------
+-- Quick check
+-------------------------------------------------------------------------------
+
+-- | Quick Check result.
+--
+-- See [Unicode Normalization Forms](https://www.unicode.org/reports/tr15/#Detecting_Normalization_Forms)
+-- for further details.
+data QuickCheck
+  = No
+  -- ^ The code point cannot occur in that Normalization Form.
+  | Maybe
+  -- ^ The code point is a starter and can occur in the Normalization Form.
+  -- In addition, for NFKC and NFC, the character may compose with a following
+  -- character, but it /never/ composes with a previous character.
+  | Yes
+  -- ^ The code point can occur, subject to canonical ordering, but with
+  -- constraints. In particular, the text may not be in the specified
+  -- Normalization Form depending on the context in which the character occurs.
+  deriving (Enum, Bounded, Eq, Show)
+
+-- | Return the
+-- [Quick Check](https://www.unicode.org/reports/tr15/#Detecting_Normalization_Forms)
+-- result for /Normalization Form D/ (__NFD__).
+{-# INLINE isNFD #-}
+isNFD :: Char -> Bool
+isNFD = QC.isNFD_QC
+
+-- | Return the
+-- [Quick Check](https://www.unicode.org/reports/tr15/#Detecting_Normalization_Forms)
+-- result for /Normalization Form KD/ (__NFKD__).
+{-# INLINE isNFKD #-}
+isNFKD :: Char -> Bool
+isNFKD = QC.isNFKD_QC
+
+-- | Return the
+-- [Quick Check](https://www.unicode.org/reports/tr15/#Detecting_Normalization_Forms)
+-- result for /Normalization Form C/ __NFC__.
+{-# INLINE isNFC #-}
+isNFC :: Char -> QuickCheck
+isNFC c = case QC.isNFC_QC c of
+    3 -> Yes
+    2 -> Yes
+    1 -> Maybe
+    _ -> No
+
+-- | Return the
+-- [Quick Check](https://www.unicode.org/reports/tr15/#Detecting_Normalization_Forms)
+-- result for /Normalization Form KD/ (__NFKC__).
+{-# INLINE isNFKC #-}
+isNFKC :: Char -> QuickCheck
+isNFKC c = case QC.isNFKC_QC c of
+    3 -> Yes
+    2 -> Yes
+    1 -> Maybe
+    _ -> No
