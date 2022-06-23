@@ -15,7 +15,9 @@ FILES="\
   ucd/DerivedNormalizationProps.txt:b2c444c20730b097787fdf50bd7d6dd3fc5256ab8084f5b35b11c8776eca674c \
   ucd/UnicodeData.txt:36018e68657fdcb3485f636630ffe8c8532e01c977703d2803f5b89d6c5feafb \
   ucd/PropList.txt:6bddfdb850417a5bee6deff19290fd1b138589909afb50f5a049f343bf2c6722 \
+  ucd/NameAliases.txt:14b3b677d33f95c51423dce6eef4a6a28b4b160451ecedee4b91edb6745cf4a3 \
   ucd/extracted/DerivedCombiningClass.txt:12b0c3af9b600b49488d66545a3e7844ea980809627201bf9afeebe1c9f16f4e \
+  ucd/extracted/DerivedName.txt:fef3e11514ba152f0d38a09f8018c03a825f846dbb912334c1e5c9fb29392a02 \
   ucd/extracted/DerivedNumericValues.txt:11075771b112e8e7ccf6ffa637c4c91eadc3ef3db0517b24e605df8fd3624239"
 
 # Download the files
@@ -59,7 +61,8 @@ run_generator() {
     # Compile and run ucd2haskell
     cabal run --flag ucd2haskell ucd2haskell -- \
           --input ./ucd/ \
-          --output ./lib/ \
+          --output-core ./unicode-data/lib/ \
+          --output-names ./unicode-data-names/lib/ \
           --core-prop Uppercase \
           --core-prop Lowercase \
           --core-prop Alphabetic \
@@ -72,7 +75,7 @@ run_generator() {
           --core-prop Pattern_White_Space
     # Update unicodeVersion in Unicode.Char
     VERSION_AS_LIST=$(echo "$VERSION" | sed "s/\./, /g")
-    sed -ri "s/^(unicodeVersion = makeVersion \[)[^]]*\]/\1$VERSION_AS_LIST\]/" "lib/Unicode/Char.hs"
+    sed -ri "s/^(unicodeVersion = makeVersion \[)[^]]*\]/\1$VERSION_AS_LIST\]/" "unicode-data/lib/Unicode/Char.hs"
 }
 
 # Print help text
