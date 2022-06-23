@@ -1,14 +1,17 @@
 # README
 
 `unicode-data` provides Haskell APIs to efficiently access the Unicode
-character database. Performance is the primary goal in the design of
-this package.
+character database. [Performance](#performance) is the primary goal in the
+design of this package.
 
 The Haskell data structures are generated programmatically from the
-Unicode character database (UCD) files.  The latest Unicode version
-supported by this library is 14.0.0.
+[Unicode character database](https://www.unicode.org/ucd/) (UCD) files.
+The latest Unicode version supported by this library is
+[`14.0.0`](https://www.unicode.org/versions/Unicode14.0.0/).
 
-Please see the haddock documentation for reference documentation.
+Please see the
+[Haddock documentation](https://hackage.haskell.org/package/unicode-data)
+for reference documentation.
 
 ## Performance
 

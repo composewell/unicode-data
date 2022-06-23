@@ -1,6 +1,6 @@
 resolver: lts-18.18
 packages:
-- '.'
+- './unicode-data'
 extra-deps:
 - streamly-0.8.0
 flags:
