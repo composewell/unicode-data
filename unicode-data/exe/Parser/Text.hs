@@ -2,7 +2,8 @@
 
 -- |
 -- Module      : Parser.Text
--- Copyright   : (c) 2020 Composewell Technologies and Contributors
+-- Copyright   : (c) 2021 Pierre Le Marre
+--               (c) 2020 Composewell Technologies and Contributors
 --               (c) 2016-2017 Harendra Kumar
 --               (c) 2014-2015 Antonio Nikishaev
 -- License     : Apache-2.0
@@ -16,25 +17,30 @@
 -- https://github.com/llelf/prose (Antonio Nikishaev) and heavily modified by
 -- Harendra Kumar.
 --
-module Parser.Text (genModules) where
+module Parser.Text
+    ( genCoreModules
+    , genNamesModules
+    ) where
 
 import Control.Exception (catch, IOException)
 import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO(liftIO))
-import Data.Bits (Bits(..))
-import Data.Word (Word8)
 import Data.Bifunctor (Bifunctor(..))
-import Data.Char (chr, ord, isSpace)
-import Data.Functor ((<&>))
+import Data.Bits (Bits(..))
+import Data.Char (chr, ord, isSpace, toUpper)
 import Data.Function ((&))
-import Data.List (intersperse, dropWhileEnd, unfoldr, sort)
+import Data.Functor ((<&>))
+import Data.List (dropWhileEnd, elemIndex, intersperse, sort, unfoldr)
 import Data.Maybe (fromMaybe)
 import Data.Ratio ((%))
+import Data.Word (Word8)
+import Numeric (showHex)
 import Streamly.Data.Fold (Fold)
 import Streamly.Prelude (IsStream, SerialT)
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getEnv)
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Streamly.Prelude as Stream
 import qualified Streamly.Data.Fold as Fold
@@ -91,12 +97,17 @@ data DetailedChar =
 -- Helpers
 -------------------------------------------------------------------------------
 
-apacheLicense :: String -> String
-apacheLicense modName =
+apacheLicense
+    :: Word   -- ^ Copyright year
+    -> String -- ^ Module name
+    -> String
+apacheLicense year modName =
     unlines
         [ "-- |"
-        , "-- Module      : " ++ modName
-        , "-- Copyright   : (c) 2020 Composewell Technologies and Contributors"
+        , "-- Module      : " <> modName
+        , "-- Copyright   : (c) "
+            <> show year
+            <> " Composewell Technologies and Contributors"
         , "-- License     : Apache-2.0"
         , "-- Maintainer  : streamly@composewell.com"
         , "-- Stability   : experimental"
@@ -108,6 +119,12 @@ readCodePoint = chr . read . ("0x"++)
 readCodePointM :: String -> Maybe Char
 readCodePointM "" = Nothing
 readCodePointM u  = Just (readCodePoint u)
+
+showHexCodepoint :: Char -> String
+showHexCodepoint c =
+    let hex = showHex (ord c) mempty
+        padding = 4 - length hex
+    in replicate padding '0' <> hex
 
 genSignature :: String -> String
 genSignature = (<> " :: Char -> Bool")
@@ -263,7 +280,7 @@ genGeneralCategoryModule moduleName =
         else (_generalCategory a : acc, succ (_char a))
 
     done (acc, _) = unlines
-        [ apacheLicense moduleName
+        [ apacheLicense 2020 moduleName
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
@@ -342,7 +359,7 @@ genDecomposableModule moduleName dtype =
 
     done st =
         unlines
-            [ apacheLicense moduleName
+            [ apacheLicense 2020 moduleName
             , "{-# OPTIONS_HADDOCK hide #-}"
             , ""
             , "module " <> moduleName
@@ -368,7 +385,7 @@ genCombiningClassModule moduleName =
 
     done (st1, st2) =
         unlines
-            [ apacheLicense moduleName
+            [ apacheLicense 2020 moduleName
             , "{-# LANGUAGE LambdaCase #-}"
             , "{-# OPTIONS_HADDOCK hide #-}"
             , "module " <> moduleName
@@ -412,7 +429,7 @@ genDecomposeDefModule moduleName before after dtype pred =
     decomposeChar _c (DC ds) = ds
 
     genHeader =
-        [ apacheLicense moduleName
+        [ apacheLicense 2020 moduleName
         , "{-# LANGUAGE LambdaCase #-}"
         , "{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
@@ -498,7 +515,7 @@ genCompositionsModule moduleName compExclu non0CC =
             else ss
 
     header =
-        [ apacheLicense moduleName
+        [ apacheLicense 2020 moduleName
         , "{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
@@ -548,7 +565,7 @@ genSimpleCaseMappingModule moduleName funcName field =
     where
 
     genHeader =
-        [ apacheLicense moduleName
+        [ apacheLicense 2020 moduleName
         , "{-# LANGUAGE LambdaCase #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
@@ -598,7 +615,7 @@ genCorePropertiesModule moduleName isProp =
     done (props, bitmaps) = unlines $ header props ++ bitmaps
 
     header exports =
-        [ apacheLicense moduleName
+        [ apacheLicense 2020 moduleName
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
@@ -607,6 +624,174 @@ genCorePropertiesModule moduleName isProp =
         , ""
         , "import Data.Char (ord)"
         , "import Unicode.Internal.Bits (lookupBit64)"
+        ]
+
+genNamesModule
+    :: Monad m
+    => String
+    -> Fold m CharName String
+genNamesModule moduleName =
+    done <$> Fold.foldl' addCharName (mempty, mempty, 0)
+
+    where
+
+    addCharName (names, offsets, offset) (CharName char name) =
+        ( name <> ['\0'] : names
+        , encodeOffset char offset : offsets
+        , offset + length name + 1
+        )
+
+    encodeOffset char offset = encode32LE (ord char) (encode32LE offset mempty)
+    encode32LE v acc
+        = (v             .&. 0xff)
+        : (v `shiftR` 8  .&. 0xff)
+        : (v `shiftR` 16 .&. 0xff)
+        :  v `shiftR` 24
+        : acc
+
+    done (names, offsets, _) = unlines
+        [ apacheLicense 2022 moduleName
+        , "{-# LANGUAGE CPP #-}"
+        , "{-# LANGUAGE OverloadedStrings #-}"
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
+        , "module " <> moduleName
+        , "(name)"
+        , "where"
+        , ""
+        , "#include \"MachDeps.h\""
+        , ""
+        , "import Foreign.C.String (CString)"
+        , "import GHC.Exts"
+        , ""
+        , "-- | Name of a character, if defined."
+        , "--"
+        , "-- @since 0.1.0"
+        , "{-# INLINE name #-}"
+        , "name :: Char -> Maybe CString"
+        , "name (C# c#) = getName 0# " <> shows (length names - 1) "#"
+        , "    where"
+        , "    -- [NOTE] Encoding"
+        , "    -- • The names are ASCII. Each name is encoded as a NUL-terminated CString."
+        , "    -- • The names are concatenated in names#."
+        , "    -- • The name of a character, if defined, is referenced by an offset in names#."
+        , "    -- • The offsets are stored in offsets#. A character entry is composed of two"
+        , "    --   LE Word32: the first one is the codepoint, the second one is the offset."
+        , "    -- • We use binary search on offsets# to extract names from names#."
+        , "    cp# = ord# c#"
+        , "    -- Binary search"
+        , "    getName l# u# = if isTrue# (l# ># u#)"
+        , "        then Nothing"
+        , "        else"
+        , "            let k# = l# +# uncheckedIShiftRL# (u# -# l#) 1#"
+        , "                j# = k# `uncheckedIShiftL#` 1#"
+        , "                cp'# = indexInt32OffAddr'# j#"
+        , "            in if isTrue# (cp'# <# cp#)"
+        , "                then getName (k# +# 1#) u#"
+        , "                else if isTrue# (cp'# ==# cp#)"
+        , "                    then let offset# = indexInt32OffAddr'# (j# +# 1#)"
+        , "                         in Just (Ptr (names# `plusAddr#` offset#))"
+        , "                    else getName l# (k# -# 1#)"
+        , "    indexInt32OffAddr'# :: Int# -> Int#"
+        , "    indexInt32OffAddr'# k# ="
+        , "#ifdef WORDS_BIGENDIAN"
+        , "#if MIN_VERSION_base(4,16,0)"
+        , "        word2Int# (byteSwap32# (word32ToWord# (indexWord32OffAddr# offsets# k#)))"
+        , "#else"
+        , "        word2Int# (byteSwap32# (indexWord32OffAddr# offsets# k#))"
+        , "#endif"
+        , "#elif MIN_VERSION_base(4,16,0)"
+        , "        int32ToInt# (indexInt32OffAddr# offsets# k#)"
+        , "#else"
+        , "        indexInt32OffAddr# offsets# k#"
+        , "#endif"
+        , ""
+        , "    names# = "
+        -- Note: names are ASCII
+            <> shows (mconcat (reverse names)) "#"
+        , "    offsets# = \""
+            <> enumMapToAddrLiteral (mconcat (reverse offsets)) "\"#"
+        ]
+
+genAliasesModule
+    :: Monad m
+    => String
+    -> Fold m CharAliases String
+genAliasesModule moduleName =
+    done <$> Fold.foldr (\a -> (:) (mkCharAliases a)) mempty
+
+    where
+
+    mkCharAliases :: CharAliases -> String
+    mkCharAliases (CharAliases char aliases) = mconcat
+        [ "  '\\x"
+        , showHexCodepoint char
+        , "' -> "
+        , show . Map.toList
+               . Map.fromListWith (flip (<>))
+               $ fmap ((:[])) <$> aliases
+        , "\n"
+        ]
+
+    done names = unlines
+        [ apacheLicense 2022 moduleName
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
+        , "module " <> moduleName
+        , "(NameAliasType(..), nameAliases, nameAliasesByType, nameAliasesWithTypes)"
+        , "where"
+        , ""
+        , "import Data.Ix (Ix)"
+        , "import Data.Maybe (fromMaybe)"
+        , "import Foreign.C.String (CString)"
+        , "import GHC.Exts (Ptr(..))"
+        , ""
+        , "-- | Type of name alias. See Unicode Standard 14.0.0, section 4.8."
+        , "--"
+        , "-- @since 0.1.0"
+        , "data NameAliasType"
+        , "    = Correction"
+        , "    -- ^ Corrections for serious problems in the character names."
+        , "    | Control"
+        , "    -- ^ ISO&#xa0;6429 names for @C0@ and @C1@ control functions, and other"
+        , "    --   commonly occurring names for control codes."
+        , "    | Alternate"
+        , "    -- ^ A few widely used alternate names for format characters."
+        , "    | Figment"
+        , "    -- ^ Several documented labels for @C1@ control code points which"
+        , "    --   were never actually approved in any standard."
+        , "    | Abbreviation"
+        , "    -- ^ Commonly occurring abbreviations (or acronyms) for control codes,"
+        , "    --   format characters, spaces, and variation selectors."
+        , "    deriving (Enum, Bounded, Eq, Ord, Ix, Show)"
+        , ""
+        , "-- | All name aliases of a character."
+        , "-- The names are listed in the original order of the UCD."
+        , "--"
+        , "-- See 'nameAliasesWithTypes' for the detailed list by alias type."
+        , "--"
+        , "-- @since 0.1.0"
+        , "{-# INLINE nameAliases #-}"
+        , "nameAliases :: Char -> [CString]"
+        , "nameAliases = mconcat . fmap snd . nameAliasesWithTypes"
+        , ""
+        , "-- | Name aliases of a character for a specific name alias type."
+        , "--"
+        , "-- @since 0.1.0"
+        , "{-# INLINE nameAliasesByType #-}"
+        , "nameAliasesByType :: NameAliasType -> Char -> [CString]"
+        , "nameAliasesByType t = fromMaybe mempty . lookup t . nameAliasesWithTypes"
+        , ""
+        , "-- | Detailed character names aliases."
+        , "-- The names are listed in the original order of the UCD."
+        , "--"
+        , "-- See 'nameAliases' if the alias type is not required."
+        , "--"
+        , "-- @since 0.1.0"
+        , "nameAliasesWithTypes :: Char -> [(NameAliasType, [CString])]"
+        , "nameAliasesWithTypes = \\case"
+        , mconcat names
+        , "  _ -> mempty"
         ]
 
 genNumericValuesModule
@@ -627,7 +812,7 @@ genNumericValuesModule moduleName =
 
 
     done values = unlines
-        [ apacheLicense moduleName
+        [ apacheLicense 2022 moduleName
         , "{-# LANGUAGE LambdaCase #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
@@ -821,7 +1006,6 @@ parseDerivedNumericValuesLine line
             then Left  (read numerator)
             else Right (read numerator % read (tail denominator))
 
-
 parseDerivedNumericValuesLines
     :: (IsStream t, Monad m)
     => t m String
@@ -840,6 +1024,120 @@ parseDerivedNumericValuesLines
         Right (c1, c2, value) -> if c1 <= c2
             then Just ((c1, value), Right (succ c1, c2, value))
             else Nothing
+
+-------------------------------------------------------------------------------
+-- Parsing Aliases
+-------------------------------------------------------------------------------
+
+data AliasType
+    = Correction
+    | Control
+    | Alternate
+    | Figment
+    | Abbreviation
+    deriving (Eq, Ord, Read, Show)
+
+newtype Alias = Alias String
+instance Show Alias where
+    show (Alias s) = "Ptr \"" <> s <> "\\0\"#"
+
+type Aliases = [(AliasType, Alias)]
+data CharAliases = CharAliases
+    { _aChar    :: !Char
+    , _aAliases :: !Aliases }
+type AliasesLine = (Char, Alias, AliasType)
+
+parseAliasesLine :: String -> Maybe AliasesLine
+parseAliasesLine line
+    | null line        = Nothing
+    | head line == '#' = Nothing
+    | otherwise        =
+        let (char , line1) = span (/= ';') line
+            (alias, line2) = span (/= ';') (tail line1)
+            type_          = tail line2
+        in Just (readCodePoint char, Alias alias, readAliasType type_)
+
+    where
+
+    readAliasType :: String -> AliasType
+    readAliasType a = read (toUpper (head a) : tail a)
+
+
+parseAliasesLines :: (IsStream t, Monad m) => t m String -> t m CharAliases
+parseAliasesLines
+    = Stream.groupsBy compareChar
+        (Fold.foldr combineAliases (CharAliases '\0' mempty))
+    . Stream.mapMaybe parseAliasesLine
+
+    where
+
+    compareChar :: AliasesLine -> AliasesLine -> Bool
+    compareChar (char1, _, _) (char2, _, _) = char1 == char2
+
+    combineAliases :: AliasesLine -> CharAliases -> CharAliases
+    combineAliases (char, alias, type_) (CharAliases _ as) =
+        CharAliases char ((type_, alias):as)
+
+-------------------------------------------------------------------------------
+-- Parsing Names
+-------------------------------------------------------------------------------
+
+data CharName = CharName
+    { _nChar    :: !Char
+    , _nName    :: !String }
+
+type CharRangeName = (Char, Char, String)
+type DerivedNameLine = Either CharName CharRangeName
+
+parseDerivedNameLine :: String -> Maybe DerivedNameLine
+parseDerivedNameLine line
+    | null line        = Nothing
+    | head line == '#' = Nothing
+    | otherwise        =
+        let (range, line1) = span (/= ';') line
+            name = trim' (tail line1)
+        in Just (bimap (`CharName` name) (mkRange name) (parseRange range))
+    where
+
+    parseRange :: String -> Either Char (Char, Char)
+    parseRange
+        = (\(c1, c2) -> maybe (Left c1) (Right . (c1,)) c2)
+        . bimap readCodePoint (readCodePointM . drop 2)
+        . span (/= '.')
+
+    mkRange :: String -> (Char, Char) -> CharRangeName
+    mkRange name (c1, c2) = case elemIndex '*' name of
+        Nothing -> error
+            $ "Range name should contain “*”: "
+            <> show (showHexCodepoint c1, showHexCodepoint c2, name)
+        Just k  -> if k == length name - 1
+            then (c1, c2, init name)
+            else error
+                $ "Unexpected “*” before the end of range name: "
+                <> show (showHexCodepoint c1, showHexCodepoint c2, name)
+
+parseDerivedNameLines
+    :: forall t m. (IsStream t, Monad m) =>
+    t m String ->
+    t m CharName
+parseDerivedNameLines
+    = Stream.unfoldMany (Unfold.unfoldr mkCharsNames)
+    . Stream.mapMaybe parseDerivedNameLine
+
+    where
+
+    mkCharsNames :: DerivedNameLine -> Maybe (CharName, DerivedNameLine)
+    mkCharsNames = \case
+        Left named -> Just (named, Right ((_nChar named),  '\0', mempty))
+        Right (c1, c2, template) -> if c1 <= c2
+            then Just ( mkName template c1
+                      , Right (succ c1, c2, template) )
+            else Nothing
+
+    mkName :: String -> Char -> CharName
+    mkName template char = CharName
+        { _nChar = char
+        , _nName = template <> fmap toUpper (showHexCodepoint char) }
 
 -------------------------------------------------------------------------------
 -- Generation
@@ -910,8 +1208,8 @@ runGenerator indir file transformLines outdir recipes =
     generatedFolds = map (fileEmitter file outdir) recipes
     combinedFld = void $ Fold.distribute generatedFolds
 
-genModules :: String -> String -> [String] -> IO ()
-genModules indir outdir props = do
+genCoreModules :: String -> String -> [String] -> IO ()
+genCoreModules indir outdir props = do
 
     compExclu <-
         readLinesFromFile (indir <> "DerivedNormalizationProps.txt")
@@ -1024,3 +1322,28 @@ genModules indir outdir props = do
     derivedNumericValues =
          ( "Unicode.Internal.Char.DerivedNumericValues"
          , \m -> genNumericValuesModule m)
+
+genNamesModules :: String -> String -> IO ()
+genNamesModules indir outdir = do
+    runGenerator
+        indir
+        "extracted/DerivedName.txt"
+        parseDerivedNameLines
+        outdir
+        [names]
+
+    runGenerator
+        indir
+        "NameAliases.txt"
+        parseAliasesLines
+        outdir
+        [aliases]
+
+    where
+
+    names =
+         ( "Unicode.Internal.Char.UnicodeData.DerivedName"
+         , \m -> genNamesModule m )
+    aliases =
+         ( "Unicode.Internal.Char.UnicodeData.NameAliases"
+         , \m -> genAliasesModule m )

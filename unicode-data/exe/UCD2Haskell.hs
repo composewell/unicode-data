@@ -8,19 +8,24 @@
 module Main where
 
 import WithCli (HasArguments(..), withCli)
-import Parser.Text (genModules)
+import Parser.Text (genCoreModules, genNamesModules)
 import GHC.Generics (Generic)
 
 data CLIOptions =
     CLIOptions
-        { input :: String
-        , output :: String
+        { input :: FilePath
+        , output_core :: FilePath
+        -- ^ `unicode-data`
+        , output_names :: FilePath
+        -- ^ `unicode-data-names`
         , core_prop :: [String]
         }
     deriving (Show, Generic, HasArguments)
 
 cliClient :: CLIOptions -> IO ()
-cliClient opts = genModules (input opts) (output opts) (core_prop opts)
+cliClient opts
+    = genCoreModules (input opts) (output_core opts) (core_prop opts)
+    *> genNamesModules (input opts) (output_names opts)
 
 main :: IO ()
 main = withCli cliClient
