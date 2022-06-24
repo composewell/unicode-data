@@ -6,11 +6,14 @@ module Unicode.CharSpec
   ) where
 
 import qualified Data.Char as Char
+import Data.Ix (Ix(..))
 import Data.Maybe (isJust)
 import qualified Unicode.Char as UChar
+import qualified Unicode.Char.General.Blocks as UBlocks
 -- [TODO] Remove the following qualified imports once isLetter and isSpace
 --        are removed from Unicode.Char.General
 import qualified Unicode.Char.General.Compat as UCharCompat
+import qualified Unicode.Char.General.Scripts as UScripts
 -- [TODO] Remove the following qualified imports once isUpper and isLower
 --        are removed from Unicode.Char.Case
 import qualified Unicode.Char.Case.Compat as UCharCompat
@@ -45,6 +48,58 @@ spec = do
   let it' t = before_ (pendingWith "Incompatible GHC Unicode version")
             . it t
 #endif
+  describe "Unicode blocks" do
+    it "Characters not in any block are unassigned"
+        let { check c = case UBlocks.block c of
+            Just  _ -> pure ()
+            Nothing -> UChar.generalCategory c `shouldBe` UChar.NotAssigned
+        } in traverse_ check [minBound..maxBound]
+    it "Characters are in the definition of their corresponding block + inBlock"
+        let {
+            check c = case UBlocks.block c of
+                Nothing -> pure ()
+                Just b  ->
+                    let r = UBlocks.blockRange (UBlocks.blockDefinition b)
+                    in if inRange r (UChar.ord c) && UBlocks.inBlock b c
+                        then pure ()
+                        else expectationFailure $ mconcat
+                            [ "Character “", show c
+                            , "” is not in the block “", show b, "”." ]
+        } in traverse_ check [minBound..maxBound]
+    it "Characters in a block definition have the corresponding block"
+        let {
+            check b = let r = UBlocks.blockRange (UBlocks.blockDefinition b)
+                      in traverse_ (checkChar b) (UChar.chr <$> range r);
+            checkChar b c = let b' = UBlocks.block c in if b' == Just b
+                then pure ()
+                else expectationFailure $ mconcat
+                    [ "Block is different for “", show c, "”. Expected: “Just "
+                    , show b, "” but got: “", show b', "”." ]
+        } in traverse_ check [minBound..maxBound]
+  describe "Unicode scripts" do
+    it "inScript"
+        let check s = if all (UScripts.inScript s) (UScripts.scriptDefinition s)
+                    then pure ()
+                    else expectationFailure (show s)
+        in traverse_ check [minBound..maxBound]
+    it "Characters are in the definition of their corresponding script"
+        let {
+            check c = let s = UScripts.script c in if UScripts.inScript s c
+                    then pure ()
+                    else expectationFailure $ mconcat
+                        [ "Char “", show c, "” in not in the definition of “"
+                        , show s, "”." ]
+        } in traverse_ check [minBound..maxBound]
+    it "Characters in a script definition have the corresponding script"
+        let {
+            checkChar s c = let s' = UScripts.script c in if s' == s
+                then pure ()
+                else expectationFailure $ mconcat
+                    [ "Script is different for “", show c, "”. Expected: “"
+                    , show s, "” but got: “", show s', "”." ];
+            check s = let chars = UScripts.scriptDefinition s
+                      in traverse_ (checkChar s) chars
+        } in traverse_ check [minBound..maxBound]
   describe' "Unicode general categories" do
     it "generalCategory" do
       -- [NOTE] We cannot compare the categories directly, so use 'show'.
