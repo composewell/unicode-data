@@ -15,8 +15,8 @@ bug-reports:         https://github.com/composewell/unicode-data/issues
 license:             Apache-2.0
 license-file:        LICENSE
 author:              Composewell Technologies and Contributors
-maintainer:          streamly@composewell.com
-copyright:           2020 Composewell Technologies and Contributors
+maintainer:          dev@wismill.eu
+copyright:           2022 Composewell Technologies and Contributors
 category:            Data,Text,Unicode
 stability:           Experimental
 build-type:          Simple

@@ -14,7 +14,7 @@ The latest Unicode version supported by these libraries is
 
 ### `unicode-data`
 
-[`unicode-data`](unicode-data/README.md) provides Haskell APIs to efficiently
+[`unicode-data`](unicode-data#readme) provides Haskell APIs to efficiently
 access the Unicode character database.
 Performance is the primary goal in the design of this package.
 
@@ -24,7 +24,7 @@ for reference documentation.
 
 ### `unicode-data-names`
 
-[`unicode-data-names`](unicode-data-names/README.md) provides Haskell APIs
+[`unicode-data-names`](unicode-data-names#readme) provides Haskell APIs
 to efficiently access the Unicode character names from the Unicode character
 database.
 
@@ -34,7 +34,7 @@ for reference documentation.
 
 ## Performance
 
-`unicode-data` is up to [_5 times faster_](unicode-data/README.md#performance)
+`unicode-data` is up to [_5 times faster_](unicode-data#performance)
 than `base`.
 
 ## Unicode database version update
