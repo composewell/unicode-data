@@ -1,6 +1,7 @@
-import Control.DeepSeq (NFData, deepseq)
-import Data.Ix (Ix(..))
-import Test.Tasty.Bench (Benchmark, bgroup, bench, bcompare, nf, defaultMain)
+import Control.DeepSeq (NFData, deepseq, force)
+import Control.Exception (evaluate)
+import Test.Tasty.Bench
+    (Benchmark, bgroup, bench, bcompare, defaultMain, env, nf)
 
 import qualified Data.Char as B
 import qualified Unicode.Char.Case as C
@@ -208,7 +209,15 @@ main = defaultMain
               . benchNF title
 
     benchNF :: forall a. (NFData a) => String -> (Char -> a) -> Benchmark
-    benchNF t f = bench t $ nf (fold_ f) (minBound, maxBound)
+    benchNF t f =
+        -- Avoid side-effects with garbage collection (see tasty-bench doc)
+        env
+            (evaluate (force chars)) -- initialize
+            (bench t . nf (fold_ f)) -- benchmark
+        where
+        -- Filter out: Surrogates, Private Use Areas and unsassigned code points
+        chars = filter isValid [minBound..maxBound]
+        isValid c = B.generalCategory c < B.Surrogate
 
-    fold_ :: forall a. (NFData a) => (Char -> a) -> (Char, Char) -> ()
-    fold_ f = foldr (deepseq . f) () . range
+    fold_ :: forall a. (NFData a) => (Char -> a) -> String -> ()
+    fold_ f = foldr (deepseq . f) ()
