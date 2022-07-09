@@ -70,17 +70,60 @@ spec = do
       UCharCompat.isSpace `shouldBeEqualTo` Char.isSpace
     it "isSymbol" do
       UChar.isSymbol `shouldBeEqualTo` Char.isSymbol
-  describe' "Case" do
-    it "isLower" do
+  describe "Case" do
+    it' "isLower" do
       UCharCompat.isLower `shouldBeEqualTo` Char.isLower
-    it "isUpper" do
+    it' "isUpper" do
       UCharCompat.isUpper `shouldBeEqualTo` Char.isUpper
-    it "toLower" do
+    it' "toLower" do
       UChar.toLower `shouldBeEqualTo` Char.toLower
-    it "toUpper" do
+    let caseCheck f (c, cs) = c `shouldSatisfy` (== cs) . f
+    describe "toLowerString" do
+        it "Examples" do
+            let examples = [ ('\0', "\0")
+                           , ('a', "a")
+                           , ('A', "a")
+                           , ('1', "1")
+                           , ('\x130', "i\x307") ]
+            traverse_ (caseCheck UChar.toLowerString) examples
+        it' "Common mapping should match simple one" do
+            let check c = case UChar.toLowerString c of
+                        [c'] -> c `shouldSatisfy` ((== c') . UChar.toLower)
+                        _    -> pure ()
+            traverse_ check [minBound..maxBound]
+    it' "toUpper" do
       UChar.toUpper `shouldBeEqualTo` Char.toUpper
-    it "toTitle" do
+    describe "toUpperString" do
+        it "Examples" do
+            let examples = [ ('\0', "\0")
+                           , ('a', "A")
+                           , ('A', "A")
+                           , ('1', "1")
+                           , ('\xdf', "SS")
+                           , ('\x1F52', "\x03A5\x0313\x0300") ]
+            traverse_ (caseCheck UChar.toUpperString) examples
+        it' "Common mapping should match simple one" do
+            let check c = case UChar.toUpperString c of
+                        [c'] -> c `shouldSatisfy` ((== c') . UChar.toUpper)
+                        _    -> pure ()
+            traverse_ check [minBound..maxBound]
+    it' "toTitle" do
       UChar.toTitle `shouldBeEqualTo` Char.toTitle
+    describe "toTitleString" do
+        it "Examples" do
+            let examples = [ ('\0', "\0")
+                           , ('a', "A")
+                           , ('A', "A")
+                           , ('1', "1")
+                           , ('\xdf', "Ss")
+                           , ('\xfb02', "Fl")
+                           , ('\x1F52', "\x03A5\x0313\x0300") ]
+            traverse_ (caseCheck UChar.toTitleString) examples
+        it' "Common mapping should match simple one" do
+            let check c = case UChar.toTitleString c of
+                        [c'] -> c `shouldSatisfy` ((== c') . UChar.toTitle)
+                        _    -> pure ()
+            traverse_ check [minBound..maxBound]
   describe "Numeric" do
     it' "isNumber" do
       UNumericCompat.isNumber `shouldBeEqualTo` Char.isNumber

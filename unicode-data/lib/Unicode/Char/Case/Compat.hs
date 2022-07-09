@@ -52,6 +52,11 @@ isLower c = case generalCategory c of
 -- | Convert a letter to the corresponding upper-case letter, if any.
 -- Any other character is returned unchanged.
 --
+-- It uses the character property @Simple_Uppercase_Mapping@.
+--
+-- See: 'Unicode.Char.Case.upperCaseMapping' and
+-- 'Unicode.Char.Case.toUpperString' for /full/ upper case conversion.
+--
 -- prop> toUpper c == Data.Char.toUpper c
 --
 -- @since 0.3.0
@@ -61,6 +66,11 @@ toUpper = C.toSimpleUpperCase
 
 -- | Convert a letter to the corresponding lower-case letter, if any.
 -- Any other character is returned unchanged.
+--
+-- It uses the character property @Simple_Lowercase_Mapping@.
+--
+-- See: 'Unicode.Char.Case.lowerCaseMapping' and
+-- 'Unicode.Char.Case.toLowerString' for /full/ lower case conversion.
 --
 -- prop> toLower c == Data.Char.toLower c
 --
@@ -72,6 +82,11 @@ toLower = C.toSimpleLowerCase
 -- | Convert a letter to the corresponding title-case or upper-case letter,
 -- if any. (Title case differs from upper case only for a small number of
 -- ligature letters.) Any other character is returned unchanged.
+--
+-- It uses the character property @Simple_Titlecase_Mapping@.
+--
+-- See: 'Unicode.Char.Case.titleCaseMapping' and
+-- 'Unicode.Char.Case.toTitleString' for /full/ title case conversion.
 --
 -- prop> toTitle c == Data.Char.toTitle c
 --

@@ -16,6 +16,7 @@ FILES="\
   ucd/UnicodeData.txt:36018e68657fdcb3485f636630ffe8c8532e01c977703d2803f5b89d6c5feafb \
   ucd/PropList.txt:6bddfdb850417a5bee6deff19290fd1b138589909afb50f5a049f343bf2c6722 \
   ucd/NameAliases.txt:14b3b677d33f95c51423dce6eef4a6a28b4b160451ecedee4b91edb6745cf4a3 \
+  ucd/SpecialCasing.txt:c667b45908fd269af25fd55d2fc5bbc157fb1b77675936e25c513ce32e080334 \
   ucd/extracted/DerivedCombiningClass.txt:12b0c3af9b600b49488d66545a3e7844ea980809627201bf9afeebe1c9f16f4e \
   ucd/extracted/DerivedName.txt:fef3e11514ba152f0d38a09f8018c03a825f846dbb912334c1e5c9fb29392a02 \
   ucd/extracted/DerivedNumericValues.txt:11075771b112e8e7ccf6ffa637c4c91eadc3ef3db0517b24e605df8fd3624239"

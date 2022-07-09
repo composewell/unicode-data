@@ -27,6 +27,15 @@ main = defaultMain
     , bgroup "isUpperCase"
       [ benchNF "unicode-data" C.isUpperCase
       ]
+    , bgroup "toLowerString"
+      [ benchNF "unicode-data" C.toLowerString
+      ]
+    , bgroup "toTitleString"
+      [ benchNF "unicode-data" C.toTitleString
+      ]
+    , bgroup "toUpperString"
+      [ benchNF "unicode-data" C.toUpperString
+      ]
     ]
   , bgroup "Unicode.Char.Case.Compat"
     [ bgroup' "isLower"
