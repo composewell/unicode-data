@@ -90,6 +90,7 @@ library
       -- Generated files
       -- This module structure is largely based on the UCD file names from which
       -- the properties are generated.
+      Unicode.Internal.Char.CaseFolding
       Unicode.Internal.Char.DerivedCoreProperties
       Unicode.Internal.Char.DerivedNumericValues
       Unicode.Internal.Char.PropList

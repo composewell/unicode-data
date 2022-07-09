@@ -18,6 +18,10 @@ module Unicode.Char.Case
       -- * Case mappings
       -- $case
 
+      -- ** Case folding mapping
+    , caseFoldingMapping
+    , toCaseFoldString
+
       -- ** Lower case mapping
     , lowerCaseMapping
     , toLowerString
@@ -38,6 +42,7 @@ import Data.Char (chr, ord)
 import Data.Int (Int64)
 
 import Unicode.Internal.Unfold
+import qualified Unicode.Internal.Char.CaseFolding as C
 import qualified Unicode.Internal.Char.DerivedCoreProperties as P
 import qualified Unicode.Internal.Char.SpecialCasing.LowerCaseMapping as C
 import qualified Unicode.Internal.Char.SpecialCasing.TitleCaseMapping as C
@@ -76,19 +81,34 @@ isUpper = P.isUppercase
 -- $case
 --
 -- Correct case conversion rules may map one input character to two or three
--- output characters. For examples, see the documentation of 'toLowerString',
--- 'toTitleString' and 'toUpperString'.
+-- output characters. For examples, see the documentation of 'toCaseFoldString',
+-- 'toLowerString', 'toTitleString' and 'toUpperString'.
 --
 -- __Note:__ In some languages, case conversion is a locale- and
 -- context-dependent operation. The case conversion functions in this
 -- module are /not/ locale nor context sensitive.
 
 -- [TODO] @since
--- | Returns the /lower/ case mapping of a character.
+-- | Returns the full /folded/ case mapping of a character.
+--
+-- It uses the character property @Case_Folding@.
+--
+-- __Note:__ @\'\\NUL\'@ requires special handling.
+-- See 'toCaseFoldString' source code for an example.
+caseFoldingMapping :: Unfold Char Char
+caseFoldingMapping = Unfold step inject
+    where
+    inject c = case C.toCasefold c of
+        0 -> fromIntegral (ord c)
+        k -> k
+
+-- [TODO] @since
+-- | Returns the full /lower/ case mapping of a character.
 --
 -- It uses the character property @Lowercase_Mapping@.
 --
--- @\'\\NUL\'@ requires special handling.
+-- __Note:__ @\'\\NUL\'@ requires special handling.
+-- See 'toLowerString' source code for an example.
 lowerCaseMapping :: Unfold Char Char
 lowerCaseMapping = Unfold step inject
     where
@@ -97,11 +117,12 @@ lowerCaseMapping = Unfold step inject
         k -> k
 
 -- [TODO] @since
--- | Returns the /title/ case mapping of a character.
+-- | Returns the full /title/ case mapping of a character.
 --
 -- It uses the character property @Titlecase_Mapping@.
 --
--- @\'\\NUL\'@ requires special handling.
+-- __Note:__ @\'\\NUL\'@ requires special handling.
+-- See 'toTitleString' source code for an example.
 titleCaseMapping :: Unfold Char Char
 titleCaseMapping = Unfold step inject
     where
@@ -110,17 +131,42 @@ titleCaseMapping = Unfold step inject
         k -> k
 
 -- [TODO] @since
--- | Returns the /upper/ case mapping of a character.
+-- | Returns the full /upper/ case mapping of a character.
 --
 -- It uses the character property @Uppercase_Mapping@.
 --
--- @\'\\NUL\'@ requires special handling.
+-- __Note:__ @\'\\NUL\'@ requires special handling.
+-- See 'toUpperString' source code for an example.
 upperCaseMapping :: Unfold Char Char
 upperCaseMapping = Unfold step inject
     where
     inject c = case C.toSpecialUpperCase c of
         0 -> fromIntegral (ord c)
         k -> k
+
+-- [TODO] @since
+-- | Convert a character to full /folded/ case if defined, else to itself.
+--
+-- This function is mainly useful for performing caseless (also known
+-- as case insensitive) string comparisons.
+--
+-- A string @x@ is a caseless match for a string @y@ if and only if:
+--
+-- @foldMap toCaseFoldString x == foldMap toCaseFoldString y@
+--
+-- The result string may have more than one character, and may
+-- differ from applying 'toLowerString' to the input string. For instance,
+-- “&#xfb13;” (@U+FB13@ Armenian small ligature men now) is case
+-- folded to the sequence “&#x574;” (@U+0574@ Armenian small letter men)
+-- followed by “&#x576;” (@U+0576@ Armenian small letter now), while
+-- “&#xb5;” (@U+00B5@ micro sign) is case folded to
+-- “&#x3bc;” (@U+03BC@  Greek small letter mu) instead of itself.
+--
+-- It uses the character property @Case_Folding@.
+toCaseFoldString :: Char -> String
+toCaseFoldString = \case
+    '\NUL' -> "\NUL"
+    c      -> toList caseFoldingMapping c
 
 -- [TODO] @since
 -- | Convert a character to full /lower/ case if defined, else to itself.

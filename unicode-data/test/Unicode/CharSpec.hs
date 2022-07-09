@@ -124,6 +124,15 @@ spec = do
                         [c'] -> c `shouldSatisfy` ((== c') . UChar.toTitle)
                         _    -> pure ()
             traverse_ check [minBound..maxBound]
+    describe "toCaseFoldString" do
+        it "Examples" do
+            let examples = [ ('\0', "\0")
+                           , ('a', "a")
+                           , ('A', "a")
+                           , ('1', "1")
+                           , ('\xb5', "\x3bc")
+                           , ('\xfb13', "\x574\x576") ]
+            traverse_ (caseCheck UChar.toCaseFoldString) examples
   describe "Numeric" do
     it' "isNumber" do
       UNumericCompat.isNumber `shouldBeEqualTo` Char.isNumber

@@ -27,6 +27,9 @@ main = defaultMain
     , bgroup "isUpperCase"
       [ benchNF "unicode-data" C.isUpperCase
       ]
+    , bgroup "toCaseFoldString"
+      [ benchNF "unicode-data" C.toCaseFoldString
+      ]
     , bgroup "toLowerString"
       [ benchNF "unicode-data" C.toLowerString
       ]
