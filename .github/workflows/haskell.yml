@@ -51,6 +51,7 @@ jobs:
           - 8.10.7+exe
           - 9.0.1+exe
           - 9.2.1
+          - 9.4.2
           - hlint
 
         include:
@@ -102,6 +103,11 @@ jobs:
             ghc_version: 9.2.1
             runner: ubuntu-latest
             cabal_version: 3.6
+
+          - name: 9.4.2
+            ghc_version: 9.4.2
+            runner: ubuntu-latest
+            cabal_version: 3.8.1.0
 
           - name: hlint
             pack_options: HLINT_OPTIONS="lint" HLINT_TARGETS="lib exe"
