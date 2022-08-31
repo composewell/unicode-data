@@ -15,7 +15,7 @@ jobs:
       # ------------------------------------------------------------------------
       CABAL_REINIT_CONFIG: y
       LC_ALL: C.UTF-8
-      DISABLE_TEST: y
+      DISABLE_TEST: n
 
       # ------------------------------------------------------------------------
       # cabal options
@@ -60,16 +60,19 @@ jobs:
             ghc_version: 8.0.2
             runner: ubuntu-latest
             cabal_version: 3.2
+            pack_options: DISABLE_TEST=y
 
           - name: 8.2.2
             ghc_version: 8.2.2
             runner: ubuntu-latest
             cabal_version: 3.2
+            pack_options: DISABLE_TEST=y
 
           - name: 8.4.4
             ghc_version: 8.4.4
             runner: ubuntu-latest
             cabal_version: 3.2
+            pack_options: DISABLE_TEST=y
 
           - name: 8.6.5
             ghc_version: 8.6.5
