@@ -658,7 +658,6 @@ genSpecialCaseMappingModule moduleName funcName specialCasings special simple =
         -- Check min 1 character, max 3 characters
         . (\cs -> if null cs || length cs > 3 then error (show cs) else cs)
 
-
 genCaseFolding
     :: Monad m
     => String
