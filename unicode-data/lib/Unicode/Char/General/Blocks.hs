@@ -22,8 +22,7 @@ module Unicode.Char.General.Blocks
 where
 
 import Control.Arrow ((***))
-import Data.Char (chr, ord)
-import Data.Ix (inRange)
+import Data.Char (chr)
 import qualified Unicode.Internal.Char.Blocks as B
 
 -- [TODO] @since
@@ -36,7 +35,7 @@ block = fmap toEnum . B.block
 -- | Check if a character is in a block.
 {-# INLINE inBlock #-}
 inBlock :: B.Block -> Char -> Bool
-inBlock b = inRange (B.blockRange (B.blockDefinition b)) . ord
+inBlock b = (== Just b) . block
 
 -- [TODO] @since
 -- | All the block ranges, in ascending order.

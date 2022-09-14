@@ -22,10 +22,8 @@ where
 import Data.Char (chr)
 import GHC.Exts
        (Ptr(..), Char(..), Int(..),
-        indexWord32OffAddr#, word2Int#, int2Word#,
-        and#, isTrue#, eqWord#, leWord#, neWord#,
-        andI#, (-#), (<#),
-        chr#, ord#)
+        indexWord32OffAddr#, word2Int#,
+        and#, isTrue#, neWord#, (-#), (<#), chr#)
 #if MIN_VERSION_base(4,16,0)
 import GHC.Exts (word32ToWord#)
 #endif
@@ -40,6 +38,12 @@ import qualified Unicode.Internal.Char.Scripts as S
 {-# INLINE script #-}
 script :: Char -> S.Script
 script = toEnum . S.script
+
+-- [TODO] @since
+-- | Check if a character is in a 'S.Script'.
+{-# INLINE inScript #-}
+inScript :: S.Script -> Char -> Bool
+inScript s = (== s) . script
 
 {- HLINT ignore scriptDefinition "Eta reduce" -}
 -- [TODO] @since
@@ -82,42 +86,3 @@ scriptDefinition = unpack . S.scriptDefinition
                 } in addRange (k# -# 2#) acc'
                 else addRange (k# -# 1#) (C# (chr# c1#) : acc)
     } in addRange (n# -# 1#) mempty
-
-{- HLINT ignore inScript "Eta reduce" -}
--- [TODO] @since
--- | Check if a character is in a 'S.Script'.
-inScript :: S.Script -> Char -> Bool
-inScript s (C# c#) = check (S.scriptDefinition s)
-    where
-    -- [NOTE] see 'scriptDefinition' for the description of the encoding.
-
-    scriptRangeMask# = 0x80000000## -- 1 << 31
-    maskComplement#  = 0x7fffffff## -- 1 << 31 ^ 0xffffffff
-    cp# = int2Word# (ord# c#)
-
-    check (Ptr addr#, I# n#) = let {
-        getRawCodePoint k# =
-#ifdef WORDS_BIGENDIAN
-#if MIN_VERSION_base(4,16,0)
-            byteSwap32# (word32ToWord# (indexWord32OffAddr# addr# k#));
-#else
-            byteSwap32# (indexWord32OffAddr# addr# k#);
-#endif
-#elif MIN_VERSION_base(4,16,0)
-            word32ToWord# (indexWord32OffAddr# addr# k#);
-#else
-            indexWord32OffAddr# addr# k#;
-#endif
-        getCodePoint k# = and# maskComplement# k#;
-        find k# = not (isTrue# (k# <# 0#)) &&
-            let {
-                r1# = getRawCodePoint k#;
-                c1# = getCodePoint r1#;
-                isRange = isTrue# (and# r1# scriptRangeMask# `neWord#` 0##)
-            } in if isRange
-                then let {
-                    c2# = getCodePoint (getRawCodePoint (k# -# 1#));
-                    found = isTrue# ((c2# `leWord#` cp#) `andI#` (cp# `leWord#` c1#))
-                } in found || find (k# -# 2#)
-                else isTrue# (c1# `eqWord#` cp#) || find (k# -# 1#)
-    } in find (n# -# 1#)
