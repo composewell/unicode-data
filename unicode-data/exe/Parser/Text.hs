@@ -268,13 +268,21 @@ isHangul c = n >= hangulFirst && n <= hangulLast
 -- Parsers
 -------------------------------------------------------------------------------
 
+-- Make a valid Haskell constructor (in CamelCase) from an identifier.
 mkHaskellConstructor :: String -> String
-mkHaskellConstructor = fmap $ \case
-    '-' -> '_'
-    ' ' -> '_'
-    c   -> if isAscii c && isAlphaNum c
-        then c
-        else error ("Unsupported character: " <> show c)
+mkHaskellConstructor = reverse . fst . foldl' convert (mempty, True)
+    where
+
+    convert (acc, newWord) = \case
+        -- Skip the following and start a new word
+        ' ' -> (acc, True)
+        '-' -> (acc, True)
+        '_' -> (acc, True)
+        -- Letter or number
+        c   -> if isAscii c && isAlphaNum c
+            then ( if newWord then toUpper c : acc else c : acc
+                 , False)
+            else error ("Unsupported character: " <> show c)
 
 genBlocksModule
     :: Monad m
@@ -298,7 +306,7 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , "-- [TODO] @since"
         , "-- | Unicode block."
         , "data Block"
-        , "    = " <> mconcat (intersperse "\n  | " (reverse blocks))
+        , "    = " <> mconcat (intersperse "\n    | " (reverse blocks))
         , "    deriving (Enum, Bounded, Eq, Ord, Ix, Show)"
         , ""
         , "-- [TODO] @since"
@@ -487,7 +495,16 @@ genScriptsModule moduleName =
     addScript :: ScriptLine -> Set.Set String -> Set.Set String
     addScript (script, _) = Set.insert script
 
-    mkScripts scripts = mconcat (intersperse "\n  | " scripts)
+    mkScripts :: [String] -> String
+    mkScripts
+        = mconcat
+        . intersperse "\n  | "
+        . fmap (\script -> mconcat
+            [ mkHaskellConstructor script
+            , " -- ^ @"
+            , script
+            , "@"
+            ])
 
     mkScriptDefinitions :: [ScriptLine] -> String
     mkScriptDefinitions
@@ -522,7 +539,7 @@ genScriptsModule moduleName =
     mkScriptDefinition :: [ScriptLine] -> String
     mkScriptDefinition ranges = mconcat
         [ "  "
-        , fst (head ranges)
+        , mkHaskellConstructor (fst (head ranges))
         , " -> (Ptr \""
         , foldMap encodeRange ranges
         , "\"#, "
