@@ -43,7 +43,7 @@ where
 
 import Data.Char (chr, ord)
 import Data.Version (Version, makeVersion)
-import Unicode.Char.Case
+import Unicode.Char.Case hiding (Unfold(..), Step(..))
 import Unicode.Char.Case.Compat hiding (isLower, isUpper)
 import Unicode.Char.General
 import Unicode.Char.General.Compat hiding (isLetter, isSpace)

@@ -22,6 +22,7 @@ module Parser.Text
     , genNamesModules
     ) where
 
+import Control.Applicative (Alternative(..))
 import Control.Exception (catch, IOException)
 import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO(liftIO))
@@ -87,9 +88,9 @@ data DetailedChar =
         , _combiningClass :: Int
         , _decompositionType :: Maybe DecompType
         , _decomposition :: Decomp
-        , _simpleUppercaseMapping :: Maybe Char
-        , _simpleLowercaseMapping :: Maybe Char
-        , _simpleTitlecaseMapping :: Maybe Char
+        , _simpleUpperCaseMapping :: Maybe Char
+        , _simpleLowerCaseMapping :: Maybe Char
+        , _simpleTitleCaseMapping :: Maybe Char
         }
     deriving (Show)
 
@@ -598,6 +599,117 @@ genSimpleCaseMappingModule moduleName funcName field =
         , show c
         ]
 
+-- [NOTE] Case mapping encodes up to 3 code points on 21 bits each in an Int64.
+genSpecialCaseMappingModule
+    :: Monad m
+    => String
+    -> String
+    -> SpecialCasings
+    -- ^ Special casings
+    -> (SpecialCasing -> String)
+    -- ^ Special case selector
+    -> (DetailedChar -> Maybe Char)
+    -- ^ Simple case selector
+    -> Fold m DetailedChar String
+genSpecialCaseMappingModule moduleName funcName specialCasings special simple =
+    done <$> Fold.foldl' step initial
+
+    where
+
+    genHeader =
+        [ apacheLicense 2022 moduleName
+        , "{-# LANGUAGE LambdaCase #-}"
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
+        , "module " <> moduleName
+        , "(" <> funcName <> ")"
+        , "where"
+        , ""
+        , "import Data.Int (Int64)"
+        , ""
+        , "{-# NOINLINE " <> funcName <> " #-}"
+        , funcName <> " :: Char -> Int64"
+        , funcName <> " = \\case"
+        ]
+    initial = []
+
+    step xs dc = case mkEntry dc of
+        Nothing -> xs
+        Just x  -> x : xs
+
+    after = ["  _ -> 0"]
+
+    done st =
+        let body = mconcat [genHeader, reverse st, after]
+        in unlines body
+
+    mkEntry dc = (mkSpecial dc <|> mkSimple dc) <&> \k -> mconcat
+        [ "  "
+        , show (_char dc)
+        , " -> 0x"
+        , showHex k ""
+        ]
+
+    mkSimple = fmap ord . simple
+    mkSpecial = fmap (encode . special) . (specialCasings Map.!?) . _char
+    encode :: String -> Int
+    encode
+        = foldr (\(k, c) -> (+) (ord c `shiftL` k)) 0
+        . zip [0, 21, 42]
+        -- Check min 1 character, max 3 characters
+        . (\cs -> if null cs || length cs > 3 then error (show cs) else cs)
+
+-- [NOTE] Case folding encodes up to 3 code points on 21 bits each in an Int64.
+genCaseFolding
+    :: Monad m
+    => String
+    -> Fold m CaseFoldings String
+genCaseFolding moduleName =
+    done <$> Fold.foldl' step initial
+
+    where
+
+    genHeader =
+        [ apacheLicense 2022 moduleName
+        , "{-# LANGUAGE LambdaCase #-}"
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
+        , "module " <> moduleName
+        , "(toCasefold)"
+        , "where"
+        , ""
+        , "import Data.Int (Int64)"
+        , ""
+        , "{-# NOINLINE toCasefold #-}"
+        , "toCasefold :: Char -> Int64"
+        , "toCasefold = \\case"
+        ]
+    initial = []
+
+    step xs cf = maybe xs (:xs) (mkEntry cf)
+
+    after = ["  _ -> 0"]
+
+    done st =
+        let body = mconcat [genHeader, reverse st, after]
+        in unlines body
+
+    mkEntry (c, cfs)
+        = (lookup FullCaseFolding cfs <|> lookup CommonCaseFolding cfs)
+        <&> \cf -> mconcat
+            [ "  "
+            , show c
+            , " -> 0x"
+            , showHex (encode cf) ""
+            ]
+
+    encode :: String -> Int
+    encode
+        = foldr (\(k, c) -> (+) (ord c `shiftL` k)) 0
+        . zip [0, 21, 42]
+        -- Check min 1 character, max 3 characters
+        . (\cs -> if null cs || length cs > 3 then error (show cs) else cs)
+
 genCorePropertiesModule ::
        Monad m => String -> (String -> Bool) -> Fold m (String, [Int]) String
 genCorePropertiesModule moduleName isProp =
@@ -810,7 +922,6 @@ genNumericValuesModule moduleName =
         , either show show (bimap Just Just value)
         ]
 
-
     done values = unlines
         [ apacheLicense 2022 moduleName
         , "{-# LANGUAGE LambdaCase #-}"
@@ -943,9 +1054,9 @@ parseDetailedChar line =
         , _combiningClass = read combining
         , _decompositionType = dctype
         , _decomposition = dcval
-        , _simpleUppercaseMapping = readCodePointM sUpper
-        , _simpleLowercaseMapping = readCodePointM sLower
-        , _simpleTitlecaseMapping = readCodePointM sTitle
+        , _simpleUpperCaseMapping = readCodePointM sUpper
+        , _simpleLowerCaseMapping = readCodePointM sLower
+        , _simpleTitleCaseMapping = readCodePointM sTitle
         }
 
     where
@@ -966,6 +1077,119 @@ parseDetailedChar line =
     (sUpper, line13) = span (/= ';') (tail line12)
     (sLower, line14) = span (/= ';') (tail line13)
     sTitle = tail line14
+
+-------------------------------------------------------------------------------
+-- Parse SpecialCasing.txt
+-------------------------------------------------------------------------------
+
+-- type SpecialCasings = Map.Map Char [SpecialCasing]
+type SpecialCasings = Map.Map Char SpecialCasing
+
+data SpecialCasing = SpecialCasing
+    { _scChar       :: Char
+    , _scLower      :: String
+    , _scTitle      :: String
+    , _scUpper      :: String
+    -- , _scConditions :: [SpecialCasingCondition]
+    }
+
+parseSpecialCasingLines
+    :: forall m. (Monad m)
+    => SerialT m String
+    -> m SpecialCasings
+parseSpecialCasingLines
+    = Stream.fold
+        ( Fold.mapMaybe parseSpecialCasing
+        $ Fold.foldl' combineSpecialCasings mempty
+        )
+
+    where
+
+    -- combineSpecialCasings acc x = Map.insertWith (++) (_scChar x) [x] acc
+    combineSpecialCasings acc sc = Map.insert (_scChar sc) sc acc
+
+parseSpecialCasing :: String -> Maybe SpecialCasing
+parseSpecialCasing line
+    | null line        = Nothing
+    | head line == '#' = Nothing
+    -- Keep only entries without condititions
+    | null conditions  = Just specialCasing
+    | otherwise        = Nothing
+
+    where
+
+    (rawChar, line1) = span (/= ';') line
+    char = readCodePoint rawChar
+    (rawLower, line2) = span (/= ';') (tail line1)
+    lower = toChars rawLower
+    (rawTitle, line3) = span (/= ';') (tail line2)
+    title = toChars rawTitle
+    (rawUpper, line4) = span (/= ';') (tail line3)
+    upper = toChars rawUpper
+    (rawConditions, _line5) = span (/= ';') (tail line4)
+    (rawConditions', _comment) = span (/= '#') rawConditions
+    conditions = words (trim' rawConditions')
+    specialCasing = SpecialCasing
+        { _scChar  = char
+        , _scLower = lower
+        , _scTitle = title
+        , _scUpper = upper
+        -- , _scConditions = conditions
+        }
+
+    toChars = fmap readCodePoint . words
+
+-------------------------------------------------------------------------------
+-- Parsing CaseFolding.txt
+-------------------------------------------------------------------------------
+
+data CaseFoldingType
+    = CommonCaseFolding
+    | FullCaseFolding
+    | SimpleCaseFolding
+    | SpecialCaseFolding
+    deriving (Eq, Ord)
+
+type CaseFoldings = (Char, [(CaseFoldingType, String)])
+type CaseFoldingLine = (Char, CaseFoldingType, String)
+
+parseCaseFoldingLines
+    :: forall t m. (IsStream t, Monad m)
+    => t m String
+    -> t m CaseFoldings
+parseCaseFoldingLines
+    = Stream.groupsBy sameChar combine
+    . Stream.mapMaybe parseCaseFoldingLine
+
+    where
+
+    sameChar (c1, _, _) (c2, _, _) = c1 == c2
+
+    combine = Fold.foldr
+        (\(c, ty, cs) (_, xs) -> (c, (ty, cs):xs))
+        ('\0', mempty)
+
+parseCaseFoldingLine :: String -> Maybe CaseFoldingLine
+parseCaseFoldingLine line
+    | null line        = Nothing
+    | head line == '#' = Nothing
+    | otherwise        = Just (char, caseFoldingType, caseFolding)
+
+    where
+
+    (rawChar, line1) = span (/= ';') line
+    char = readCodePoint rawChar
+    (rawCaseFoldType, line2) = span (/= ';') (tail line1)
+    caseFoldingType = case trim rawCaseFoldType of
+        "C" -> CommonCaseFolding
+        "F" -> FullCaseFolding
+        "S" -> SimpleCaseFolding
+        "T" -> SpecialCaseFolding
+        ty  -> error ("Unsupported case folding type: " <> ty)
+    (rawCaseFolding, _) = span (/= ';') (tail line2)
+    caseFolding = toChars rawCaseFolding
+
+    toChars = fmap readCodePoint . words
 
 -------------------------------------------------------------------------------
 -- Parsing DerivedNumericValues.txt
@@ -1224,6 +1448,10 @@ genCoreModules indir outdir props = do
             & Stream.map snd
             & Stream.fold (Fold.foldl' (++) [])
 
+    specialCasings <-
+        readLinesFromFile (indir <> "SpecialCasing.txt")
+            & parseSpecialCasingLines
+
     runGenerator
         indir
         "UnicodeData.txt"
@@ -1240,6 +1468,9 @@ genCoreModules indir outdir props = do
         , simpleUpperCaseMapping
         , simpleLowerCaseMapping
         , simpleTitleCaseMapping
+        , specialUpperCaseMapping specialCasings
+        , specialLowerCaseMapping specialCasings
+        , specialTitleCaseMapping specialCasings
         ]
 
     runGenerator
@@ -1262,6 +1493,13 @@ genCoreModules indir outdir props = do
         parseDerivedNumericValuesLines
         outdir
         [ derivedNumericValues ]
+
+    runGenerator
+        indir
+        "CaseFolding.txt"
+        parseCaseFoldingLines
+        outdir
+        [ caseFolding ]
 
     where
 
@@ -1309,15 +1547,43 @@ genCoreModules indir outdir props = do
 
     simpleUpperCaseMapping =
          ( "Unicode.Internal.Char.UnicodeData.SimpleUpperCaseMapping"
-         , \m -> genSimpleCaseMappingModule m "toSimpleUpperCase" _simpleUppercaseMapping)
+         , \m -> genSimpleCaseMappingModule m "toSimpleUpperCase" _simpleUpperCaseMapping)
 
     simpleLowerCaseMapping =
          ( "Unicode.Internal.Char.UnicodeData.SimpleLowerCaseMapping"
-         , \m -> genSimpleCaseMappingModule m "toSimpleLowerCase" _simpleLowercaseMapping)
+         , \m -> genSimpleCaseMappingModule m "toSimpleLowerCase" _simpleLowerCaseMapping)
 
     simpleTitleCaseMapping =
          ( "Unicode.Internal.Char.UnicodeData.SimpleTitleCaseMapping"
-         , \m -> genSimpleCaseMappingModule m "toSimpleTitleCase" _simpleTitlecaseMapping)
+         , \m -> genSimpleCaseMappingModule m "toSimpleTitleCase" _simpleTitleCaseMapping)
+
+    specialUpperCaseMapping sc =
+         ( "Unicode.Internal.Char.SpecialCasing.UpperCaseMapping"
+         , \m -> genSpecialCaseMappingModule m
+                    "toSpecialUpperCase"
+                    sc
+                    _scUpper
+                    _simpleUpperCaseMapping )
+
+    specialLowerCaseMapping sc =
+         ( "Unicode.Internal.Char.SpecialCasing.LowerCaseMapping"
+         , \m -> genSpecialCaseMappingModule m
+                    "toSpecialLowerCase"
+                    sc
+                    _scLower
+                    _simpleLowerCaseMapping )
+
+    specialTitleCaseMapping sc =
+         ( "Unicode.Internal.Char.SpecialCasing.TitleCaseMapping"
+         , \m -> genSpecialCaseMappingModule m
+                    "toSpecialTitleCase"
+                    sc
+                    _scTitle
+                    _simpleTitleCaseMapping )
+
+    caseFolding =
+         ( "Unicode.Internal.Char.CaseFolding"
+         , genCaseFolding )
 
     derivedNumericValues =
          ( "Unicode.Internal.Char.DerivedNumericValues"

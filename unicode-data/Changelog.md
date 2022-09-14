@@ -2,6 +2,14 @@
 
 ## Next
 
+- Added full case conversions to `Unicode.Char.Case`:
+
+  - Case folding: `caseFoldMapping`, `toCaseFoldString`.
+  - Lower case: `lowerCaseMapping`, `toLowerString`.
+  - Upper case: `upperCaseMapping`, `toUpperString`.
+  - Title case: `titleCaseMapping`, `toTitleString`.
+  - Stream mechanism: `Unfold` and `Step`.
+
 - Added `isNumeric`, `numericValue` and `integerValue`
   to `Unicode.Char.Numeric`.
 - Add compatibility module:
