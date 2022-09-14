@@ -19,7 +19,7 @@ module Unicode.Char.Case
       -- $case
 
       -- ** Case folding mapping
-    , caseFoldingMapping
+    , caseFoldMapping
     , toCaseFoldString
 
       -- ** Lower case mapping
@@ -95,8 +95,9 @@ isUpper = P.isUppercase
 --
 -- __Note:__ @\'\\NUL\'@ requires special handling.
 -- See 'toCaseFoldString' source code for an example.
-caseFoldingMapping :: Unfold Char Char
-caseFoldingMapping = Unfold step inject
+{-# INLINE caseFoldMapping #-}
+caseFoldMapping :: Unfold Char Char
+caseFoldMapping = Unfold step inject
     where
     inject c = case C.toCasefold c of
         0 -> fromIntegral (ord c)
@@ -109,6 +110,7 @@ caseFoldingMapping = Unfold step inject
 --
 -- __Note:__ @\'\\NUL\'@ requires special handling.
 -- See 'toLowerString' source code for an example.
+{-# INLINE lowerCaseMapping #-}
 lowerCaseMapping :: Unfold Char Char
 lowerCaseMapping = Unfold step inject
     where
@@ -123,6 +125,7 @@ lowerCaseMapping = Unfold step inject
 --
 -- __Note:__ @\'\\NUL\'@ requires special handling.
 -- See 'toTitleString' source code for an example.
+{-# INLINE titleCaseMapping #-}
 titleCaseMapping :: Unfold Char Char
 titleCaseMapping = Unfold step inject
     where
@@ -137,6 +140,7 @@ titleCaseMapping = Unfold step inject
 --
 -- __Note:__ @\'\\NUL\'@ requires special handling.
 -- See 'toUpperString' source code for an example.
+{-# INLINE upperCaseMapping #-}
 upperCaseMapping :: Unfold Char Char
 upperCaseMapping = Unfold step inject
     where
@@ -166,7 +170,7 @@ upperCaseMapping = Unfold step inject
 toCaseFoldString :: Char -> String
 toCaseFoldString = \case
     '\NUL' -> "\NUL"
-    c      -> toList caseFoldingMapping c
+    c      -> toList caseFoldMapping c
 
 -- [TODO] @since
 -- | Convert a character to full /lower/ case if defined, else to itself.
@@ -215,15 +219,16 @@ toUpperString = \case
     '\NUL' -> "\NUL"
     c      -> toList upperCaseMapping c
 
--- | Extract the next character from a raw case mapping.
+-- | Extract the next character from a raw mapping.
+-- Each character is encoded on 21 bits.
 --
--- **Note:** this does not work for character @\'\\NUL\'@
+-- **Note:** this does not work for character @\'\\NUL\'@.
 {-# INLINE step #-}
 step :: Int64 -> Step Int64 Char
 step = \case
     0 -> Stop
     s -> Yield (chr cp) (s `shiftR` 21)
         where
-            -- (1 << 21) - 1: bits used for a Unicode code point.
+            -- Mask for a single Unicode code point: (1 << 21) - 1
             mask = 0x1fffff
             cp = fromIntegral (s .&. mask)

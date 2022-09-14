@@ -599,6 +599,7 @@ genSimpleCaseMappingModule moduleName funcName field =
         , show c
         ]
 
+-- [NOTE] Case mapping encodes up to 3 code points on 21 bits each in an Int64.
 genSpecialCaseMappingModule
     :: Monad m
     => String
@@ -658,6 +659,7 @@ genSpecialCaseMappingModule moduleName funcName specialCasings special simple =
         -- Check min 1 character, max 3 characters
         . (\cs -> if null cs || length cs > 3 then error (show cs) else cs)
 
+-- [NOTE] Case folding encodes up to 3 code points on 21 bits each in an Int64.
 genCaseFolding
     :: Monad m
     => String
@@ -919,7 +921,6 @@ genNumericValuesModule moduleName =
         , " -> "
         , either show show (bimap Just Just value)
         ]
-
 
     done values = unlines
         [ apacheLicense 2022 moduleName

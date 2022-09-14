@@ -4,7 +4,7 @@
 
 - Added full case conversions to `Unicode.Char.Case`:
 
-  - Case folding: `caseFoldingMapping`, `toCaseFoldString`.
+  - Case folding: `caseFoldMapping`, `toCaseFoldString`.
   - Lower case: `lowerCaseMapping`, `toLowerString`.
   - Upper case: `upperCaseMapping`, `toUpperString`.
   - Title case: `titleCaseMapping`, `toTitleString`.

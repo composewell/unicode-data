@@ -1,6 +1,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE LambdaCase                #-}
 
+-- [TODO] @since
 -- |
 -- Module      : Unicode.Internal.Unfold
 -- Copyright   : (c) 2022 Composewell Technologies and Contributors
@@ -16,14 +17,14 @@ module Unicode.Internal.Unfold
     , toList
     ) where
 
+-- [TODO] @since
 -- | An @Unfold a b@ is a generator of a stream of values of type @b@ from a
--- seed of type 'a'.
---
--- @since 0.3.0
+-- seed of type @a@.
 data Unfold a b =
     -- | @Unfold step inject@
     forall s. Unfold (s -> Step s b) (a -> s)
 
+-- [TODO] @since
 -- | A stream is a succession of 'Step's.
 data Step s a
     = Yield !a !s
@@ -34,8 +35,11 @@ data Step s a
 instance Functor (Step s) where
     {-# INLINE fmap #-}
     fmap f (Yield x s) = Yield (f x) s
-    fmap _ Stop = Stop
+    fmap _ Stop        = Stop
 
+-- [TODO] @since
+-- | Convert an 'Unfold' to a list.
+{-# INLINE toList #-}
 toList :: Unfold a b -> a -> [b]
 toList (Unfold step inject) a = go (inject a)
     where
