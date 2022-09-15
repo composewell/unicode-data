@@ -246,7 +246,7 @@ main = defaultMain
         where
         -- Filter out: Surrogates, Private Use Areas and unsassigned code points
         chars = filter isValid [minBound..maxBound]
-        isValid c = B.generalCategory c < B.Surrogate
+        isValid c = G.generalCategory c < G.Surrogate
 
     fold_ :: forall a. (NFData a) => (Char -> a) -> String -> ()
     fold_ f = foldr (deepseq . f) ()
