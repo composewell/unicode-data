@@ -7,9 +7,10 @@
 --
 module Main where
 
-import WithCli (HasArguments(..), withCli)
-import Parser.Text (genCoreModules, genNamesModules, genScriptsModules)
 import GHC.Generics (Generic)
+import Parser.Text (genCoreModules, genNamesModules, genScriptsModules, genSecurityModules)
+import System.FilePath ((</>))
+import WithCli (HasArguments(..), withCli)
 
 data CLIOptions =
     CLIOptions
@@ -20,15 +21,18 @@ data CLIOptions =
         -- ^ `unicode-data-names`
         , output_scripts :: FilePath
         -- ^ `unicode-data-scripts`
+        , output_security :: FilePath
+        -- ^ `unicode-data-security`
         , core_prop :: [String]
         }
     deriving (Show, Generic, HasArguments)
 
 cliClient :: CLIOptions -> IO ()
 cliClient opts
-    = genCoreModules (input opts) (output_core opts) (core_prop opts)
-    *> genNamesModules (input opts) (output_names opts)
-    *> genScriptsModules (input opts) (output_scripts opts)
+    = genCoreModules (input opts </> "ucd") (output_core opts) (core_prop opts)
+    *> genNamesModules (input opts </> "ucd") (output_names opts)
+    *> genScriptsModules (input opts </> "ucd") (output_scripts opts)
+    *> genSecurityModules (input opts </> "security") (output_security opts)
 
 main :: IO ()
 main = withCli cliClient
