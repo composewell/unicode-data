@@ -9,7 +9,6 @@ import qualified Unicode.Char.Case.Compat as CC
 import qualified Unicode.Char.General as G
 import qualified Unicode.Char.General.Blocks as B
 import qualified Unicode.Char.General.Compat as GC
-import qualified Unicode.Char.General.Scripts as S
 import qualified Unicode.Char.Identifiers as I
 import qualified Unicode.Char.Normalization as N
 import qualified Unicode.Char.Numeric as Num
@@ -147,12 +146,6 @@ main = defaultMain
       [ Bench "base"          Char.isSpace
       , Bench "unicode-data"  GC.isSpace
       ]
-    ]
-  , bgroup "Unicode.Char.General.Script"
-    [ bgroup "script"
-      [ benchNF "unicode-data"  (show . S.script)
-      ]
-    -- [TODO] scriptDefinition, inScript
     ]
   , bgroup "Unicode.Char.Identifiers"
     [ bgroup "isIDContinue"

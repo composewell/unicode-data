@@ -20,6 +20,7 @@
 module Parser.Text
     ( genCoreModules
     , genNamesModules
+    , genScriptsModules
     ) where
 
 import Control.Applicative (Alternative(..))
@@ -1843,13 +1844,6 @@ genCoreModules indir outdir props = do
 
     runGenerator
         indir
-        "Scripts.txt"
-        parseScriptLines
-        outdir
-        [ scripts ]
-
-    runGenerator
-        indir
         "UnicodeData.txt"
         parseUnicodeDataLines
         outdir
@@ -1902,10 +1896,6 @@ genCoreModules indir outdir props = do
     blocks =
         ( "Unicode.Internal.Char.Blocks"
         , genBlocksModule)
-
-    scripts =
-        ( "Unicode.Internal.Char.Scripts"
-        , genScriptsModule)
 
     propList =
         ("Unicode.Internal.Char.PropList"
@@ -2017,3 +2007,18 @@ genNamesModules indir outdir = do
     aliases =
          ( "Unicode.Internal.Char.UnicodeData.NameAliases"
          , \m -> genAliasesModule m )
+
+genScriptsModules :: String -> String -> IO ()
+genScriptsModules indir outdir = do
+    runGenerator
+        indir
+        "Scripts.txt"
+        parseScriptLines
+        outdir
+        [ scripts ]
+
+    where
+
+    scripts =
+        ( "Unicode.Internal.Char.Scripts"
+        , genScriptsModule)

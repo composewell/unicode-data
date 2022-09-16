@@ -13,7 +13,6 @@ import qualified Unicode.Char.General.Blocks as UBlocks
 -- [TODO] Remove the following qualified imports once isLetter and isSpace
 --        are removed from Unicode.Char.General
 import qualified Unicode.Char.General.Compat as UCharCompat
-import qualified Unicode.Char.General.Scripts as UScripts
 -- [TODO] Remove the following qualified imports once isUpper and isLower
 --        are removed from Unicode.Char.Case
 import qualified Unicode.Char.Case.Compat as UCharCompat
@@ -75,30 +74,6 @@ spec = do
                 else expectationFailure $ mconcat
                     [ "Block is different for “", show c, "”. Expected: “Just "
                     , show b, "” but got: “", show b', "”." ]
-        } in traverse_ check [minBound..maxBound]
-  describe "Unicode scripts" do
-    it "inScript"
-        let check s = if all (UScripts.inScript s) (UScripts.scriptDefinition s)
-                    then pure ()
-                    else expectationFailure (show s)
-        in traverse_ check [minBound..maxBound]
-    it "Characters are in the definition of their corresponding script"
-        let {
-            check c = let s = UScripts.script c in if UScripts.inScript s c
-                    then pure ()
-                    else expectationFailure $ mconcat
-                        [ "Char “", show c, "” in not in the definition of “"
-                        , show s, "”." ]
-        } in traverse_ check [minBound..maxBound]
-    it "Characters in a script definition have the corresponding script"
-        let {
-            checkChar s c = let s' = UScripts.script c in if s' == s
-                then pure ()
-                else expectationFailure $ mconcat
-                    [ "Script is different for “", show c, "”. Expected: “"
-                    , show s, "” but got: “", show s', "”." ];
-            check s = let chars = UScripts.scriptDefinition s
-                      in traverse_ (checkChar s) chars
         } in traverse_ check [minBound..maxBound]
   describe' "Unicode general categories" do
     it "generalCategory" do

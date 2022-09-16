@@ -67,6 +67,7 @@ run_generator() {
           --input ./ucd/ \
           --output-core ./unicode-data/lib/ \
           --output-names ./unicode-data-names/lib/ \
+          --output-scripts ./unicode-data-scripts/lib/ \
           --core-prop Uppercase \
           --core-prop Lowercase \
           --core-prop Alphabetic \

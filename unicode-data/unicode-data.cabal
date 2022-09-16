@@ -79,7 +79,6 @@ library
       Unicode.Char.General
       Unicode.Char.General.Blocks
       Unicode.Char.General.Compat
-      Unicode.Char.General.Scripts
       Unicode.Char.Identifiers
       Unicode.Char.Normalization
       Unicode.Char.Numeric
@@ -101,7 +100,6 @@ library
       Unicode.Internal.Char.SpecialCasing.LowerCaseMapping
       Unicode.Internal.Char.SpecialCasing.TitleCaseMapping
       Unicode.Internal.Char.SpecialCasing.UpperCaseMapping
-      Unicode.Internal.Char.Scripts
       Unicode.Internal.Char.UnicodeData.CombiningClass
       Unicode.Internal.Char.UnicodeData.Compositions
       Unicode.Internal.Char.UnicodeData.Decomposable
