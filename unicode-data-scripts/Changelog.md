@@ -2,4 +2,6 @@
 
 ## TBA
 
-- Initial release
+Initial release
+
+- Added the module `Unicode.Char.General.Scripts`.
