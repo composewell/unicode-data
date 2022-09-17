@@ -20,6 +20,7 @@
 module Parser.Text
     ( genCoreModules
     , genNamesModules
+    , genScriptsModules
     ) where
 
 import Control.Applicative (Alternative(..))
@@ -28,13 +29,14 @@ import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Data.Bifunctor (Bifunctor(..))
 import Data.Bits (Bits(..))
-import Data.Char (chr, ord, isSpace, toUpper)
-import Data.Function ((&))
+import Data.Char (chr, ord, isAlphaNum, isAscii, isSpace, toUpper)
+import Data.Foldable (foldl')
+import Data.Function (on, (&))
 import Data.Functor ((<&>))
-import Data.List (dropWhileEnd, elemIndex, intersperse, sort, unfoldr)
+import Data.List (dropWhileEnd, elemIndex, groupBy, intersperse, sort, unfoldr)
 import Data.Maybe (fromMaybe)
 import Data.Ratio ((%))
-import Data.Word (Word8)
+import Data.Word (Word8, Word32)
 import Numeric (showHex)
 import Streamly.Data.Fold (Fold)
 import Streamly.Prelude (IsStream, SerialT)
@@ -50,8 +52,6 @@ import qualified Streamly.Data.Unfold as Unfold
 import qualified Streamly.FileSystem.Handle as Handle
 import qualified System.IO as Sys
 import qualified Streamly.Unicode.Stream as Unicode
-
-import Prelude hiding (pred)
 
 -------------------------------------------------------------------------------
 -- Types
@@ -94,6 +94,8 @@ data DetailedChar =
         }
     deriving (Show)
 
+type CharRange = Either Char (Char, Char)
+
 -------------------------------------------------------------------------------
 -- Helpers
 -------------------------------------------------------------------------------
@@ -121,11 +123,17 @@ readCodePointM :: String -> Maybe Char
 readCodePointM "" = Nothing
 readCodePointM u  = Just (readCodePoint u)
 
-showHexCodepoint :: Char -> String
-showHexCodepoint c =
-    let hex = showHex (ord c) mempty
+showPaddedHex :: Int -> String
+showPaddedHex cp =
+    let hex = showHex cp mempty
         padding = 4 - length hex
     in replicate padding '0' <> hex
+
+showPaddedHeX :: Int -> String
+showPaddedHeX = fmap toUpper . showPaddedHex
+
+showHexCodepoint :: Char -> String
+showHexCodepoint = showPaddedHex . ord
 
 genSignature :: String -> String
 genSignature = (<> " :: Char -> Bool")
@@ -231,6 +239,10 @@ enumMapToAddrLiteral xs cs = foldr go cs xs
         then fromIntegral w
         else error $ "Cannot convert to Word8: " <> show a
 
+-- Encode Word32 to [Word8] little endian
+word32ToWord8s :: Word32 -> [Word8]
+word32ToWord8s n = (\k -> fromIntegral ((n `shiftR` k) .&. 0xff)) <$> [0,8..24]
+
 -- This bit of code is duplicated but this duplication allows us to reduce 2
 -- dependencies on the executable.
 
@@ -256,6 +268,313 @@ isHangul c = n >= hangulFirst && n <= hangulLast
 -------------------------------------------------------------------------------
 -- Parsers
 -------------------------------------------------------------------------------
+
+-- Make a valid Haskell constructor (in CamelCase) from an identifier.
+mkHaskellConstructor :: String -> String
+mkHaskellConstructor = reverse . fst . foldl' convert (mempty, True)
+    where
+
+    convert (acc, newWord) = \case
+        -- Skip the following and start a new word
+        ' ' -> (acc, True)
+        '-' -> (acc, True)
+        '_' -> (acc, True)
+        -- Letter or number
+        c   -> if isAscii c && isAlphaNum c
+            then ( if newWord then toUpper c : acc else c : acc
+                 , False)
+            else error ("Unsupported character: " <> show c)
+
+genBlocksModule
+    :: Monad m
+    => String
+    -> Fold m BlockLine String
+genBlocksModule moduleName = done <$> Fold.foldl' step initial
+    where
+
+    done (blocks, defs, ranges) = let ranges' = reverse ranges in unlines
+        [ apacheLicense 2022 moduleName
+        , "{-# LANGUAGE CPP, MultiWayIf #-}"
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
+        , "module " <> moduleName
+        , "(Block(..), BlockDefinition(..), block, blockDefinition, allBlockRanges)"
+        , "where"
+        , ""
+        , "import Data.Ix (Ix)"
+        , "import GHC.Exts"
+        , ""
+        , "-- [TODO] @since"
+        , "-- | Unicode block."
+        , "data Block"
+        , "    = " <> mconcat (intersperse "\n    | " (reverse blocks))
+        , "    deriving (Enum, Bounded, Eq, Ord, Ix, Show)"
+        , ""
+        , "-- [TODO] @since"
+        , "-- | Block definition: range and name."
+        , "data BlockDefinition = BlockDefinition"
+        , "    { blockRange :: !(Int, Int) -- ^ Range"
+        , "    , blockName :: !String -- ^ Name"
+        , "    } deriving (Eq, Ord, Show)"
+        , ""
+        , "-- [TODO] @since"
+        , "-- | Block definition"
+        , "blockDefinition :: Block -> BlockDefinition"
+        , "blockDefinition b = case b of"
+        , mconcat (reverse defs)
+        , "-- [TODO] @since"
+        , "-- | All the block ranges, in ascending order."
+        , "{-# INLINE allBlockRanges #-}"
+        , "allBlockRanges :: [(Int, Int)]"
+        , "allBlockRanges ="
+        , "    " <> show ranges'
+        , ""
+        , "-- [TODO] @since"
+        , "-- | Character block, if defined."
+        , "block :: Char -> Maybe Int"
+        , "block (C# c#) = getBlock 0# " <> shows (length ranges - 1) "#"
+        , "    where"
+        , "    -- [NOTE] Encoding"
+        , "    -- A range is encoded as two LE Word32:"
+        , "    -- • First one is the lower bound, where the higher 11 bits are the block"
+        , "    --   index and the lower 21 bits are the codepoint."
+        , "    -- • Second one is the upper bound, which correspond to the codepoint."
+        , ""
+        , "    cp# = int2Word# (ord# c#)"
+        , ""
+        , "    -- Binary search"
+        , "    getBlock l# u# = if isTrue# (l# ># u#)"
+        , "        then Nothing"
+        , "        else"
+        , "            let k# = l# +# uncheckedIShiftRL# (u# -# l#) 1#"
+        , "                j# = k# `uncheckedIShiftL#` 1#"
+        , "                cpL0# = getRawCodePoint# j#"
+        , "                cpL# = cpL0# `and#` 0x1fffff## -- Mask for codepoint: [0..0x10fff]"
+        , "                cpU# = getRawCodePoint# (j# +# 1#)"
+        , "            in if isTrue# (cpU# `ltWord#` cp#)"
+        , "                -- cp > upper bound"
+        , "                then getBlock (k# +# 1#) u#"
+        , "                -- check lower bound"
+        , "                else if isTrue# (cp# `ltWord#` cpL#)"
+        , "                    -- cp < lower bound"
+        , "                    then getBlock l# (k# -# 1#)"
+        , "                    -- cp in block: get block index"
+        , "                    else let block# = cpL0# `uncheckedShiftRL#` 21#"
+        , "                         in Just (I# (word2Int# block#))"
+        , ""
+        , "    getRawCodePoint# k# ="
+        , "#ifdef WORDS_BIGENDIAN"
+        , "#if MIN_VERSION_base(4,16,0)"
+        , "        byteSwap32# (word32ToWord# (indexWord32OffAddr# addr# k#))"
+        , "#else"
+        , "        byteSwap32# (indexWord32OffAddr# ranges# k#)"
+        , "#endif"
+        , "#elif MIN_VERSION_base(4,16,0)"
+        , "        word32ToWord# (indexWord32OffAddr# ranges# k#)"
+        , "#else"
+        , "        indexWord32OffAddr# ranges# k#"
+        , "#endif"
+        , ""
+        , "    -- Encoded ranges"
+        , "    ranges# = \"" <> enumMapToAddrLiteral (mkRanges ranges') "\"#"
+        ]
+
+    initial :: ([String], [String], [(Int, Int)])
+    initial = (mempty, mempty, mempty)
+
+    step (blocks, defs, ranges) (blockName, blockRange) =
+        let blockID = mkHaskellConstructor blockName
+        in ( mkBlockConstructor blockID blockName blockRange : blocks
+           , mkBlockDef   blockID blockName blockRange : defs
+           , blockRange : ranges )
+
+    mkBlockConstructor blockID blockName (l, u) = mconcat
+        [ blockID
+        , " -- ^ @U+"
+        , showPaddedHeX l
+        , "..U+"
+        , showPaddedHeX u
+        , "@: "
+        , blockName
+        , "."
+        ]
+
+    mkBlockDef blockID blockName (l, u) = mconcat
+        [ "    "
+        , blockID
+        , " -> BlockDefinition (0x"
+        , showPaddedHex l
+        , ", 0x"
+        , showPaddedHex u
+        , ") "
+        , show blockName
+        , "\n"
+        ]
+
+    -- [NOTE] Encoding: a range is encoded as two LE Word32:
+    -- • First one is the lower bound, where the higher 11 bits are the block
+    --   index and the lower 21 bits are the codepoint.
+    -- • Second one is upper bound, which correspond to the codepoint.
+    mkRanges :: [(Int, Int)] -> [Word8]
+    mkRanges = foldMap (uncurry mkBlockRange) . zip [0..]
+    mkBlockRange :: Word32 -> (Int, Int) -> [Word8]
+    mkBlockRange idx (l, u) = encodeBound idx l <> encodeBound 0 u
+
+    encodeBound :: Word32 -> Int -> [Word8]
+    encodeBound idx n = word32ToWord8s ((idx `shiftL` 21) .|. fromIntegral n)
+
+genScriptsModule
+    :: Monad m
+    => String
+    -> Fold m ScriptLine String
+genScriptsModule moduleName =
+    done <$> Fold.foldl' addRange mempty
+    where
+
+    done ranges =
+        let scripts = Set.toList (foldr addScript (Set.singleton "Unknown") ranges)
+        in unlines
+            [ apacheLicense 2022 moduleName
+            , "{-# LANGUAGE MultiWayIf #-}"
+            , "{-# OPTIONS_HADDOCK hide #-}"
+            , ""
+            , "module " <> moduleName
+            , "(Script(..), script, scriptDefinition)"
+            , "where"
+            , ""
+            , "import Data.Char (ord)"
+            , "import Data.Int (Int32)"
+            , "import Data.Ix (Ix)"
+            , "import GHC.Exts (Ptr(..))"
+            , "import Unicode.Internal.Bits (lookupIntN)"
+            , ""
+            , "-- [TODO] @since"
+            , "-- | Unicode script."
+            , "data Script"
+            , "  = " <> mkScripts scripts
+            , "  deriving (Enum, Bounded, Eq, Ord, Ix, Show)"
+            , ""
+            , "-- [TODO] @since"
+            , "-- | Script definition: list of corresponding characters."
+            , "scriptDefinition :: Script -> (Ptr Int32, Int)"
+            , "scriptDefinition b = case b of"
+            , mkScriptDefinitions ranges
+            , "-- [TODO] @since"
+            , "-- | Script of a character."
+            , if length scripts <= 0xff
+                then mkCharScripts scripts ranges
+                else error "Cannot encode scripts"
+            , ""
+            ]
+
+    addRange :: [ScriptLine] -> ScriptLine -> [ScriptLine]
+    addRange acc l@(script, r) = case acc of
+        (script', r'):acc' -> if script == script'
+            then case combineRanges r r' of
+                Left  r'' -> (script, r'') : acc
+                Right r'' -> (script, r'') : acc'
+            else l : acc
+        _ -> [l]
+
+    combineRanges :: CharRange -> CharRange -> Either CharRange CharRange
+    combineRanges r = case r of
+        Left c1 -> \case
+            Left c2 -> if c1 == succ c2
+                then Right (Right (c2, c1))
+                else Left r
+            Right (c2, c3) -> if c1 == succ c3
+                then Right (Right (c2, c1))
+                else Left r
+        Right (c1, c2) -> \case
+            Left c3 -> if c1 == succ c3
+                then Right (Right (c3, c2))
+                else Left r
+            Right (c3, c4) -> if c1 == succ c4
+                then Right (Right (c3, c2))
+                else Left r
+
+    addScript :: ScriptLine -> Set.Set String -> Set.Set String
+    addScript (script, _) = Set.insert script
+
+    mkScripts :: [String] -> String
+    mkScripts
+        = mconcat
+        . intersperse "\n  | "
+        . fmap (\script -> mconcat
+            [ mkHaskellConstructor script
+            , " -- ^ @"
+            , script
+            , "@"
+            ])
+
+    mkScriptDefinitions :: [ScriptLine] -> String
+    mkScriptDefinitions
+        = foldMap mkScriptDefinition
+        . groupBy ((==) `on` fst)
+        . reverse
+        . addUnknownRanges
+
+    addUnknownRanges :: [ScriptLine] -> [ScriptLine]
+    addUnknownRanges ls =
+        let addUnknown (acc, expected) (c, _) = case mkMissingRange expected c of
+                Just r -> (,succ c) $ case acc of
+                    r':acc' -> either (:acc) (:acc') (combineRanges r r')
+                    _       -> [r]
+                Nothing -> (acc, succ expected)
+            addRest (acc@(r':acc'), expected) =
+                let r = Right (expected, maxBound)
+                in either (:acc) (:acc') (combineRanges r r')
+            addRest _ = error "impossible"
+            unknown = fmap ("Unknown",) . addRest $ foldl'
+                addUnknown
+                (mempty, '\0')
+                (sort (foldMap (rangeToCharScripts id) ls))
+        in unknown <> ls
+
+    mkMissingRange :: Char -> Char -> Maybe CharRange
+    mkMissingRange expected c
+        | c == expected      = Nothing
+        | c == succ expected = Just (Left expected)
+        | otherwise          = Just (Right (expected, pred c))
+
+    mkScriptDefinition :: [ScriptLine] -> String
+    mkScriptDefinition ranges = mconcat
+        [ "  "
+        , mkHaskellConstructor (fst (head ranges))
+        , " -> (Ptr \""
+        , foldMap encodeRange ranges
+        , "\"#, "
+        , show (foldr (\r -> either (const (+1)) (const (+2)) (snd r)) 0 ranges :: Word)
+        , ")\n"
+        ]
+
+    -- Encoding:
+    -- • A single char is encoded as an LE Int32.
+    -- • A range is encoded as two LE Int32 (first is lower bound, second is
+    --   upper bound), which correspond to the codepoints with the 32th bit set.
+    encodeRange :: ScriptLine -> String
+    encodeRange (_, r) = case r of
+        Left  c      -> encodeBytes (fromIntegral (ord c))
+        Right (l, u) -> encodeBytes (setBit (fromIntegral (ord l)) 31)
+                     <> encodeBytes (setBit (fromIntegral (ord u)) 31)
+    encodeBytes = foldr addByte "" . word32ToWord8s
+    addByte n acc = '\\' : shows n acc
+
+    mkCharScripts :: [String] -> [ScriptLine] -> String
+    mkCharScripts scripts scriptsRanges =
+        let charScripts = sort (foldMap (rangeToCharScripts getScript) scriptsRanges)
+            charScripts' = fst (foldl' addMissing (mempty, '\0') charScripts)
+            addMissing (acc, expected) x@(c, script) = if expected < c
+                then addMissing (def:acc, succ expected) x
+                else (script:acc, succ c)
+            def = getScript "Unknown"
+            getScript s = fromMaybe (error "script not found") (elemIndex s scripts)
+        in genEnumBitmap "script" def (reverse charScripts')
+
+    rangeToCharScripts :: (String -> b) -> ScriptLine -> [(Char, b)]
+    rangeToCharScripts f (script, r) = case r of
+        Left  cp     -> [(cp, f script)]
+        Right (l, u) -> (, f script) <$> [l..u]
 
 -------------------------------------------------------------------------------
 -- Parsing UnicodeData.txt
@@ -419,8 +738,8 @@ genDecomposeDefModule ::
     -> DType
     -> (Int -> Bool)
     -> Fold m DetailedChar String
-genDecomposeDefModule moduleName before after dtype pred =
-    Fold.filter (pred . ord . _char)
+genDecomposeDefModule moduleName before after dtype predicate =
+    Fold.filter (predicate . ord . _char)
         $ filterNonHangul
         $ filterDecomposableType dtype $ done <$> Fold.foldl' step initial
 
@@ -939,6 +1258,70 @@ genNumericValuesModule moduleName =
         ]
 
 -------------------------------------------------------------------------------
+-- Parsing blocks file
+-------------------------------------------------------------------------------
+
+type BlockLine = (String, (Int, Int))
+
+parseBlockLine :: String -> Maybe BlockLine
+parseBlockLine ln
+    | null ln = Nothing
+    | head ln == '#' = Nothing
+    | otherwise = Just (parseLine ln)
+
+    where
+
+    parseLine line =
+        let (rangeLn, line1) = span (/= ';') line
+            name = takeWhile (/= '#') (tail line1)
+
+        in (trim' name, parseRange (trim rangeLn))
+
+    parseRange
+        = bimap parseCodePoint (parseCodePoint . drop 2)
+        . span (/= '.')
+
+    parseCodePoint = read . ("0x" <>)
+
+parseBlockLines
+    :: (IsStream t, Monad m)
+    => t m String
+    -> t m BlockLine
+parseBlockLines = Stream.mapMaybe parseBlockLine
+
+-------------------------------------------------------------------------------
+-- Parsing script file
+-------------------------------------------------------------------------------
+
+type ScriptLine = (String, Either Char (Char, Char))
+
+parseScriptLine :: String -> Maybe ScriptLine
+parseScriptLine ln
+    | null ln = Nothing
+    | head ln == '#' = Nothing
+    | otherwise = Just (parseLine ln)
+
+    where
+
+    parseLine line =
+        let (rangeLn, line1) = span (/= ';') line
+            script = takeWhile (/= '#') (tail line1)
+
+        in (trim script, parseRange (trim rangeLn))
+
+    parseRange :: String -> Either Char (Char, Char)
+    parseRange
+        = (\(c1, c2) -> maybe (Left c1) (Right . (c1,)) c2)
+        . bimap readCodePoint (readCodePointM . drop 2)
+        . span (/= '.')
+
+parseScriptLines
+    :: (IsStream t, Monad m)
+    => t m String
+    -> t m ScriptLine
+parseScriptLines = Stream.mapMaybe parseScriptLine
+
+-------------------------------------------------------------------------------
 -- Parsing property files
 -------------------------------------------------------------------------------
 
@@ -972,7 +1355,7 @@ parsePropertyLine ln
     parseLineJ line =
         let (rangeLn, line1) = span (/= ';') line
             propLn = takeWhile (/= '#') (tail line1)
-         in (trim propLn, parseRange (trim rangeLn))
+        in (trim propLn, parseRange (trim rangeLn))
 
     parseRange :: String -> [Int]
     parseRange rng =
@@ -1454,6 +1837,13 @@ genCoreModules indir outdir props = do
 
     runGenerator
         indir
+        "Blocks.txt"
+        parseBlockLines
+        outdir
+        [ blocks ]
+
+    runGenerator
+        indir
         "UnicodeData.txt"
         parseUnicodeDataLines
         outdir
@@ -1502,6 +1892,10 @@ genCoreModules indir outdir props = do
         [ caseFolding ]
 
     where
+
+    blocks =
+        ( "Unicode.Internal.Char.Blocks"
+        , genBlocksModule)
 
     propList =
         ("Unicode.Internal.Char.PropList"
@@ -1613,3 +2007,18 @@ genNamesModules indir outdir = do
     aliases =
          ( "Unicode.Internal.Char.UnicodeData.NameAliases"
          , \m -> genAliasesModule m )
+
+genScriptsModules :: String -> String -> IO ()
+genScriptsModules indir outdir = do
+    runGenerator
+        indir
+        "Scripts.txt"
+        parseScriptLines
+        outdir
+        [ scripts ]
+
+    where
+
+    scripts =
+        ( "Unicode.Internal.Char.Scripts"
+        , genScriptsModule)

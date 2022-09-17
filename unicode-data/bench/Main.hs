@@ -3,10 +3,11 @@ import Control.Exception (evaluate)
 import Test.Tasty.Bench
     (Benchmark, bgroup, bench, bcompare, defaultMain, env, nf)
 
-import qualified Data.Char as B
+import qualified Data.Char as Char
 import qualified Unicode.Char.Case as C
 import qualified Unicode.Char.Case.Compat as CC
 import qualified Unicode.Char.General as G
+import qualified Unicode.Char.General.Blocks as B
 import qualified Unicode.Char.General.Compat as GC
 import qualified Unicode.Char.Identifiers as I
 import qualified Unicode.Char.Normalization as N
@@ -43,61 +44,61 @@ main = defaultMain
     ]
   , bgroup "Unicode.Char.Case.Compat"
     [ bgroup' "isLower"
-      [ Bench "base"         B.isLower
+      [ Bench "base"         Char.isLower
       , Bench "unicode-data" CC.isLower
       ]
     , bgroup' "isUpper"
-      [ Bench "base"         B.isUpper
+      [ Bench "base"         Char.isUpper
       , Bench "unicode-data" CC.isUpper
       ]
     , bgroup' "toLower"
-      [ Bench "base"         B.toLower
+      [ Bench "base"         Char.toLower
       , Bench "unicode-data" CC.toLower
       ]
     , bgroup' "toTitle"
-      [ Bench "base"         B.toTitle
+      [ Bench "base"         Char.toTitle
       , Bench "unicode-data" CC.toTitle
       ]
     , bgroup' "toUpper"
-      [ Bench "base"         B.toUpper
+      [ Bench "base"         Char.toUpper
       , Bench "unicode-data" CC.toUpper
       ]
     ]
   , bgroup "Unicode.Char.General"
     -- Character classification
     [ bgroup' "generalCategory"
-      [ Bench "base"          (show . B.generalCategory)
+      [ Bench "base"          (show . Char.generalCategory)
       , Bench "unicode-data"  (show . G.generalCategory)
       ]
     , bgroup "isAlphabetic"
       [ benchNF "unicode-data"  G.isAlphabetic
       ]
     , bgroup' "isAlphaNum"
-      [ Bench "base"          B.isAlphaNum
+      [ Bench "base"          Char.isAlphaNum
       , Bench "unicode-data"  G.isAlphaNum
       ]
     , bgroup' "isControl"
-      [ Bench "base"          B.isControl
+      [ Bench "base"          Char.isControl
       , Bench "unicode-data"  G.isControl
       ]
     , bgroup' "isMark"
-      [ Bench "base"          B.isMark
+      [ Bench "base"          Char.isMark
       , Bench "unicode-data"  G.isMark
       ]
     , bgroup' "isPrint"
-      [ Bench "base"          B.isPrint
+      [ Bench "base"          Char.isPrint
       , Bench "unicode-data"  G.isPrint
       ]
     , bgroup' "isPunctuation"
-      [ Bench "base"          B.isPunctuation
+      [ Bench "base"          Char.isPunctuation
       , Bench "unicode-data"  G.isPunctuation
       ]
     , bgroup' "isSeparator"
-      [ Bench "base"          B.isSeparator
+      [ Bench "base"          Char.isSeparator
       , Bench "unicode-data"  G.isSeparator
       ]
     , bgroup' "isSymbol"
-      [ Bench "base"          B.isSymbol
+      [ Bench "base"          Char.isSymbol
       , Bench "unicode-data"  G.isSymbol
       ]
     , bgroup "isWhiteSpace"
@@ -123,17 +124,26 @@ main = defaultMain
       [ benchNF "unicode-data"  G.jamoTIndex
       ]
     ]
+  , bgroup "Unicode.Char.General.Blocks"
+    [ bgroup "block"
+      [ benchNF "unicode-data"  (show . B.block)
+      ]
+    -- [TODO] blockDefinition, inBlock
+    , bgroup "allBlockRanges"
+      [ benchNF "unicode-data"  (const B.allBlockRanges)
+      ]
+    ]
   , bgroup "Unicode.Char.General.Compat"
     [ bgroup' "isAlpha"
-      [ Bench "base"          B.isAlpha
+      [ Bench "base"          Char.isAlpha
       , Bench "unicode-data"  GC.isAlpha
       ]
     , bgroup' "isLetter"
-      [ Bench "base"          B.isLetter
+      [ Bench "base"          Char.isLetter
       , Bench "unicode-data"  GC.isLetter
       ]
     , bgroup' "isSpace"
-      [ Bench "base"          B.isSpace
+      [ Bench "base"          Char.isSpace
       , Bench "unicode-data"  GC.isSpace
       ]
     ]
@@ -203,7 +213,7 @@ main = defaultMain
     ]
   , bgroup "Unicode.Char.Numeric.Compat"
     [ bgroup' "isNumber"
-      [ Bench "base"          B.isNumber
+      [ Bench "base"          Char.isNumber
       , Bench "unicode-data"  NumCompat.isNumber
       ]
     ]
@@ -229,7 +239,7 @@ main = defaultMain
         where
         -- Filter out: Surrogates, Private Use Areas and unsassigned code points
         chars = filter isValid [minBound..maxBound]
-        isValid c = B.generalCategory c < B.Surrogate
+        isValid c = G.generalCategory c < G.Surrogate
 
     fold_ :: forall a. (NFData a) => (Char -> a) -> String -> ()
     fold_ f = foldr (deepseq . f) ()

@@ -12,6 +12,8 @@
 
 - Added `isNumeric`, `numericValue` and `integerValue`
   to `Unicode.Char.Numeric`.
+- Added the module `Unicode.Char.General.Blocks`.
+- Added the module `Unicode.Char.General.Scripts`.
 - Add compatibility module:
 
   - `Unicode.Char.Numeric.Compat`

@@ -11,11 +11,13 @@ VERIFY_CHECKSUM=y
 
 # Filename:checksum
 FILES="\
+  ucd/Blocks.txt:598870dddef7b34b5a972916528c456aff2765b79cd4f9647fb58ceb767e7f17 \
   ucd/CaseFolding.txt:a566cd48687b2cd897e02501118b2413c14ae86d318f9abbbba97feb84189f0f \
   ucd/DerivedCoreProperties.txt:e3eddd7d469cd1b0feed7528defad1a1cc7c6a9ceb0ae4446a6d10921ed2e7bc \
   ucd/DerivedNormalizationProps.txt:b2c444c20730b097787fdf50bd7d6dd3fc5256ab8084f5b35b11c8776eca674c \
   ucd/NameAliases.txt:14b3b677d33f95c51423dce6eef4a6a28b4b160451ecedee4b91edb6745cf4a3 \
   ucd/PropList.txt:6bddfdb850417a5bee6deff19290fd1b138589909afb50f5a049f343bf2c6722 \
+  ucd/Scripts.txt:52db475c4ec445e73b0b16915448c357614946ad7062843c563e00d7535c6510 \
   ucd/SpecialCasing.txt:c667b45908fd269af25fd55d2fc5bbc157fb1b77675936e25c513ce32e080334 \
   ucd/UnicodeData.txt:36018e68657fdcb3485f636630ffe8c8532e01c977703d2803f5b89d6c5feafb \
   ucd/extracted/DerivedCombiningClass.txt:12b0c3af9b600b49488d66545a3e7844ea980809627201bf9afeebe1c9f16f4e \
@@ -65,6 +67,7 @@ run_generator() {
           --input ./ucd/ \
           --output-core ./unicode-data/lib/ \
           --output-names ./unicode-data-names/lib/ \
+          --output-scripts ./unicode-data-scripts/lib/ \
           --core-prop Uppercase \
           --core-prop Lowercase \
           --core-prop Alphabetic \

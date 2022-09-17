@@ -77,6 +77,7 @@ library
       Unicode.Char.Case
       Unicode.Char.Case.Compat
       Unicode.Char.General
+      Unicode.Char.General.Blocks
       Unicode.Char.General.Compat
       Unicode.Char.Identifiers
       Unicode.Char.Normalization
@@ -91,6 +92,7 @@ library
       -- Generated files
       -- This module structure is largely based on the UCD file names from which
       -- the properties are generated.
+      Unicode.Internal.Char.Blocks
       Unicode.Internal.Char.CaseFolding
       Unicode.Internal.Char.DerivedCoreProperties
       Unicode.Internal.Char.DerivedNumericValues
