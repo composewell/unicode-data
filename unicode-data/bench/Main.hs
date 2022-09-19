@@ -1,5 +1,6 @@
 import Control.DeepSeq (NFData, deepseq, force)
 import Control.Exception (evaluate)
+import Data.Ix (Ix(..))
 import Test.Tasty.Bench
     (Benchmark, bgroup, bench, bcompare, defaultMain, env, nf)
 
@@ -24,22 +25,22 @@ main :: IO ()
 main = defaultMain
   [ bgroup "Unicode.Char.Case"
     [ bgroup "isLowerCase"
-      [ benchNF "unicode-data" C.isLowerCase
+      [ benchChars "unicode-data" C.isLowerCase
       ]
     , bgroup "isUpperCase"
-      [ benchNF "unicode-data" C.isUpperCase
+      [ benchChars "unicode-data" C.isUpperCase
       ]
     , bgroup "toCaseFoldString"
-      [ benchNF "unicode-data" C.toCaseFoldString
+      [ benchChars "unicode-data" C.toCaseFoldString
       ]
     , bgroup "toLowerString"
-      [ benchNF "unicode-data" C.toLowerString
+      [ benchChars "unicode-data" C.toLowerString
       ]
     , bgroup "toTitleString"
-      [ benchNF "unicode-data" C.toTitleString
+      [ benchChars "unicode-data" C.toTitleString
       ]
     , bgroup "toUpperString"
-      [ benchNF "unicode-data" C.toUpperString
+      [ benchChars "unicode-data" C.toUpperString
       ]
     ]
   , bgroup "Unicode.Char.Case.Compat"
@@ -71,7 +72,7 @@ main = defaultMain
       , Bench "unicode-data"  (show . G.generalCategory)
       ]
     , bgroup "isAlphabetic"
-      [ benchNF "unicode-data"  G.isAlphabetic
+      [ benchChars "unicode-data"  G.isAlphabetic
       ]
     , bgroup' "isAlphaNum"
       [ Bench "base"          Char.isAlphaNum
@@ -102,35 +103,37 @@ main = defaultMain
       , Bench "unicode-data"  G.isSymbol
       ]
     , bgroup "isWhiteSpace"
-      [ benchNF "unicode-data"  G.isWhiteSpace
+      [ benchChars "unicode-data"  G.isWhiteSpace
       ]
     -- Korean Hangul Characters
     , bgroup "isHangul"
-      [ benchNF "unicode-data"  G.isHangul
+      [ benchChars "unicode-data"  G.isHangul
       ]
     , bgroup "isHangulLV"
-      [ benchNF "unicode-data"  G.isHangul
+      [ benchChars "unicode-data"  G.isHangul
       ]
     , bgroup "isJamo"
-      [ benchNF "unicode-data"  G.isJamo
+      [ benchChars "unicode-data"  G.isJamo
       ]
     , bgroup "jamoLIndex"
-      [ benchNF "unicode-data"  G.jamoLIndex
+      [ benchChars "unicode-data"  G.jamoLIndex
       ]
     , bgroup "jamoVIndex"
-      [ benchNF "unicode-data"  G.jamoVIndex
+      [ benchChars "unicode-data"  G.jamoVIndex
       ]
     , bgroup "jamoTIndex"
-      [ benchNF "unicode-data"  G.jamoTIndex
+      [ benchChars "unicode-data"  G.jamoTIndex
       ]
     ]
   , bgroup "Unicode.Char.General.Blocks"
     [ bgroup "block"
-      [ benchNF "unicode-data"  (show . B.block)
+      [ benchChars "unicode-data"  (show . B.block)
       ]
-    -- [TODO] blockDefinition, inBlock
+    , bgroup "blockDefinition"
+      [ benchNF "unicode-data"  (show . B.blockDefinition)
+      ]
     , bgroup "allBlockRanges"
-      [ benchNF "unicode-data"  (const B.allBlockRanges)
+      [ benchChars "unicode-data"  (const B.allBlockRanges)
       ]
     ]
   , bgroup "Unicode.Char.General.Compat"
@@ -149,66 +152,66 @@ main = defaultMain
     ]
   , bgroup "Unicode.Char.Identifiers"
     [ bgroup "isIDContinue"
-      [ benchNF "unicode-data"  I.isIDContinue
+      [ benchChars "unicode-data"  I.isIDContinue
       ]
     , bgroup "isIDStart"
-      [ benchNF "unicode-data"  I.isIDStart
+      [ benchChars "unicode-data"  I.isIDStart
       ]
     , bgroup "isXIDContinue"
-      [ benchNF "unicode-data"  I.isXIDContinue
+      [ benchChars "unicode-data"  I.isXIDContinue
       ]
     , bgroup "isXIDStart"
-      [ benchNF "unicode-data"  I.isXIDStart
+      [ benchChars "unicode-data"  I.isXIDStart
       ]
     , bgroup "isPatternSyntax"
-      [ benchNF "unicode-data"  I.isPatternSyntax
+      [ benchChars "unicode-data"  I.isPatternSyntax
       ]
     , bgroup "isPatternWhitespace"
-      [ benchNF "unicode-data"  I.isPatternWhitespace
+      [ benchChars "unicode-data"  I.isPatternWhitespace
       ]
     ]
   , bgroup "Unicode.Char.Normalization"
     [ bgroup "isCombining"
-      [ benchNF "unicode-data"  N.isCombining
+      [ benchChars "unicode-data"  N.isCombining
       ]
     , bgroup "combiningClass"
-      [ benchNF "unicode-data"  N.combiningClass
+      [ benchChars "unicode-data"  N.combiningClass
       ]
     , bgroup "isCombiningStarter"
-      [ benchNF "unicode-data"  N.isCombiningStarter
+      [ benchChars "unicode-data"  N.isCombiningStarter
       ]
     -- [TODO] compose, composeStarters
     , bgroup "isDecomposable"
       [ bgroup "Canonical"
-        [ benchNF "unicode-data" (N.isDecomposable N.Canonical)
+        [ benchChars "unicode-data" (N.isDecomposable N.Canonical)
         ]
       , bgroup "Kompat"
-        [ benchNF "unicode-data" (N.isDecomposable N.Kompat)
+        [ benchChars "unicode-data" (N.isDecomposable N.Kompat)
         ]
       ]
     -- [FIXME] Fail due to non-exhaustive pattern matching
     -- , bgroup "decompose"
     --   [ bgroup "Canonical"
-    --     [ benchNF "unicode-data" (N.decompose N.Canonical)
+    --     [ benchChars "unicode-data" (N.decompose N.Canonical)
     --     ]
     --   , bgroup "Kompat"
-    --     [ benchNF "unicode-data" (N.decompose N.Kompat)
+    --     [ benchChars "unicode-data" (N.decompose N.Kompat)
     --     ]
     --   ]
     , bgroup "decomposeHangul"
-      [ benchNF "unicode-data" N.decomposeHangul
+      [ benchChars "unicode-data" N.decomposeHangul
       ]
     ]
   , bgroup "Unicode.Char.Numeric"
     -- [TODO] Replace with 'isNumber' once the migration is done.
     [ bgroup "isNumeric"
-      [ benchNF "unicode-data"  Num.isNumeric
+      [ benchChars "unicode-data"  Num.isNumeric
       ]
     , bgroup "numericValue"
-      [ benchNF "unicode-data" Num.numericValue
+      [ benchChars "unicode-data" Num.numericValue
       ]
     , bgroup "integerValue"
-      [ benchNF "unicode-data" Num.integerValue
+      [ benchChars "unicode-data" Num.integerValue
       ]
     ]
   , bgroup "Unicode.Char.Numeric.Compat"
@@ -220,26 +223,40 @@ main = defaultMain
   ]
   where
     bgroup' groupTitle bs = bgroup groupTitle
-      [ benchNF' groupTitle title f
+      [ benchChars' groupTitle title f
       | Bench title f <- bs
       ]
 
     -- [NOTE] Works if groupTitle uniquely identifies the benchmark group.
-    benchNF' groupTitle title = case title of
-      "base" -> benchNF title
+    benchChars' groupTitle title = case title of
+      "base" -> benchChars title
       _      -> bcompare ("$NF == \"base\" && $(NF-1) == \"" ++ groupTitle ++ "\"")
-              . benchNF title
+              . benchChars title
 
-    benchNF :: forall a. (NFData a) => String -> (Char -> a) -> Benchmark
-    benchNF t f =
+    benchChars :: forall a. (NFData a) => String -> (Char -> a) -> Benchmark
+    benchChars t f =
         -- Avoid side-effects with garbage collection (see tasty-bench doc)
         env
             (evaluate (force chars)) -- initialize
-            (bench t . nf (fold_ f)) -- benchmark
+            (bench t . nf (foldString f)) -- benchmark
         where
         -- Filter out: Surrogates, Private Use Areas and unsassigned code points
         chars = filter isValid [minBound..maxBound]
         isValid c = G.generalCategory c < G.Surrogate
 
-    fold_ :: forall a. (NFData a) => (Char -> a) -> String -> ()
-    fold_ f = foldr (deepseq . f) ()
+    foldString :: forall a. (NFData a) => (Char -> a) -> String -> ()
+    foldString f = foldr (deepseq . f) ()
+
+    benchNF
+        :: forall a b. (Bounded a, Ix a, NFData b)
+        => String
+        -> (a -> b)
+        -> Benchmark
+    benchNF t f = bench t (nf (fold_ f) (minBound, maxBound))
+
+    fold_
+        :: forall a b. (Ix a, NFData b)
+        => (a -> b)
+        -> (a, a)
+        -> ()
+    fold_ f = foldr (deepseq . f) () . range
