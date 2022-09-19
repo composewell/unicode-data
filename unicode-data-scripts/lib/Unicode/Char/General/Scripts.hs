@@ -15,7 +15,6 @@ module Unicode.Char.General.Scripts
     ( S.Script(..)
     , script
     , scriptDefinition
-    , inScript
     )
 where
 
@@ -38,12 +37,6 @@ import qualified Unicode.Internal.Char.Scripts as S
 {-# INLINE script #-}
 script :: Char -> S.Script
 script = toEnum . S.script
-
--- [TODO] @since
--- | Check if a character is in a 'S.Script'.
-{-# INLINE inScript #-}
-inScript :: S.Script -> Char -> Bool
-inScript s = (== s) . script
 
 {- HLINT ignore scriptDefinition "Eta reduce" -}
 -- [TODO] @since
