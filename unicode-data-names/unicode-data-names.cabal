@@ -95,11 +95,11 @@ test-suite test
       Unicode.Char.General.NamesSpec
   build-depends:
       base             >= 4.7   && < 4.18
-    , hspec            >= 2.0   && < 2.10
+    , hspec            >= 2.0   && < 2.11
     , unicode-data
     , unicode-data-names
   build-tool-depends:
-      hspec-discover:hspec-discover >= 2.0 && < 2.10
+      hspec-discover:hspec-discover >= 2.0 && < 2.11
   default-language: Haskell2010
 
 executable export-all-chars
