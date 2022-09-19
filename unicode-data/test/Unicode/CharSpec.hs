@@ -53,13 +53,13 @@ spec = do
             Just  _ -> pure ()
             Nothing -> UChar.generalCategory c `shouldBe` UChar.NotAssigned
         } in traverse_ check [minBound..maxBound]
-    it "Characters are in the definition of their corresponding block + inBlock"
+    it "Characters are in the definition of their corresponding block"
         let {
             check c = case UBlocks.block c of
                 Nothing -> pure ()
                 Just b  ->
                     let r = UBlocks.blockRange (UBlocks.blockDefinition b)
-                    in if inRange r (UChar.ord c) && UBlocks.inBlock b c
+                    in if inRange r (UChar.ord c)
                         then pure ()
                         else expectationFailure $ mconcat
                             [ "Character “", show c

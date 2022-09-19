@@ -14,7 +14,6 @@ module Unicode.Char.General.Blocks
     , B.BlockDefinition(..)
     , block
     , B.blockDefinition
-    , inBlock
     , allBlockRanges
     , allBlockRanges'
     )
@@ -30,12 +29,6 @@ import qualified Unicode.Internal.Char.Blocks as B
 {-# INLINE block #-}
 block :: Char -> Maybe B.Block
 block = fmap toEnum . B.block
-
--- [TODO] @since
--- | Check if a character is in a block.
-{-# INLINE inBlock #-}
-inBlock :: B.Block -> Char -> Bool
-inBlock b = (== Just b) . block
 
 -- [TODO] @since
 -- | All the block ranges, in ascending order.
