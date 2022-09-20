@@ -520,7 +520,7 @@ jamoTLast = jamoTFirst + jamoTCount - 1
 jamoNCount :: Int
 jamoNCount = 588
 
--- hangul
+-- Hangul
 hangulFirst, hangulLast :: Int
 
 -- | Codepoint of the first pre-composed Hangul character.
@@ -541,6 +541,10 @@ isHangul c = n >= hangulFirst && n <= hangulLast
     where n = ord c
 
 -- | Determine if the given character is a Hangul LV syllable.
+--
+-- __Note:__ this function requires a precomposed Hangul syllable but does /not/
+-- check it. Use 'isHangul' to check the input character before passing it to
+-- 'isHangulLV'.
 --
 -- @since 0.1.0
 isHangulLV :: Char -> Bool
