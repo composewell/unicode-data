@@ -4,7 +4,7 @@ version:             0.1.0
 synopsis:            Unicode characters names and aliases
 description:
   @unicode-data-security@ provides Haskell APIs to access the
-  <https://www.unicode.org/reports/tr39/ Unicode security mechanisms>.
+  <https://www.unicode.org/reports/tr39/ Unicode security mechanisms database>.
   .
   The Haskell data structures are generated programmatically.
   The latest Unicode version supported by this library is

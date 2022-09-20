@@ -10,7 +10,7 @@
 {-# OPTIONS_HADDOCK hide #-}
 
 module Unicode.Internal.Char.Security.Confusables
-(prototypeM)
+(prototypeIfConfusable)
 where
 
 import Foreign.C.String (CString)
@@ -19,8 +19,8 @@ import GHC.Exts (Ptr(..))
 -- | Returns the /prototype/ of a character, if it is confusable.
 --
 -- The resulting 'CString' is null-terminated and encoded in UTF-8.
-prototypeM :: Char -> Maybe CString
-prototypeM = \case
+prototypeIfConfusable :: Char -> Maybe CString
+prototypeIfConfusable = \case
     '"' -> Just (Ptr "\39\39\0"#)
     '%' -> Just (Ptr "\194\186\47\226\130\128\0"#)
     '0' -> Just (Ptr "\79\0"#)

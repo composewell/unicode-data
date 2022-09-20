@@ -1,6 +1,6 @@
 -- [TODO] @since
 -- |
--- Module      : Unicode.Char.Identifiers
+-- Module      : Unicode.Char.Identifiers.Security
 -- Copyright   : (c) 2021 Composewell Technologies and Contributors
 -- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
@@ -11,18 +11,16 @@
 
 module Unicode.Char.Identifiers.Security
     ( -- * Identifier status
-      IdentifierStatus(..)
-    , identifierStatus
-    , isAllowedIdentifier
+      isAllowedIdentifier
 
       -- * Identifier type
     , T.IdentifierType(..)
     , identifierTypes
-    , identifierTypeStatus
+    , isIdentifierTypeAllowed
 
       -- * Confusables
     , prototype
-    , prototypeM
+    , prototypeIfConfusable
     , intentionalConfusables
     , isIntentionallyConfusable
     )
@@ -40,42 +38,26 @@ import qualified Unicode.Internal.Char.Security.IdentifierType as T
 import qualified Unicode.Internal.Char.Security.IntentionalConfusables as IC
 
 -- [TODO] @since
--- | Identifier status
+-- | Returns 'True' if the given character is allowed in an identifier.
 --
-data IdentifierStatus
-    = Restricted
-    -- ^ /Restricted/ characters should be treated with caution when considering
-    -- possible use in identifiers, and should be disallowed unless there is
-    -- good reason to allow them in the environment in question.
-    | Allowed
-    -- ^ /Allowed/ characters are not typically used as is by implementations.
-    -- Instead, they are applied as filters to the set of supported characters.
-    deriving (Eq, Ord, Bounded, Enum, Show)
-
--- [TODO] @since
--- | Returns the 'IdentifierStatus' corresponding to a character.
---
-{-# INLINE identifierStatus #-}
-identifierStatus :: Char -> IdentifierStatus
-identifierStatus c = if S.isAllowedIdentifier c
-    then Allowed
-    else Restricted
-
--- [TODO] @since
--- | Returns 'True' if the given character is 'Allowed' in an identifier.
+-- * /Restricted/ characters should be treated with caution when considering
+-- possible use in identifiers, and should be disallowed unless there is
+-- good reason to allow them in the environment in question.
+-- * /Allowed/ characters are not typically used as is by implementations.
+-- Instead, they are applied as filters to the set of supported characters.
 --
 {-# INLINE isAllowedIdentifier #-}
 isAllowedIdentifier :: Char -> Bool
 isAllowedIdentifier = S.isAllowedIdentifier
 
 -- [TODO] @since
--- | Get the 'IdentifierStatus' of an 'T.IdentifierType'.
-{-# INLINE identifierTypeStatus #-}
-identifierTypeStatus :: T.IdentifierType -> IdentifierStatus
-identifierTypeStatus = \case
-    T.Inclusion   -> Allowed
-    T.Recommended -> Allowed
-    _             -> Restricted
+-- | Return 'True' if the given 'T.IdentifierType' is allowed.
+{-# INLINE isIdentifierTypeAllowed #-}
+isIdentifierTypeAllowed :: T.IdentifierType -> Bool
+isIdentifierTypeAllowed = \case
+    T.Inclusion   -> True
+    T.Recommended -> True
+    _             -> False
 
 -- [TODO] @since
 -- | Returns the 'IdentifierType's corresponding to a character.
@@ -86,9 +68,9 @@ identifierTypes = T.decodeIdentifierTypes . T.identifierTypes
 -- [TODO] @since
 -- | Returns the /prototype/ of a character if it is /unintentionally/
 -- confusable, else 'Nothing'.
-{-# INLINE prototypeM #-}
-prototypeM :: Char -> Maybe String
-prototypeM = fmap decode . C.prototypeM
+{-# INLINE prototypeIfConfusable #-}
+prototypeIfConfusable :: Char -> Maybe String
+prototypeIfConfusable = fmap decode . C.prototypeIfConfusable
     where
     decode = unsafePerformIO . Foreign.peekCString Encoding.utf8
 
@@ -98,7 +80,7 @@ prototypeM = fmap decode . C.prototypeM
 -- Note: returns the character itself if it is not /unintentionally/ confusable.
 {-# INLINE prototype #-}
 prototype :: Char -> String
-prototype c = fromMaybe [c] (prototypeM c)
+prototype c = fromMaybe [c] (prototypeIfConfusable c)
 
 -- [TODO] @since
 -- | Returns the list of /intentional/ confusables of a character, if any.

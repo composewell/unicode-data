@@ -18,16 +18,15 @@ main :: IO ()
 main = defaultMain
     [ bgroup "Unicode.Char.Identifiers.Security"
         [ bgroup "Identifier Status"
-            [ benchNF "identifierStatus"    (show . Security.identifierStatus)
-            , benchNF "isAllowedIdentifier" (show . Security.isAllowedIdentifier)
+            [ benchNF "isAllowedIdentifier" (show . Security.isAllowedIdentifier)
             ]
         , bgroup "Identifier Types"
             [ benchNF "identifierTypes"     (show . Security.identifierTypes)
             ]
         , bgroup "Confusables"
-            [ bgroup' "prototypeM"
-                [ Bench "CString" Confusables.prototypeM
-                , Bench "String"  Security.prototypeM
+            [ bgroup' "prototypeIfConfusable"
+                [ Bench "CString" Confusables.prototypeIfConfusable
+                , Bench "String"  Security.prototypeIfConfusable
                 ]
             , benchNF "prototype"                 Security.prototype
             , bgroup' "intentionalConfusables"

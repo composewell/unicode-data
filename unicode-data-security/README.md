@@ -1,7 +1,7 @@
 # README
 
 `unicode-data-security` provides Haskell APIs to efficiently access the
-[Unicode security mechanisms](https://www.unicode.org/reports/tr39/).
+[Unicode security mechanisms database](https://www.unicode.org/reports/tr39/).
 
 The Haskell data structures are generated programmatically from the
 Unicode character database (UCD) files. The latest Unicode version

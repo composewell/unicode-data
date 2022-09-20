@@ -1440,7 +1440,7 @@ genConfusablesModule moduleName =
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
-        , "(prototypeM)"
+        , "(prototypeIfConfusable)"
         , "where"
         , ""
         , "import Foreign.C.String (CString)"
@@ -1450,8 +1450,8 @@ genConfusablesModule moduleName =
         , "-- | Returns the /prototype/ of a character, if it is confusable."
         , "--"
         , "-- The resulting 'CString' is null-terminated and encoded in UTF-8."
-        , "prototypeM :: Char -> Maybe CString"
-        , "prototypeM = \\case" <> confusables
+        , "prototypeIfConfusable :: Char -> Maybe CString"
+        , "prototypeIfConfusable = \\case" <> confusables
         , "    _ -> Nothing"
         ]
 
