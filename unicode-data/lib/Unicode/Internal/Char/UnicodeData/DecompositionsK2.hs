@@ -14,8 +14,6 @@ module Unicode.Internal.Char.UnicodeData.DecompositionsK2
 (decompose)
 where
 
--- Note: this is a partial function we do not expect to call
--- this if isDecomposable returns false.
 {-# NOINLINE decompose #-}
 decompose :: Char -> [Char]
 decompose = \case
@@ -3465,3 +3463,4 @@ decompose = \case
   '\195099' -> "\40726"
   '\195100' -> "\40763"
   '\195101' -> "\173568"
+  c -> [c]
