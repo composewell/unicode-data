@@ -7,7 +7,6 @@
 -- Stability   : experimental
 
 {-# LANGUAGE LambdaCase #-}
-{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}
 {-# OPTIONS_HADDOCK hide #-}
 
 module Unicode.Internal.Char.UnicodeData.Decompositions

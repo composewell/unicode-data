@@ -6,7 +6,6 @@
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 
-{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}
 {-# OPTIONS_HADDOCK hide #-}
 
 module Unicode.Internal.Char.UnicodeData.Compositions

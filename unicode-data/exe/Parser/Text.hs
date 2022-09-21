@@ -751,7 +751,6 @@ genDecomposeDefModule moduleName before after dtype predicate =
     genHeader =
         [ apacheLicense 2020 moduleName
         , "{-# LANGUAGE LambdaCase #-}"
-        , "{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
@@ -834,7 +833,6 @@ genCompositionsModule moduleName compExclu non0CC =
 
     header =
         [ apacheLicense 2020 moduleName
-        , "{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
