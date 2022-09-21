@@ -763,7 +763,6 @@ genDecomposeDefModule moduleName before after dtype predicate =
     genHeader =
         [ apacheLicense 2020 moduleName
         , "{-# LANGUAGE LambdaCase #-}"
-        , "{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
@@ -772,9 +771,7 @@ genDecomposeDefModule moduleName before after dtype predicate =
         , ""
         ]
     genSign =
-        [ "-- Note: this is a partial function we do not expect to call"
-        , "-- this if isDecomposable returns false."
-        , "{-# NOINLINE decompose #-}"
+        [ "{-# NOINLINE decompose #-}"
         , "decompose :: Char -> [Char]"
         , "decompose = \\case"
         ]
@@ -848,7 +845,6 @@ genCompositionsModule moduleName compExclu non0CC =
 
     header =
         [ apacheLicense 2020 moduleName
-        , "{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
@@ -2329,17 +2325,19 @@ genCoreModules indir outdir props = do
         , (`genDecomposableModule` Kompat))
 
     decompositions =
-        ( "Unicode.Internal.Char.UnicodeData.Decompositions"
-        , \m -> genDecomposeDefModule m [] [] Canonical (const True))
+        let post = ["  c -> [c]"]
+        in  ( "Unicode.Internal.Char.UnicodeData.Decompositions"
+            , \m -> genDecomposeDefModule m [] post Canonical (const True))
 
     decompositionsK2 =
-        ( "Unicode.Internal.Char.UnicodeData.DecompositionsK2"
-        , \m -> genDecomposeDefModule m [] [] Kompat (>= 60000))
+        let post = ["  c -> [c]"]
+        in  ( "Unicode.Internal.Char.UnicodeData.DecompositionsK2"
+            , \m -> genDecomposeDefModule m [] post Kompat (>= 60000))
 
     decompositionsK =
         let pre = ["import qualified " <> fst decompositionsK2 <> " as DK2", ""]
             post = ["  c -> DK2.decompose c"]
-         in ( "Unicode.Internal.Char.UnicodeData.DecompositionsK"
+        in  ( "Unicode.Internal.Char.UnicodeData.DecompositionsK"
             , \m -> genDecomposeDefModule m pre post Kompat (< 60000))
 
     generalCategory =

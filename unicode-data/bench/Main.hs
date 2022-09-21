@@ -189,15 +189,14 @@ main = defaultMain
         [ benchChars "unicode-data" (N.isDecomposable N.Kompat)
         ]
       ]
-    -- [FIXME] Fail due to non-exhaustive pattern matching
-    -- , bgroup "decompose"
-    --   [ bgroup "Canonical"
-    --     [ benchChars "unicode-data" (N.decompose N.Canonical)
-    --     ]
-    --   , bgroup "Kompat"
-    --     [ benchChars "unicode-data" (N.decompose N.Kompat)
-    --     ]
-    --   ]
+    , bgroup "decompose"
+      [ bgroup "Canonical"
+        [ benchDecomposableChars "unicode-data" N.Canonical N.decompose
+        ]
+      , bgroup "Kompat"
+        [ benchDecomposableChars "unicode-data" N.Kompat N.decompose
+        ]
+      ]
     , bgroup "decomposeHangul"
       [ benchChars "unicode-data" N.decomposeHangul
       ]
@@ -234,15 +233,36 @@ main = defaultMain
               . benchChars title
 
     benchChars :: forall a. (NFData a) => String -> (Char -> a) -> Benchmark
-    benchChars t f =
+    benchChars t = benchCharsNF t isValid
+        where
+        -- Filter out: Surrogates, Private Use Areas and unsassigned code points
+        isValid c = G.generalCategory c < G.Surrogate
+
+    benchDecomposableChars
+        :: forall a. (NFData a)
+        => String
+        -> N.DecomposeMode
+        -> (N.DecomposeMode -> Char -> a)
+        -> Benchmark
+    benchDecomposableChars t mode f = benchCharsNF t isValid (f mode)
+        where
+        -- Filter out: Surrogates, Private Use Areas and unsassigned code points
+        --             and non-decomposable characters
+        isValid c = G.generalCategory c < G.Surrogate && N.isDecomposable mode c
+
+    benchCharsNF
+        :: forall a. (NFData a)
+        => String
+        -> (Char -> Bool)
+        -> (Char -> a)
+        -> Benchmark
+    benchCharsNF t isValid f =
         -- Avoid side-effects with garbage collection (see tasty-bench doc)
         env
             (evaluate (force chars)) -- initialize
             (bench t . nf (foldString f)) -- benchmark
         where
-        -- Filter out: Surrogates, Private Use Areas and unsassigned code points
         chars = filter isValid [minBound..maxBound]
-        isValid c = G.generalCategory c < G.Surrogate
 
     foldString :: forall a. (NFData a) => (Char -> a) -> String -> ()
     foldString f = foldr (deepseq . f) ()

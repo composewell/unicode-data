@@ -7,7 +7,6 @@
 -- Stability   : experimental
 
 {-# LANGUAGE LambdaCase #-}
-{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}
 {-# OPTIONS_HADDOCK hide #-}
 
 module Unicode.Internal.Char.UnicodeData.DecompositionsK
@@ -16,8 +15,6 @@ where
 
 import qualified Unicode.Internal.Char.UnicodeData.DecompositionsK2 as DK2
 
--- Note: this is a partial function we do not expect to call
--- this if isDecomposable returns false.
 {-# NOINLINE decompose #-}
 decompose :: Char -> [Char]
 decompose = \case
