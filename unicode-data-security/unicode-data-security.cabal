@@ -4,9 +4,10 @@ version:             0.1.0
 synopsis:            Unicode security mechanisms database
 description:
   @unicode-data-security@ provides Haskell APIs to access the
-  <https://www.unicode.org/reports/tr39/ Unicode security mechanisms database>.
+  <https://www.unicode.org/reports/tr39/ Unicode security mechanisms>
+  <https://www.unicode.org/Public/security/ database>.
   .
-  The Haskell data structures are generated programmatically.
+  The Haskell data structures are generated programmatically from the database.
   The latest Unicode version supported by this library is
   @<https://www.unicode.org/versions/Unicode14.0.0/ 14.0.0>@.
 homepage:            http://github.com/composewell/unicode-data
