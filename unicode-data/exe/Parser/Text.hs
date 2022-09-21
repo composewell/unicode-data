@@ -21,10 +21,12 @@ module Parser.Text
     ( genCoreModules
     , genNamesModules
     , genScriptsModules
+    , genSecurityModules
     ) where
 
 import Control.Applicative (Alternative(..))
-import Control.Exception (catch, IOException)
+import Control.Arrow ((&&&))
+import Control.Exception (assert, catch, IOException)
 import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Data.Bifunctor (Bifunctor(..))
@@ -40,11 +42,15 @@ import Data.Word (Word8, Word32)
 import Numeric (showHex)
 import Streamly.Data.Fold (Fold)
 import Streamly.Prelude (IsStream, SerialT)
+import System.FilePath ((</>))
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getEnv)
+import System.IO.Unsafe (unsafePerformIO)
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
+import qualified GHC.Foreign as Foreign
+import qualified GHC.IO.Encoding as Encoding
 import qualified Streamly.Prelude as Stream
 import qualified Streamly.Data.Fold as Fold
 import qualified Streamly.Internal.Data.Fold as Fold
@@ -122,6 +128,12 @@ readCodePoint = chr . read . ("0x"++)
 readCodePointM :: String -> Maybe Char
 readCodePointM "" = Nothing
 readCodePointM u  = Just (readCodePoint u)
+
+parseCodePointRange :: String -> Either Char (Char, Char)
+parseCodePointRange
+    = (\(c1, c2) -> maybe (Left c1) (Right . (c1,)) c2)
+    . bimap readCodePoint (readCodePointM . drop 2)
+    . span (/= '.')
 
 showPaddedHex :: Int -> String
 showPaddedHex cp =
@@ -1257,6 +1269,249 @@ genNumericValuesModule moduleName =
         , "  _ -> Nothing"
         ]
 
+genIdentifierStatusModule
+    :: Monad m
+    => String
+    -> Fold m CharIdentifierStatus String
+genIdentifierStatusModule moduleName =
+    done <$> Fold.lmap mkAllowed Fold.toList
+
+    where
+
+    mkAllowed = \case
+        CharIdentifierStatus c Allowed -> ord c
+        x                              -> error ("Unexpected " <> show x)
+
+    done values = unlines
+        [ apacheLicense 2022 moduleName
+        , "{-# LANGUAGE LambdaCase #-}"
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
+        , "module " <> moduleName
+        , "(isAllowedInIdentifier)"
+        , "where"
+        , ""
+        , "import Data.Char (ord)"
+        , "import Unicode.Internal.Bits (lookupBit64)"
+        , ""
+        , genBitmap "isAllowedInIdentifier" values
+        ]
+
+genIdentifierTypeModule
+    :: Monad m
+    => String
+    -> Fold m CharIdentifierTypes String
+genIdentifierTypeModule moduleName =
+    done . mkIdentifiersTypes <$> Fold.foldl' addIdentifierType mempty
+
+    where
+
+    addIdentifierType
+        :: Map.Map Char [IdentifierType]
+        -> CharIdentifierTypes
+        -> Map.Map Char [IdentifierType]
+    addIdentifierType acc (CharIdentifierTypes c types) =
+        Map.insertWith (flip (<>)) c types acc
+
+    mkIdentifiersTypes
+        :: Map.Map Char [IdentifierType]
+        -> (String, [Int])
+    mkIdentifiersTypes types =
+        let encoding = Set.toList (Set.fromList (def : Map.elems types))
+        in assert (length encoding < 0xff)
+            ( foldMap addEncoding (zip [0..] encoding)
+            , snd (Map.foldlWithKey' (addChar encoding) ('\0', mempty) types) )
+
+    -- Default value
+    def = [Not_Character]
+
+    addEncoding :: (Int, [IdentifierType]) -> String
+    addEncoding (n, e) = mconcat
+        [ "\n    "
+        , show n
+        , " -> "
+        , hackHaskellConstructor e ]
+
+    addChar
+        :: [[IdentifierType]]
+        -> (Char, [Int])
+        -> Char
+        -> [IdentifierType]
+        -> (Char, [Int])
+    addChar encoding (expected, acc) c types = if expected < c
+        then
+            let acc' = encodeTypes encoding def : acc
+            in addChar encoding (succ expected, acc') c types
+        else (succ c, encodeTypes encoding types : acc)
+
+    encodeTypes :: [[IdentifierType]] -> [IdentifierType] -> Int
+    encodeTypes encoding types
+        = assert (elemIndex def encoding == Just 0)
+        $ fromMaybe 0 (elemIndex types encoding)
+
+    hackHaskellConstructor = filter (/= '_') . show
+
+    done (encoding, identifiersTypes) = unlines
+        [ apacheLicense 2022 moduleName
+        , "{-# LANGUAGE LambdaCase, OverloadedLists #-}"
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
+        , "module " <> moduleName
+        , "(IdentifierType(..), identifierTypes, decodeIdentifierTypes)"
+        , "where"
+        , ""
+        , "import Data.Char (ord)"
+        , "import Data.List.NonEmpty (NonEmpty)"
+        , "import Unicode.Internal.Bits (lookupIntN)"
+        , ""
+        -- [TODO] @since
+        , "-- | Identifier type"
+        , "data IdentifierType"
+        , "    = NotCharacter"
+        , "    -- ^ Unassigned characters, private use characters, surrogates,"
+        , "    -- non-whitespace control characters."
+        , "    | Deprecated"
+        , "    -- ^ Characters with the Unicode property @Deprecated=Yes@."
+        , "    | DefaultIgnorable"
+        , "    -- ^ Characters with the Unicode property \
+                   \@Default_Ignorable_Code_Point=Yes@."
+        , "    | NotNFKC"
+        , "    -- ^ Characters that cannot occur in strings normalized to NFKC."
+        , "    | NotXID"
+        , "    -- ^ Characters that do not qualify as default Unicode identifiers;"
+        , "    -- that is, they do not have the Unicode property XID_Continue=True."
+        , "    | Exclusion"
+        , "    -- ^ Characters with @Script_Extensions@ values containing a script"
+        , "    -- in /Excluded Scripts/, and no script from /Limited Use Scripts/"
+        , "    -- or /Recommended Scripts/, other than “Common” or “Inherited”."
+        , "    | Obsolete"
+        , "    -- ^ Characters that are no longer in modern use, or that are not"
+        , "    -- commonly used in modern text."
+        , "    | Technical"
+        , "    -- ^ Specialized usage: technical, liturgical, etc."
+        , "    | UncommonUse"
+        , "    -- ^ Characters that are uncommon, or are limited in use, or"
+        , "    -- whose usage is uncertain."
+        , "    | LimitedUse"
+        , "    -- ^ Characters from scripts that are in limited use."
+        , "    | Inclusion"
+        , "    -- ^ Exceptionally allowed characters."
+        , "    | Recommended"
+        , "    -- ^ Characters from scripts that are in widespread everyday common use."
+        , "    deriving (Eq, Ord, Bounded, Enum, Show)"
+        , ""
+        , "decodeIdentifierTypes :: Int -> NonEmpty IdentifierType"
+        , "decodeIdentifierTypes = \\case" <> encoding
+        , "    _ -> " <> hackHaskellConstructor def
+        , ""
+        , genEnumBitmap "identifierTypes" 0 (reverse identifiersTypes)
+        ]
+
+genConfusablesModule
+    :: Monad m
+    => String
+    -> Fold m Confusable String
+genConfusablesModule moduleName =
+    done . foldMap mkConfusable . sort <$> Fold.toList
+
+    where
+
+    mkConfusable :: Confusable -> String
+    mkConfusable (Confusable c s) = mconcat
+        [ "\n    "
+        , show c
+        , " -> Just (Ptr \""
+        , stringToAddrLiteral s
+        , "\\0\"#)"
+        ]
+
+    -- Encode string as a null-terminated utf-8
+    stringToAddrLiteral = foldMap toWord8 . encodeUtf8
+    -- [HACK] Encode in utf-8, then decode in latin1 in order to get bytes
+    encodeUtf8 s
+        = unsafePerformIO
+        $ Foreign.withCString Encoding.utf8 s
+            (Foreign.peekCString Encoding.latin1)
+    toWord8 = ('\\' :) . show . ord
+
+    done confusables = unlines
+        [ apacheLicense 2022 moduleName
+        , "{-# LANGUAGE LambdaCase #-}"
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
+        , "module " <> moduleName
+        , "(prototypeIfConfusable)"
+        , "where"
+        , ""
+        , "import Foreign.C.String (CString)"
+        , "import GHC.Exts (Ptr(..))"
+        , ""
+        -- [TODO] @since
+        , "-- | Returns the /prototype/ of a character, if it is confusable."
+        , "--"
+        , "-- The resulting 'CString' is null-terminated and encoded in UTF-8."
+        , "prototypeIfConfusable :: Char -> Maybe CString"
+        , "prototypeIfConfusable = \\case" <> confusables
+        , "    _ -> Nothing"
+        ]
+
+genIntentionalConfusablesModule
+    :: Monad m
+    => String
+    -> Fold m IntentionalConfusable String
+genIntentionalConfusablesModule moduleName =
+    done . Map.foldMapWithKey mkConfusable <$> Fold.foldl' addEntry mempty
+
+    where
+
+    addEntry
+        :: Map.Map Char (Set.Set Char)
+        -> IntentionalConfusable
+        -> Map.Map Char (Set.Set Char)
+    addEntry acc (IntentionalConfusable c1 c2)
+        = Map.insertWith (flip (<>)) c1 (Set.singleton c2)
+        . Map.insertWith (flip (<>)) c2 (Set.singleton c1)
+        $ acc
+
+    mkConfusable :: Char -> Set.Set Char -> String
+    mkConfusable c cs = mconcat
+        [ "\n    "
+        , show c
+        , " -> Just (Ptr \""
+        , stringToAddrLiteral (Set.toList cs)
+        , "\\0\"#)"
+        ]
+
+    -- Encode string as a null-terminated utf-8
+    stringToAddrLiteral = foldMap toWord8 . encodeUtf8
+    -- [HACK] Encode in utf-8, then decode in latin1 in order to get bytes
+    encodeUtf8 s
+        = unsafePerformIO
+        $ Foreign.withCString Encoding.utf8 s
+            (Foreign.peekCString Encoding.latin1)
+    toWord8 = ('\\' :) . show . ord
+
+    done confusables = unlines
+        [ apacheLicense 2022 moduleName
+        , "{-# LANGUAGE LambdaCase #-}"
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
+        , "module " <> moduleName
+        , "(intentionalConfusables)"
+        , "where"
+        , ""
+        , "import Foreign.C.String (CString)"
+        , "import GHC.Exts (Ptr(..))"
+        , ""
+        -- [TODO] @since
+        , "-- | Returns the /intentional/ confusables of a character, if any."
+        , "--"
+        , "-- The resulting 'CString' is null-terminated and encoded in UTF-8."
+        , "intentionalConfusables :: Char -> Maybe CString"
+        , "intentionalConfusables = \\case" <> confusables
+        , "    _ -> Nothing"
+        ]
+
 -------------------------------------------------------------------------------
 -- Parsing blocks file
 -------------------------------------------------------------------------------
@@ -1593,15 +1848,9 @@ parseDerivedNumericValuesLine line
             (_field2, line3) = span (/= ';') (tail line2)
             value            = takeWhile (/= '#') (tail line3)
             value' = parseValue (trim' value)
-        in Just (bimap (,value') (mkRange value') (parseRange range))
+        in Just (bimap (,value') (mkRange value') (parseCodePointRange range))
 
     where
-
-    parseRange :: String -> Either Char (Char, Char)
-    parseRange
-        = (\(c1, c2) -> maybe (Left c1) (Right . (c1,)) c2)
-        . bimap readCodePoint (readCodePointM . drop 2)
-        . span (/= '.')
 
     mkRange :: NumericValue -> (Char, Char) -> CharRangeNumericValue
     mkRange value (c1, c2) = (c1, c2, value)
@@ -1703,14 +1952,8 @@ parseDerivedNameLine line
     | otherwise        =
         let (range, line1) = span (/= ';') line
             name = trim' (tail line1)
-        in Just (bimap (`CharName` name) (mkRange name) (parseRange range))
+        in Just (bimap (`CharName` name) (mkRange name) (parseCodePointRange range))
     where
-
-    parseRange :: String -> Either Char (Char, Char)
-    parseRange
-        = (\(c1, c2) -> maybe (Left c1) (Right . (c1,)) c2)
-        . bimap readCodePoint (readCodePointM . drop 2)
-        . span (/= '.')
 
     mkRange :: String -> (Char, Char) -> CharRangeName
     mkRange name (c1, c2) = case elemIndex '*' name of
@@ -1745,6 +1988,170 @@ parseDerivedNameLines
     mkName template char = CharName
         { _nChar = char
         , _nName = template <> fmap toUpper (showHexCodepoint char) }
+
+-------------------------------------------------------------------------------
+-- Parsing Identifier_Status
+-------------------------------------------------------------------------------
+
+data IdentifierStatus = Restricted | Allowed
+    deriving (Eq, Show, Read)
+
+data CharIdentifierStatus = CharIdentifierStatus
+    { _idStatusChar :: !Char
+    , _idStatus     :: !IdentifierStatus }
+    deriving (Show)
+
+type IdentifierStatusLine = (Char, Char, IdentifierStatus)
+
+parseIdentifierStatusLine :: String -> Maybe IdentifierStatusLine
+parseIdentifierStatusLine = \case
+    ""         -> Nothing -- empty line
+    '#':_      -> Nothing -- comment
+    '\xFEFF':_ -> Nothing -- BOM
+    line       ->
+        let (rawRange, line1) = span (/= ';') line
+            line2 = takeWhile (/= '#') (tail line1)
+            range = parseCodePointRange rawRange
+            status = read (trim' (tail line2))
+        in Just (either (mkRange status . (id &&& id)) (mkRange status) range)
+
+    where
+
+    mkRange :: IdentifierStatus -> (Char, Char) -> IdentifierStatusLine
+    mkRange status (c1, c2) = (c1, c2, status)
+
+parseIdentifierStatusLines
+    :: forall t m. (IsStream t, Monad m)
+    => t m String
+    -> t m CharIdentifierStatus
+parseIdentifierStatusLines
+    = Stream.unfoldMany (Unfold.unfoldr mkIdentifiersStatus)
+    . Stream.mapMaybe parseIdentifierStatusLine
+
+    where
+
+    mkIdentifiersStatus
+        :: IdentifierStatusLine
+        -> Maybe (CharIdentifierStatus, IdentifierStatusLine)
+    mkIdentifiersStatus (c1, c2, status) = if c1 <= c2
+        then Just (CharIdentifierStatus c1 status, (succ c1, c2, status))
+        else Nothing
+
+-------------------------------------------------------------------------------
+-- Parsing Identifier_Type
+-------------------------------------------------------------------------------
+
+data IdentifierType
+    = Not_Character
+    | Deprecated
+    | Default_Ignorable
+    | Not_NFKC
+    | Not_XID
+    | Exclusion
+    | Obsolete
+    | Technical
+    | Uncommon_Use
+    | Limited_Use
+    | Inclusion
+    | Recommended
+    deriving (Eq, Ord, Bounded, Enum, Show, Read)
+
+data CharIdentifierTypes = CharIdentifierTypes
+    { _idTypesChar :: !Char
+    , _idTypes     :: ![IdentifierType] }
+    deriving (Show)
+
+type IdentifierTypeLine = (Char, Char, [IdentifierType])
+
+parseIdentifierTypeLine :: String -> Maybe IdentifierTypeLine
+parseIdentifierTypeLine = \case
+    ""         -> Nothing -- empty line
+    '#':_      -> Nothing -- comment
+    '\xFEFF':_ -> Nothing -- BOM
+    line       ->
+        let (rawRange, line1) = span (/= ';') line
+            line2 = takeWhile (/= '#') (tail line1)
+            range = parseCodePointRange rawRange
+            types = read <$> words (trim' (tail line2))
+        in Just (either (mkRange types . (id &&& id)) (mkRange types) range)
+
+    where
+
+    mkRange :: [IdentifierType] -> (Char, Char) -> IdentifierTypeLine
+    mkRange type_ (c1, c2) = (c1, c2, type_)
+
+parseIdentifierTypeLines
+    :: forall t m. (IsStream t, Monad m)
+    => t m String
+    -> t m CharIdentifierTypes
+parseIdentifierTypeLines
+    = Stream.unfoldMany (Unfold.unfoldr mkIdentifiersStatus)
+    . Stream.mapMaybe parseIdentifierTypeLine
+
+    where
+
+    mkIdentifiersStatus
+        :: IdentifierTypeLine
+        -> Maybe (CharIdentifierTypes, IdentifierTypeLine)
+    mkIdentifiersStatus (c1, c2, types) = if c1 <= c2
+        then Just (CharIdentifierTypes c1 types, (succ c1, c2, types))
+        else Nothing
+
+-------------------------------------------------------------------------------
+-- Parsing Confusables
+-------------------------------------------------------------------------------
+
+data Confusable = Confusable
+    { _confusableChar     :: !Char
+    , _confusablePrototype :: !String }
+    deriving (Eq, Ord, Show)
+
+parseConfusablesLine :: String -> Maybe Confusable
+parseConfusablesLine = \case
+    ""         -> Nothing -- empty line
+    '#':_      -> Nothing -- comment
+    '\xFEFF':_ -> Nothing -- BOM
+    line       ->
+        let (rawChar, line1) = span (/= ';') line
+            line2 = takeWhile (/= ';') (tail line1)
+            char = readCodePoint rawChar
+            prototype = readCodePoint <$> words (trim' (tail line2))
+        in Just (Confusable char prototype)
+
+parseConfusablesLines
+    :: forall t m. (IsStream t, Monad m)
+    => t m String
+    -> t m Confusable
+parseConfusablesLines
+    = Stream.mapMaybe parseConfusablesLine
+
+-------------------------------------------------------------------------------
+-- Parsing Intentional Confusables
+-------------------------------------------------------------------------------
+
+data IntentionalConfusable = IntentionalConfusable
+    { _intantionConfusableChar      :: !Char
+    , _intantionConfusablePrototype :: !Char }
+    deriving (Eq, Ord, Show)
+
+parseIntentionalConfusablesLine :: String -> Maybe IntentionalConfusable
+parseIntentionalConfusablesLine = \case
+    ""         -> Nothing -- empty line
+    '#':_      -> Nothing -- comment
+    '\xFEFF':_ -> Nothing -- BOM
+    line       ->
+        let (rawChar, line1) = span (/= ';') line
+            line2 = takeWhile (/= '#') (tail line1)
+            char = readCodePoint rawChar
+            prototype = readCodePoint (trim' (tail line2))
+        in Just (IntentionalConfusable char prototype)
+
+parseIntentionalConfusablesLines
+    :: forall t m. (IsStream t, Monad m)
+    => t m String
+    -> t m IntentionalConfusable
+parseIntentionalConfusablesLines
+    = Stream.mapMaybe parseIntentionalConfusablesLine
 
 -------------------------------------------------------------------------------
 -- Generation
@@ -1808,7 +2215,7 @@ runGenerator ::
     -> GeneratorRecipe a
     -> IO ()
 runGenerator indir file transformLines outdir recipes =
-    readLinesFromFile (indir <> file) & transformLines & Stream.fold combinedFld
+    readLinesFromFile (indir </> file) & transformLines & Stream.fold combinedFld
 
     where
 
@@ -1819,20 +2226,20 @@ genCoreModules :: String -> String -> [String] -> IO ()
 genCoreModules indir outdir props = do
 
     compExclu <-
-        readLinesFromFile (indir <> "DerivedNormalizationProps.txt")
+        readLinesFromFile (indir </> "DerivedNormalizationProps.txt")
             & parsePropertyLines
             & Stream.find (\(name, _) -> name == "Full_Composition_Exclusion")
             & fmap (snd . fromMaybe ("", []))
 
     non0CC <-
-        readLinesFromFile (indir <> "extracted/DerivedCombiningClass.txt")
+        readLinesFromFile (indir </> "extracted/DerivedCombiningClass.txt")
             & parsePropertyLines
             & Stream.filter (\(name, _) -> name /= "0")
             & Stream.map snd
             & Stream.fold (Fold.foldl' (++) [])
 
     specialCasings <-
-        readLinesFromFile (indir <> "SpecialCasing.txt")
+        readLinesFromFile (indir </> "SpecialCasing.txt")
             & parseSpecialCasingLines
 
     runGenerator
@@ -1981,7 +2388,7 @@ genCoreModules indir outdir props = do
 
     derivedNumericValues =
          ( "Unicode.Internal.Char.DerivedNumericValues"
-         , \m -> genNumericValuesModule m)
+         , genNumericValuesModule )
 
 genNamesModules :: String -> String -> IO ()
 genNamesModules indir outdir = do
@@ -2003,10 +2410,10 @@ genNamesModules indir outdir = do
 
     names =
          ( "Unicode.Internal.Char.UnicodeData.DerivedName"
-         , \m -> genNamesModule m )
+         , genNamesModule )
     aliases =
          ( "Unicode.Internal.Char.UnicodeData.NameAliases"
-         , \m -> genAliasesModule m )
+         , genAliasesModule )
 
 genScriptsModules :: String -> String -> IO ()
 genScriptsModules indir outdir = do
@@ -2022,3 +2429,51 @@ genScriptsModules indir outdir = do
     scripts =
         ( "Unicode.Internal.Char.Scripts"
         , genScriptsModule)
+
+genSecurityModules :: String -> String -> IO ()
+genSecurityModules indir outdir = do
+    runGenerator
+        indir
+        "IdentifierStatus.txt"
+        parseIdentifierStatusLines
+        outdir
+        [isAllowedInIdentifier]
+
+    runGenerator
+        indir
+        "IdentifierType.txt"
+        parseIdentifierTypeLines
+        outdir
+        [identifierTypes]
+
+    runGenerator
+        indir
+        "confusables.txt"
+        parseConfusablesLines
+        outdir
+        [confusables]
+
+    runGenerator
+        indir
+        "intentional.txt"
+        parseIntentionalConfusablesLines
+        outdir
+        [intentional]
+
+    where
+
+    isAllowedInIdentifier =
+         ( "Unicode.Internal.Char.Security.IdentifierStatus"
+         , genIdentifierStatusModule )
+
+    identifierTypes =
+         ( "Unicode.Internal.Char.Security.IdentifierType"
+         , genIdentifierTypeModule )
+
+    confusables =
+         ( "Unicode.Internal.Char.Security.Confusables"
+         , genConfusablesModule )
+
+    intentional =
+         ( "Unicode.Internal.Char.Security.IntentionalConfusables"
+         , genIntentionalConfusablesModule )

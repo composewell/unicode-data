@@ -26,7 +26,7 @@ for reference documentation.
 ### `unicode-data-names`
 
 [`unicode-data-names`](unicode-data-names#readme) provides Haskell APIs
-to efficiently access the Unicode character names from the Unicode character
+to efficiently access the Unicode character _names_ from the Unicode character
 database.
 
 Please see the
@@ -36,11 +36,21 @@ for reference documentation.
 ### `unicode-data-scripts`
 
 [`unicode-data-scripts`](unicode-data-scripts#readme) provides Haskell APIs
-to efficiently access the Unicode character scripts from the Unicode character
+to efficiently access the Unicode character _scripts_ from the Unicode character
 database.
 
 Please see the
 [Haddock documentation](https://hackage.haskell.org/package/unicode-data-scripts)
+for reference documentation.
+
+### `unicode-data-security`
+
+[`unicode-data-security`](unicode-data-security#readme) provides Haskell APIs
+to efficiently access the
+[Unicode security mechanisms database](https://www.unicode.org/reports/tr39/).
+
+Please see the
+[Haddock documentation](https://hackage.haskell.org/package/unicode-data-security)
 for reference documentation.
 
 ## Performance
