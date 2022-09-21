@@ -15,7 +15,6 @@ module Unicode.Char.General.Blocks
     , block
     , B.blockDefinition
     , allBlockRanges
-    , allBlockRanges'
     )
 
 where
@@ -37,11 +36,3 @@ block = fmap toEnum . B.block
 {-# INLINE allBlockRanges #-}
 allBlockRanges :: [(Int, Int)]
 allBlockRanges = B.allBlockRanges
-
--- | Variant of 'allBlockRanges', with ranges expressed as 'Char's instead of
--- 'Int's.
---
--- @since 0.3.1
-{-# INLINE allBlockRanges' #-}
-allBlockRanges' :: [(Char, Char)]
-allBlockRanges' = (chr *** chr) <$> B.allBlockRanges
