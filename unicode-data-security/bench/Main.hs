@@ -18,7 +18,7 @@ main :: IO ()
 main = defaultMain
     [ bgroup "Unicode.Char.Identifiers.Security"
         [ bgroup "Identifier Status"
-            [ benchNF "isAllowedIdentifier" (show . Security.isAllowedIdentifier)
+            [ benchNF "isAllowedInIdentifier" (show . Security.isAllowedInIdentifier)
             ]
         , bgroup "Identifier Types"
             [ benchNF "identifierTypes"     (show . Security.identifierTypes)

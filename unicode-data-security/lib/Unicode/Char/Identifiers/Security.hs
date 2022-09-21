@@ -11,7 +11,7 @@
 
 module Unicode.Char.Identifiers.Security
     ( -- * Identifier status
-      isAllowedIdentifier
+      isAllowedInIdentifier
 
       -- * Identifier type
     , T.IdentifierType(..)
@@ -46,9 +46,9 @@ import qualified Unicode.Internal.Char.Security.IntentionalConfusables as IC
 -- * /Allowed/ characters are not typically used as is by implementations.
 -- Instead, they are applied as filters to the set of supported characters.
 --
-{-# INLINE isAllowedIdentifier #-}
-isAllowedIdentifier :: Char -> Bool
-isAllowedIdentifier = S.isAllowedIdentifier
+{-# INLINE isAllowedInIdentifier #-}
+isAllowedInIdentifier :: Char -> Bool
+isAllowedInIdentifier = S.isAllowedInIdentifier
 
 -- [TODO] @since
 -- | Return 'True' if the given 'T.IdentifierType' is allowed.

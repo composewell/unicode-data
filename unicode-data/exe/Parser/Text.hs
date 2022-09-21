@@ -1288,13 +1288,13 @@ genIdentifierStatusModule moduleName =
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
-        , "(isAllowedIdentifier)"
+        , "(isAllowedInIdentifier)"
         , "where"
         , ""
         , "import Data.Char (ord)"
         , "import Unicode.Internal.Bits (lookupBit64)"
         , ""
-        , genBitmap "isAllowedIdentifier" values
+        , genBitmap "isAllowedInIdentifier" values
         ]
 
 genIdentifierTypeModule
@@ -2437,7 +2437,7 @@ genSecurityModules indir outdir = do
         "IdentifierStatus.txt"
         parseIdentifierStatusLines
         outdir
-        [isAllowedIdentifier]
+        [isAllowedInIdentifier]
 
     runGenerator
         indir
@@ -2462,7 +2462,7 @@ genSecurityModules indir outdir = do
 
     where
 
-    isAllowedIdentifier =
+    isAllowedInIdentifier =
          ( "Unicode.Internal.Char.Security.IdentifierStatus"
          , genIdentifierStatusModule )
 
