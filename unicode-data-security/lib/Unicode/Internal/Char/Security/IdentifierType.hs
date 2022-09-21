@@ -18,6 +18,8 @@ import Data.List.NonEmpty (NonEmpty)
 import Unicode.Internal.Bits (lookupIntN)
 
 -- | Identifier type
+--
+-- @since 0.1.0
 data IdentifierType
     = NotCharacter
     -- ^ Unassigned characters, private use characters, surrogates,
@@ -51,6 +53,7 @@ data IdentifierType
     -- ^ Characters from scripts that are in widespread everyday common use.
     deriving (Eq, Ord, Bounded, Enum, Show)
 
+-- | Useful to decode the output of 'identifierTypes'.
 decodeIdentifierTypes :: Int -> NonEmpty IdentifierType
 decodeIdentifierTypes = \case
     0 -> [NotCharacter]
@@ -83,6 +86,7 @@ decodeIdentifierTypes = \case
     27 -> [Recommended]
     _ -> [NotCharacter]
 
+-- | Returns the 'IdentifierType's corresponding to a character.
 {-# INLINE identifierTypes #-}
 identifierTypes :: Char -> Int
 identifierTypes c = let n = ord c in if n >= 918000 then 0 else lookupIntN bitmap# n

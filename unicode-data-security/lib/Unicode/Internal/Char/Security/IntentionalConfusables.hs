@@ -19,6 +19,8 @@ import GHC.Exts (Ptr(..))
 -- | Returns the /intentional/ confusables of a character, if any.
 --
 -- The resulting 'CString' is null-terminated and encoded in UTF-8.
+--
+-- @since 0.1.0
 intentionalConfusables :: Char -> Maybe CString
 intentionalConfusables = \case
     '!' -> Just (Ptr "\199\131\0"#)

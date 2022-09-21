@@ -19,6 +19,8 @@ import GHC.Exts (Ptr(..))
 -- | Returns the /prototype/ of a character, if it is confusable.
 --
 -- The resulting 'CString' is null-terminated and encoded in UTF-8.
+--
+-- @since 0.1.0
 prototypeIfConfusable :: Char -> Maybe CString
 prototypeIfConfusable = \case
     '"' -> Just (Ptr "\39\39\0"#)

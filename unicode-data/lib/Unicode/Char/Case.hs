@@ -88,13 +88,14 @@ isUpper = P.isUppercase
 -- context-dependent operation. The case conversion functions in this
 -- module are /not/ locale nor context sensitive.
 
--- [TODO] @since
 -- | Returns the full /folded/ case mapping of a character.
 --
 -- It uses the character property @Case_Folding@.
 --
 -- __Note:__ @\'\\NUL\'@ requires special handling.
 -- See 'toCaseFoldString' source code for an example.
+--
+-- @since 0.3.1
 {-# INLINE caseFoldMapping #-}
 caseFoldMapping :: Unfold Char Char
 caseFoldMapping = Unfold step inject
@@ -103,13 +104,14 @@ caseFoldMapping = Unfold step inject
         0 -> fromIntegral (ord c)
         k -> k
 
--- [TODO] @since
 -- | Returns the full /lower/ case mapping of a character.
 --
 -- It uses the character property @Lowercase_Mapping@.
 --
 -- __Note:__ @\'\\NUL\'@ requires special handling.
 -- See 'toLowerString' source code for an example.
+--
+-- @since 0.3.1
 {-# INLINE lowerCaseMapping #-}
 lowerCaseMapping :: Unfold Char Char
 lowerCaseMapping = Unfold step inject
@@ -118,13 +120,14 @@ lowerCaseMapping = Unfold step inject
         0 -> fromIntegral (ord c)
         k -> k
 
--- [TODO] @since
 -- | Returns the full /title/ case mapping of a character.
 --
 -- It uses the character property @Titlecase_Mapping@.
 --
 -- __Note:__ @\'\\NUL\'@ requires special handling.
 -- See 'toTitleString' source code for an example.
+--
+-- @since 0.3.1
 {-# INLINE titleCaseMapping #-}
 titleCaseMapping :: Unfold Char Char
 titleCaseMapping = Unfold step inject
@@ -133,13 +136,14 @@ titleCaseMapping = Unfold step inject
         0 -> fromIntegral (ord c)
         k -> k
 
--- [TODO] @since
 -- | Returns the full /upper/ case mapping of a character.
 --
 -- It uses the character property @Uppercase_Mapping@.
 --
 -- __Note:__ @\'\\NUL\'@ requires special handling.
 -- See 'toUpperString' source code for an example.
+--
+-- @since 0.3.1
 {-# INLINE upperCaseMapping #-}
 upperCaseMapping :: Unfold Char Char
 upperCaseMapping = Unfold step inject
@@ -148,7 +152,6 @@ upperCaseMapping = Unfold step inject
         0 -> fromIntegral (ord c)
         k -> k
 
--- [TODO] @since
 -- | Convert a character to full /folded/ case if defined, else to itself.
 --
 -- This function is mainly useful for performing caseless (also known
@@ -167,12 +170,13 @@ upperCaseMapping = Unfold step inject
 -- “&#x3bc;” (@U+03BC@  Greek small letter mu) instead of itself.
 --
 -- It uses the character property @Case_Folding@.
+--
+-- @since 0.3.1
 toCaseFoldString :: Char -> String
 toCaseFoldString = \case
     '\NUL' -> "\NUL"
     c      -> toList caseFoldMapping c
 
--- [TODO] @since
 -- | Convert a character to full /lower/ case if defined, else to itself.
 --
 -- The result string may have more than one character. For instance,
@@ -183,12 +187,13 @@ toCaseFoldString = \case
 -- It uses the character property @Lowercase_Mapping@.
 --
 -- See: 'Unicode.Char.Case.Compat.toLower' for /simple/ lower case conversion.
+--
+-- @since 0.3.1
 toLowerString :: Char -> String
 toLowerString = \case
     '\NUL' -> "\NUL"
     c      -> toList lowerCaseMapping c
 
--- [TODO] @since
 -- | Convert a character to full /title/ case if defined, else to itself.
 --
 -- The result string may have more than one character. For instance,
@@ -199,12 +204,13 @@ toLowerString = \case
 -- It uses the character property @Titlecase_Mapping@.
 --
 -- See: 'Unicode.Char.Case.Compat.toTitle' for /simple/ title case conversion.
+--
+-- @since 0.3.1
 toTitleString :: Char -> String
 toTitleString = \case
     '\NUL' -> "\NUL"
     c      -> toList titleCaseMapping c
 
--- [TODO] @since
 -- | Convert a character to full /upper/ case if defined, else to itself.
 --
 -- The result string may have more than one character. For instance,
@@ -214,6 +220,8 @@ toTitleString = \case
 -- It uses the character property @Uppercase_Mapping@.
 --
 -- See: 'Unicode.Char.Case.Compat.toUpper' for /simple/ upper case conversion.
+--
+-- @since 0.3.1
 toUpperString :: Char -> String
 toUpperString = \case
     '\NUL' -> "\NUL"

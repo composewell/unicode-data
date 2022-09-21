@@ -1,4 +1,3 @@
--- [TODO] @since
 -- |
 -- Module      : Unicode.Char.Identifiers.Security
 -- Copyright   : (c) 2021 Composewell Technologies and Contributors
@@ -8,6 +7,8 @@
 --
 -- Unicode Security Mechanisms functions based on
 -- [Unicode Technical Standard #39](https://www.unicode.org/reports/tr39/)
+--
+-- @since 0.1.0
 
 module Unicode.Char.Identifiers.Security
     ( -- * Identifier status
@@ -37,7 +38,6 @@ import qualified Unicode.Internal.Char.Security.IdentifierStatus as S
 import qualified Unicode.Internal.Char.Security.IdentifierType as T
 import qualified Unicode.Internal.Char.Security.IntentionalConfusables as IC
 
--- [TODO] @since
 -- | Returns 'True' if the given character is allowed in an identifier.
 --
 -- * /Restricted/ characters should be treated with caution when considering
@@ -46,12 +46,14 @@ import qualified Unicode.Internal.Char.Security.IntentionalConfusables as IC
 -- * /Allowed/ characters are not typically used as is by implementations.
 -- Instead, they are applied as filters to the set of supported characters.
 --
+-- @since 0.1.0
 {-# INLINE isAllowedInIdentifier #-}
 isAllowedInIdentifier :: Char -> Bool
 isAllowedInIdentifier = S.isAllowedInIdentifier
 
--- [TODO] @since
 -- | Return 'True' if the given 'T.IdentifierType' is allowed.
+--
+-- @since 0.1.0
 {-# INLINE isIdentifierTypeAllowed #-}
 isIdentifierTypeAllowed :: T.IdentifierType -> Bool
 isIdentifierTypeAllowed = \case
@@ -59,39 +61,44 @@ isIdentifierTypeAllowed = \case
     T.Recommended -> True
     _             -> False
 
--- [TODO] @since
 -- | Returns the 'IdentifierType's corresponding to a character.
+--
+-- @since 0.1.0
 {-# INLINE identifierTypes #-}
 identifierTypes :: Char -> NonEmpty T.IdentifierType
 identifierTypes = T.decodeIdentifierTypes . T.identifierTypes
 
--- [TODO] @since
 -- | Returns the /prototype/ of a character if it is /unintentionally/
 -- confusable, else 'Nothing'.
+--
+-- @since 0.1.0
 {-# INLINE prototypeIfConfusable #-}
 prototypeIfConfusable :: Char -> Maybe String
 prototypeIfConfusable = fmap decode . C.prototypeIfConfusable
     where
     decode = unsafePerformIO . Foreign.peekCString Encoding.utf8
 
--- [TODO] @since
 -- | Returns the /prototype/ of a character.
 --
 -- Note: returns the character itself if it is not /unintentionally/ confusable.
+--
+-- @since 0.1.0
 {-# INLINE prototype #-}
 prototype :: Char -> String
 prototype c = fromMaybe [c] (prototypeIfConfusable c)
 
--- [TODO] @since
 -- | Returns the list of /intentional/ confusables of a character, if any.
+--
+-- @since 0.1.0
 {-# INLINE intentionalConfusables #-}
 intentionalConfusables :: Char -> String
 intentionalConfusables = maybe mempty decode . IC.intentionalConfusables
     where
     decode = unsafePerformIO . Foreign.peekCString Encoding.utf8
 
--- [TODO] @since
 -- | Returns 'True' if the character is /intentionally/ confusable.
+--
+-- @since 0.1.0
 {-# INLINE isIntentionallyConfusable #-}
 isIntentionallyConfusable :: Char -> Bool
 isIntentionallyConfusable = isJust . IC.intentionalConfusables

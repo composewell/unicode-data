@@ -1,6 +1,6 @@
 # Changelog
 
-## Next
+## 0.3.1 (September 2022)
 
 - Added full case conversions to `Unicode.Char.Case`:
 
