@@ -1,7 +1,7 @@
 cabal-version:       2.2
 name:                unicode-data-security
 version:             0.1.0
-synopsis:            Unicode characters names and aliases
+synopsis:            Unicode security mechanisms database
 description:
   @unicode-data-security@ provides Haskell APIs to access the
   <https://www.unicode.org/reports/tr39/ Unicode security mechanisms database>.

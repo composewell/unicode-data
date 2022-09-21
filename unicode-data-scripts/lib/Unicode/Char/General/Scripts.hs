@@ -33,7 +33,7 @@ import GHC.Exts (byteSwap32#)
 
 import qualified Unicode.Internal.Char.Scripts as S
 
--- | Character script
+-- | Character script.
 --
 -- @since 0.1.0
 {-# INLINE script #-}
@@ -41,7 +41,7 @@ script :: Char -> S.Script
 script = toEnum . S.script
 
 {- HLINT ignore scriptDefinition "Eta reduce" -}
--- | Characters correspinding to a 'S.Script'.
+-- | Characters corresponding to a 'S.Script'.
 --
 -- @since 0.1.0
 scriptDefinition :: S.Script -> String
