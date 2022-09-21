@@ -1,6 +1,5 @@
 {-# LANGUAGE CPP #-}
 
--- [TODO] @since
 -- |
 -- Module      : Unicode.Char.General
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
@@ -9,6 +8,8 @@
 -- Stability   : experimental
 --
 -- Unicode scripts related functions.
+--
+-- @since 0.1.0
 --
 
 module Unicode.Char.General.Scripts
@@ -32,15 +33,17 @@ import GHC.Exts (byteSwap32#)
 
 import qualified Unicode.Internal.Char.Scripts as S
 
--- [TODO] @since
 -- | Character script
+--
+-- @since 0.1.0
 {-# INLINE script #-}
 script :: Char -> S.Script
 script = toEnum . S.script
 
 {- HLINT ignore scriptDefinition "Eta reduce" -}
--- [TODO] @since
 -- | Characters correspinding to a 'S.Script'.
+--
+-- @since 0.1.0
 scriptDefinition :: S.Script -> String
 scriptDefinition = unpack . S.scriptDefinition
     where

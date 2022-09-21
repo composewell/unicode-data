@@ -7,6 +7,7 @@
 --
 -- Numeric character property related functions.
 --
+-- @since 0.3.0
 module Unicode.Char.Numeric
     ( -- * Predicates
       isNumber
@@ -53,7 +54,6 @@ import qualified Unicode.Internal.Char.DerivedNumericValues as V
 isNumber :: Char -> Bool
 isNumber = Compat.isNumber
 
--- [TODO] @since
 -- | Selects Unicode character with a numeric value.
 --
 -- __Note:__ a character may have a numeric value but return 'False' with
@@ -63,11 +63,12 @@ isNumber = Compat.isNumber
 -- 'Unicode.Char.General.OtherLetter' and do have a numeric value.
 --
 -- prop> isNumeric c == isJust (numericValue c)
+--
+-- @since 0.3.1
 {-# INLINE isNumeric #-}
 isNumeric :: Char -> Bool
 isNumeric = isJust . V.numericValue
 
--- [TODO] @since
 -- | Numeric value of a character, if relevant.
 --
 -- __Note:__ a character may have a numeric value but return 'False' with
@@ -75,11 +76,12 @@ isNumeric = isJust . V.numericValue
 -- 'Unicode.Char.Numeric.Compat.isNumber' only tests
 -- 'Unicode.Char.General.GeneralCategory': some CJK characters are
 -- 'Unicode.Char.General.OtherLetter' and do have a numeric value.
+--
+-- @since 0.3.1
 {-# INLINE numericValue #-}
 numericValue :: Char -> Maybe Rational
 numericValue = V.numericValue
 
--- [TODO] @since
 -- | Integer value of a character, if relevant.
 --
 -- This is a special case of 'numericValue'.
@@ -89,6 +91,8 @@ numericValue = V.numericValue
 -- 'Unicode.Char.Numeric.Compat.isNumber' only tests
 -- 'Unicode.Char.General.GeneralCategory': some CJK characters are
 -- 'Unicode.Char.General.OtherLetter' and do have a numeric value.
+--
+-- @since 0.3.1
 integerValue :: Char -> Maybe Int
 integerValue c = do
     r <- V.numericValue c

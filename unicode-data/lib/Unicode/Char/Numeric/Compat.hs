@@ -7,6 +7,8 @@
 --
 -- Compatibility module for numeric character property related functions.
 --
+-- @since 0.3.1
+--
 module Unicode.Char.Numeric.Compat
     ( -- * Predicates
       isNumber
@@ -14,7 +16,6 @@ module Unicode.Char.Numeric.Compat
 
 import Unicode.Char.General (GeneralCategory(..), generalCategory)
 
--- [TODO] @since 0.3.0:; @since X.X.X: moved to compat module.
 -- | Selects Unicode numeric characters, including digits from various
 -- scripts, Roman numerals, et cetera.
 --
@@ -31,6 +32,9 @@ import Unicode.Char.General (GeneralCategory(..), generalCategory)
 -- Use 'Unicode.Char.Numeric.isNumeric' to cover those cases as well.
 --
 -- prop> isNumber c == Data.Char.isNumber c
+--
+-- @since 0.3.1 moved to Compat module.
+-- @since 0.3.0
 isNumber :: Char -> Bool
 isNumber c = case generalCategory c of
     DecimalNumber -> True
