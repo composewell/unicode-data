@@ -19,8 +19,10 @@ UCD_FILES="\
   DerivedCoreProperties.txt:e3eddd7d469cd1b0feed7528defad1a1cc7c6a9ceb0ae4446a6d10921ed2e7bc \
   DerivedNormalizationProps.txt:b2c444c20730b097787fdf50bd7d6dd3fc5256ab8084f5b35b11c8776eca674c \
   NameAliases.txt:14b3b677d33f95c51423dce6eef4a6a28b4b160451ecedee4b91edb6745cf4a3 \
+  PropertyValueAliases.txt:eb755757e20b72b330b2948df3cf2ff7adb0e31bb060140dc09dafb132ace2cd \
   PropList.txt:6bddfdb850417a5bee6deff19290fd1b138589909afb50f5a049f343bf2c6722 \
   Scripts.txt:52db475c4ec445e73b0b16915448c357614946ad7062843c563e00d7535c6510 \
+  ScriptExtensions.txt:d37eedf63ff9c48bac863d5f76862373d6cf5269fd21253d499e2430d638c01d \
   SpecialCasing.txt:c667b45908fd269af25fd55d2fc5bbc157fb1b77675936e25c513ce32e080334 \
   UnicodeData.txt:36018e68657fdcb3485f636630ffe8c8532e01c977703d2803f5b89d6c5feafb \
   extracted/DerivedCombiningClass.txt:12b0c3af9b600b49488d66545a3e7844ea980809627201bf9afeebe1c9f16f4e \
