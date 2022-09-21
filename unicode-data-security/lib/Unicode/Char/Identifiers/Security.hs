@@ -21,7 +21,7 @@ module Unicode.Char.Identifiers.Security
 
       -- * Confusables
     , prototype
-    , prototypeIfConfusable
+    , confusablePrototype
     , intentionalConfusables
     , isIntentionallyConfusable
     )
@@ -72,9 +72,9 @@ identifierTypes = T.decodeIdentifierTypes . T.identifierTypes
 -- confusable, else 'Nothing'.
 --
 -- @since 0.1.0
-{-# INLINE prototypeIfConfusable #-}
-prototypeIfConfusable :: Char -> Maybe String
-prototypeIfConfusable = fmap decode . C.prototypeIfConfusable
+{-# INLINE confusablePrototype #-}
+confusablePrototype :: Char -> Maybe String
+confusablePrototype = fmap decode . C.confusablePrototype
     where
     decode = unsafePerformIO . Foreign.peekCString Encoding.utf8
 
@@ -85,7 +85,7 @@ prototypeIfConfusable = fmap decode . C.prototypeIfConfusable
 -- @since 0.1.0
 {-# INLINE prototype #-}
 prototype :: Char -> String
-prototype c = fromMaybe [c] (prototypeIfConfusable c)
+prototype c = fromMaybe [c] (confusablePrototype c)
 
 -- | Returns the list of /intentional/ confusables of a character, if any.
 --
