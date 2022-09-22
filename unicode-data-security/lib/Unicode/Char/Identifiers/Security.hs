@@ -20,15 +20,15 @@ module Unicode.Char.Identifiers.Security
     , isIdentifierTypeAllowed
 
       -- * Confusables
-    , prototype
     , confusablePrototype
+    -- , prototype
     , intentionalConfusables
     , isIntentionallyConfusable
     )
 where
 
 import           Data.List.NonEmpty (NonEmpty)
-import           Data.Maybe (fromMaybe, isJust)
+import           Data.Maybe (isJust)
 import qualified GHC.Foreign as Foreign
 import qualified GHC.IO.Encoding as Encoding
 import           System.IO.Unsafe (unsafePerformIO)
@@ -78,14 +78,15 @@ confusablePrototype = fmap decode . C.confusablePrototype
     where
     decode = unsafePerformIO . Foreign.peekCString Encoding.utf8
 
--- | Returns the /prototype/ of a character.
---
--- Note: returns the character itself if it is not /unintentionally/ confusable.
---
--- @since 0.1.0
-{-# INLINE prototype #-}
-prototype :: Char -> String
-prototype c = fromMaybe [c] (confusablePrototype c)
+-- [TODO] Assess the need for this function
+-- -- | Returns the /prototype/ of a character.
+-- --
+-- -- Note: returns the character itself if it is not /unintentionally/ confusable.
+-- --
+-- -- @since 0.1.0
+-- {-# INLINE prototype #-}
+-- prototype :: Char -> String
+-- prototype c = fromMaybe [c] (confusablePrototype c)
 
 -- | Returns the list of /intentional/ confusables of a character, if any.
 --
