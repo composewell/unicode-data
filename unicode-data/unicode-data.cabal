@@ -166,6 +166,6 @@ benchmark bench
     deepseq     >= 1.1   && < 1.5,
     tasty-bench >= 0.2.5 && < 0.4,
     tasty       >= 1.4.1,
-    text        >= 2.0   && < 2.1,
+    text        >= 1.2.4 && < 2.1,
     unicode-data
   ghc-options: -O2 -fdicts-strict -rtsopts
