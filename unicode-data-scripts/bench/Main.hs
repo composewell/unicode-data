@@ -16,6 +16,9 @@ main = defaultMain
     , bgroup "scriptDefinition"
       [ benchNF "unicode-data"  (show . S.scriptDefinition)
       ]
+    , bgroup "scriptExtensions"
+      [ benchChars "unicode-data"  (show . S.scriptExtensions)
+      ]
     ]
   ]
   where

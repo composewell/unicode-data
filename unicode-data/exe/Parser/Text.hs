@@ -35,7 +35,8 @@ import Data.Char (chr, ord, isAlphaNum, isAscii, isSpace, toUpper)
 import Data.Foldable (foldl')
 import Data.Function (on, (&))
 import Data.Functor ((<&>))
-import Data.List (dropWhileEnd, elemIndex, groupBy, intersperse, sort, unfoldr)
+import Data.List
+    (dropWhileEnd, elemIndex, groupBy, intersperse, sort, sortBy, unfoldr)
 import Data.Maybe (fromMaybe)
 import Data.Ratio ((%))
 import Data.Word (Word8, Word32)
@@ -101,6 +102,10 @@ data DetailedChar =
     deriving (Show)
 
 type CharRange = Either Char (Char, Char)
+data CharRangeStream
+    = SingleChar !Char
+    | CharRange !Char !Char
+    | Stop
 
 -------------------------------------------------------------------------------
 -- Helpers
@@ -440,19 +445,23 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
     encodeBound :: Word32 -> Int -> [Word8]
     encodeBound idx n = word32ToWord8s ((idx `shiftL` 21) .|. fromIntegral n)
 
+defaultScript :: String
+defaultScript = "Unknown"
+
 genScriptsModule
     :: Monad m
     => String
+    -> PropertyValuesAliases
     -> Fold m ScriptLine String
-genScriptsModule moduleName =
+genScriptsModule moduleName aliases =
     done <$> Fold.foldl' addRange mempty
     where
 
     done ranges =
-        let scripts = Set.toList (foldr addScript (Set.singleton "Unknown") ranges)
+        let scripts = Set.toList
+                        (foldr addScript (Set.singleton defaultScript) ranges)
         in unlines
             [ apacheLicense 2022 moduleName
-            , "{-# LANGUAGE MultiWayIf #-}"
             , "{-# OPTIONS_HADDOCK hide #-}"
             , ""
             , "module " <> moduleName
@@ -465,7 +474,12 @@ genScriptsModule moduleName =
             , "import GHC.Exts (Ptr(..))"
             , "import Unicode.Internal.Bits (lookupIntN)"
             , ""
-            , "-- | Unicode script."
+            , "-- | Unicode [script](https://www.unicode.org/reports/tr24/)."
+            , "--"
+            , "-- The constructors descriptions are the original Unicode values"
+            , "-- (short and long forms)."
+            , "--"
+            , "-- There is a total of " <> show (length scripts) <> " scripts."
             , "--"
             , "-- @since 0.1.0"
             , "data Script"
@@ -522,10 +536,25 @@ genScriptsModule moduleName =
         . intersperse "\n  | "
         . fmap (\script -> mconcat
             [ mkHaskellConstructor script
-            , " -- ^ @"
+            , " -- ^ "
+            , case Map.lookup script aliasesMap of
+                Just as -> mkAliases as
+                Nothing -> error ("No abbreviation for script: " <> script)
+            , ": @"
             , script
             , "@"
             ])
+
+    -- Map: script long form → short forms
+    aliasesMap :: Map.Map String [String]
+    aliasesMap = Map.foldrWithKey
+        (\abbr as -> Map.insert (head as) (abbr : tail as))
+        mempty
+        aliases
+    mkAliases
+        = mconcat
+        . intersperse ", "
+        . fmap (\abbr -> mconcat ["@", abbr, "@"])
 
     mkScriptDefinitions :: [ScriptLine] -> String
     mkScriptDefinitions
@@ -545,7 +574,7 @@ genScriptsModule moduleName =
                 let r = Right (expected, maxBound)
                 in either (:acc) (:acc') (combineRanges r r')
             addRest _ = error "impossible"
-            unknown = fmap ("Unknown",) . addRest $ foldl'
+            unknown = fmap (defaultScript,) . addRest $ foldl'
                 addUnknown
                 (mempty, '\0')
                 (sort (foldMap (rangeToCharScripts id) ls))
@@ -587,7 +616,7 @@ genScriptsModule moduleName =
             addMissing (acc, expected) x@(c, script) = if expected < c
                 then addMissing (def:acc, succ expected) x
                 else (script:acc, succ c)
-            def = getScript "Unknown"
+            def = getScript defaultScript
             getScript s = fromMaybe (error "script not found") (elemIndex s scripts)
         in genEnumBitmap "script" def (reverse charScripts')
 
@@ -595,6 +624,119 @@ genScriptsModule moduleName =
     rangeToCharScripts f (script, r) = case r of
         Left  cp     -> [(cp, f script)]
         Right (l, u) -> (, f script) <$> [l..u]
+
+genScriptExtensionsModule
+    :: Monad m
+    => String
+    -> PropertyValuesAliases
+    -> ScriptExtensions
+    -> Fold m ScriptLine String
+genScriptExtensionsModule moduleName aliases extensions =
+    done <$> Fold.foldl' processLine mempty
+
+    where
+
+    -- [NOTE] We rely on all the scripts having a short form
+
+    -- Map: script → short form
+    scriptsAbbr :: Map.Map String String
+    scriptsAbbr =
+        Map.foldrWithKey (\abbr as -> Map.insert (head as) abbr) mempty aliases
+    getScriptAbbr :: String -> String
+    getScriptAbbr = fromMaybe (error "script not found") . (scriptsAbbr Map.!?)
+
+    -- All possible values: extensions + scripts
+    extensionsSet :: Set.Set [String]
+    extensionsSet = Set.fromList (Map.elems extensions)
+                  <> Set.map pure (Map.keysSet aliases)
+    extensionsList = sortBy
+        (compare `on` fmap mkScript)
+        (Set.toList extensionsSet)
+
+    encodeExtensions :: [String] -> Int
+    encodeExtensions e = fromMaybe
+        (error ("extension not found: " <> show e))
+        (elemIndex e extensionsList)
+
+    encodedExtensions :: Map.Map [String] Int
+    encodedExtensions =
+        let l = length extensionsSet
+        in if length extensionsSet > 0xff
+            then error ("Too many script extensions: " <> show l)
+            else Map.fromSet encodeExtensions extensionsSet
+
+    processLine
+        :: (Set.Set [String], Map.Map Char Int) -- used exts, encoded char exts
+        -> ScriptLine
+        -> (Set.Set [String], Map.Map Char Int)
+    processLine acc (script, range) = case range of
+        Left c         -> addChar script c acc
+        Right (c1, c2) -> foldr (addChar script) acc [c1..c2]
+
+    addChar
+        :: String -- script
+        -> Char   -- processed char
+        -> (Set.Set [String], Map.Map Char Int)
+        -> (Set.Set [String], Map.Map Char Int)
+    addChar script c (extsAcc, charAcc) = case Map.lookup c extensions of
+        -- Char has explicit extensions
+        Just exts -> ( Set.insert exts extsAcc
+                     , Map.insert c (encodedExtensions Map.! exts) charAcc)
+        -- Char has no explicit extensions: use its script
+        Nothing   ->
+            let exts = [getScriptAbbr script]
+            in ( Set.insert exts extsAcc
+               , Map.insert c (encodedExtensions Map.! exts) charAcc)
+
+    done (usedExts, exts) = unlines
+        [ apacheLicense 2022 moduleName
+        , "{-# LANGUAGE OverloadedLists #-}"
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
+        , "module " <> moduleName
+        , "(scriptExtensions, decodeScriptExtensions)"
+        , "where"
+        , ""
+        , "import Data.Char (ord)"
+        , "import Data.List.NonEmpty (NonEmpty)"
+        , "import Unicode.Internal.Char.Scripts (Script(..))"
+        , "import Unicode.Internal.Bits (lookupIntN)"
+        , ""
+        , "-- | Useful to decode the output of 'scriptExtensions'."
+        , "decodeScriptExtensions :: Int -> NonEmpty Script"
+        , "decodeScriptExtensions = \\case" <> mkDecodeScriptExtensions usedExts
+        , "    _   -> [" <> mkHaskellConstructor defaultScript <> "]"
+        , ""
+        , "-- | Script extensions of a character."
+        , "--"
+        , "-- @since 0.1.0"
+        , genEnumBitmap "scriptExtensions" def (mkScriptExtensions exts)
+        ]
+
+    mkDecodeScriptExtensions :: Set.Set [String] -> String
+    mkDecodeScriptExtensions
+        = mkDecodeScriptExtensions'
+        . Set.map (\exts -> (encodedExtensions Map.! exts, exts))
+    mkDecodeScriptExtensions' = foldMap $ \(v, exts) -> mconcat
+        [ "\n    "
+        , show v
+        , " -> ["
+        , mconcat (intersperse ", " (mkScript <$> exts))
+        , "]"
+        ]
+    mkScript :: String -> String
+    mkScript = mkHaskellConstructor . head . (aliases Map.!)
+
+    def :: Int
+    def = encodedExtensions Map.! [getScriptAbbr defaultScript]
+
+    mkScriptExtensions
+        = reverse
+        . snd
+        . Map.foldlWithKey addCharExt ('\0', mempty)
+    addCharExt (expected, acc) c v = if expected < c
+        then addCharExt (succ expected, def : acc) c v
+        else (succ c, v : acc)
 
 -------------------------------------------------------------------------------
 -- Parsing UnicodeData.txt
@@ -1586,6 +1728,52 @@ parseScriptLines
 parseScriptLines = Stream.mapMaybe parseScriptLine
 
 -------------------------------------------------------------------------------
+-- Parsing ScriptExtensions.txt
+-------------------------------------------------------------------------------
+
+type ScriptExtensionsLine = (CharRangeStream, [String])
+
+data CharScriptExtensions = CharScriptExtensions
+    { _scriptExtensionsChar    :: !Char
+    , _scriptExtensionsScripts :: ![String] }
+type ScriptExtensions = Map.Map Char [String]
+
+parseScriptExtensionsLine :: String -> Maybe ScriptExtensionsLine
+parseScriptExtensionsLine = \case
+    ""    -> Nothing -- empty line
+    '#':_ -> Nothing -- comment
+    line  -> Just (parseLine line)
+
+    where
+
+    parseLine line =
+        let (rangeLn, line1) = span (/= ';') line
+            range = parseCodePointRange rangeLn
+            scripts = words (takeWhile (/= '#') (tail line1))
+        in (either SingleChar (uncurry CharRange) range, scripts)
+
+parseScriptExtensionsLines
+    :: (IsStream t, Monad m)
+    => t m String
+    -> t m CharScriptExtensions
+parseScriptExtensionsLines
+    = Stream.unfoldMany (Unfold.unfoldr mkScriptExtension)
+    . Stream.mapMaybe parseScriptExtensionsLine
+
+    where
+
+    mkScriptExtension
+        :: ScriptExtensionsLine
+        -> Maybe (CharScriptExtensions, ScriptExtensionsLine)
+    mkScriptExtension (step, scripts) = case step of
+        SingleChar c    -> Just (CharScriptExtensions c scripts, (Stop, mempty))
+        CharRange c1 c2 -> Just ( CharScriptExtensions c1 scripts
+                                , if c1 < c2
+                                    then (CharRange (succ c1) c2, scripts)
+                                    else (Stop, mempty) )
+        Stop            -> Nothing
+
+-------------------------------------------------------------------------------
 -- Parsing property files
 -------------------------------------------------------------------------------
 
@@ -1638,6 +1826,53 @@ parsePropertyLines =
     Stream.splitOn isDivider
         $ Fold.lmap parsePropertyLine
         $ Fold.foldl' combinePropertyLines emptyPropertyLine
+
+-------------------------------------------------------------------------------
+-- Parsing UnicodeData.txt
+-------------------------------------------------------------------------------
+
+data PropertyValueAliasesLine = PropertyValueAliasesLine
+    { _prop             :: !String
+    , _propValue        :: !String
+    , _propValueAliases :: [String] }
+
+type PropertyValuesAliases      = Map.Map String [String]
+type PropertyValuesAliasesEntry = (String, PropertyValuesAliases)
+
+parsePropertyValueAliasesLine :: String -> Maybe PropertyValueAliasesLine
+parsePropertyValueAliasesLine = \case
+    ""    -> Nothing -- empty line
+    '#':_ -> Nothing -- comment
+    line  -> case split line of
+        prop : value : as -> Just (PropertyValueAliasesLine prop value as)
+        _                 -> error ("Unsupported line: " <> line)
+
+    where
+
+    split s = case s' of
+        ""    -> [v']
+        '#':_ -> [v']
+        s''   -> v' : split (tail s'')
+        where (v, s') = span (\c -> c /= ';' && c /= '#') (dropWhile isSpace s)
+              v' = dropWhileEnd isSpace v
+
+parsePropertyValueAliasesLines
+    :: forall t m. (IsStream t, Monad m)
+    => t m String
+    -> t m PropertyValuesAliasesEntry
+parsePropertyValueAliasesLines
+    = Stream.groupsBy ((==) `on` _prop) (Fold.foldr addEntry mempty)
+    . Stream.mapMaybe parsePropertyValueAliasesLine
+
+    where
+
+    addEntry (PropertyValueAliasesLine prop value aliases) (_, acc) =
+        ( prop
+        , Map.insert value aliases acc )
+
+-------------------------------------------------------------------------------
+-- Parsing UnicodeData.txt
+-------------------------------------------------------------------------------
 
 -- | A range entry in @UnicodeData.txt@.
 data UnicodeDataRange
@@ -2428,18 +2663,36 @@ genNamesModules indir outdir = do
 
 genScriptsModules :: String -> String -> IO ()
 genScriptsModules indir outdir = do
+    scriptAliases <-
+        readLinesFromFile (indir </> "PropertyValueAliases.txt")
+            & parsePropertyValueAliasesLines
+            & Stream.lookup "sc"
+            & fmap (fromMaybe mempty)
+
+    extensions <-
+        readLinesFromFile (indir </> "ScriptExtensions.txt")
+            & parseScriptExtensionsLines
+            & Stream.foldr
+                (\(CharScriptExtensions c s) -> Map.insertWith (<>) c s)
+                mempty
+
     runGenerator
         indir
         "Scripts.txt"
         parseScriptLines
         outdir
-        [ scripts ]
+        [ scripts scriptAliases
+        , scriptExtensions scriptAliases extensions ]
 
     where
 
-    scripts =
+    scripts scriptAliases =
         ( "Unicode.Internal.Char.Scripts"
-        , genScriptsModule)
+        , \m -> genScriptsModule m scriptAliases )
+
+    scriptExtensions scriptAliases extensions =
+        ( "Unicode.Internal.Char.ScriptExtensions"
+        , \m -> genScriptExtensionsModule m scriptAliases extensions )
 
 genSecurityModules :: String -> String -> IO ()
 genSecurityModules indir outdir = do

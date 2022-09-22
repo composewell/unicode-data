@@ -1,7 +1,7 @@
 # README
 
 `unicode-data-scripts` provides Haskell APIs to efficiently access the Unicode
-character scripts from the
+character [scripts](https://www.unicode.org/reports/tr24/) from the
 [Unicode character database](https://www.unicode.org/ucd/).
 
 The Haskell data structures are generated programmatically from the
