@@ -24,7 +24,7 @@ module Unicode.Internal.Unfold
 -- @since 0.3.1
 data Unfold a b =
     -- | @Unfold step inject@
-    forall s. Unfold (s -> Step s b) (a -> s)
+    forall s. Unfold (s -> Step s b) (a -> Step s b)
 
 -- | A stream is a succession of 'Step's.
 --
@@ -45,8 +45,8 @@ instance Functor (Step s) where
 -- @since 0.3.1
 {-# INLINE toList #-}
 toList :: Unfold a b -> a -> [b]
-toList (Unfold step inject) a = go (inject a)
+toList (Unfold step inject) = go . inject
     where
-    go s = case step s of
-        Yield b s' -> b : go s'
-        Stop       -> []
+    go = \case
+        Yield b s -> let !s' = step s in b : go s'
+        Stop      -> []

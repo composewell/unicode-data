@@ -38,7 +38,7 @@ module Unicode.Char.Case
 where
 
 import Data.Bits (Bits(..))
-import Data.Char (chr, ord)
+import Data.Char (chr)
 import Data.Int (Int64)
 
 import Unicode.Internal.Unfold
@@ -92,24 +92,18 @@ isUpper = P.isUppercase
 --
 -- It uses the character property @Case_Folding@.
 --
--- __Note:__ @\'\\NUL\'@ requires special handling.
--- See 'toCaseFoldString' source code for an example.
---
 -- @since 0.3.1
 {-# INLINE caseFoldMapping #-}
 caseFoldMapping :: Unfold Char Char
 caseFoldMapping = Unfold step inject
     where
     inject c = case C.toCasefold c of
-        0 -> fromIntegral (ord c)
-        k -> k
+        0 -> Yield c 0
+        k -> step k
 
 -- | Returns the full /lower/ case mapping of a character.
 --
 -- It uses the character property @Lowercase_Mapping@.
---
--- __Note:__ @\'\\NUL\'@ requires special handling.
--- See 'toLowerString' source code for an example.
 --
 -- @since 0.3.1
 {-# INLINE lowerCaseMapping #-}
@@ -117,15 +111,12 @@ lowerCaseMapping :: Unfold Char Char
 lowerCaseMapping = Unfold step inject
     where
     inject c = case C.toSpecialLowerCase c of
-        0 -> fromIntegral (ord c)
-        k -> k
+        0 -> Yield c 0
+        k -> step k
 
 -- | Returns the full /title/ case mapping of a character.
 --
 -- It uses the character property @Titlecase_Mapping@.
---
--- __Note:__ @\'\\NUL\'@ requires special handling.
--- See 'toTitleString' source code for an example.
 --
 -- @since 0.3.1
 {-# INLINE titleCaseMapping #-}
@@ -133,15 +124,12 @@ titleCaseMapping :: Unfold Char Char
 titleCaseMapping = Unfold step inject
     where
     inject c = case C.toSpecialTitleCase c of
-        0 -> fromIntegral (ord c)
-        k -> k
+        0 -> Yield c 0
+        k -> step k
 
 -- | Returns the full /upper/ case mapping of a character.
 --
 -- It uses the character property @Uppercase_Mapping@.
---
--- __Note:__ @\'\\NUL\'@ requires special handling.
--- See 'toUpperString' source code for an example.
 --
 -- @since 0.3.1
 {-# INLINE upperCaseMapping #-}
@@ -149,8 +137,8 @@ upperCaseMapping :: Unfold Char Char
 upperCaseMapping = Unfold step inject
     where
     inject c = case C.toSpecialUpperCase c of
-        0 -> fromIntegral (ord c)
-        k -> k
+        0 -> Yield c 0
+        k -> step k
 
 -- | Convert a character to full /folded/ case if defined, else to itself.
 --
@@ -173,9 +161,7 @@ upperCaseMapping = Unfold step inject
 --
 -- @since 0.3.1
 toCaseFoldString :: Char -> String
-toCaseFoldString = \case
-    '\NUL' -> "\NUL"
-    c      -> toList caseFoldMapping c
+toCaseFoldString = toList caseFoldMapping
 
 -- | Convert a character to full /lower/ case if defined, else to itself.
 --
@@ -190,9 +176,7 @@ toCaseFoldString = \case
 --
 -- @since 0.3.1
 toLowerString :: Char -> String
-toLowerString = \case
-    '\NUL' -> "\NUL"
-    c      -> toList lowerCaseMapping c
+toLowerString = toList lowerCaseMapping
 
 -- | Convert a character to full /title/ case if defined, else to itself.
 --
@@ -207,9 +191,7 @@ toLowerString = \case
 --
 -- @since 0.3.1
 toTitleString :: Char -> String
-toTitleString = \case
-    '\NUL' -> "\NUL"
-    c      -> toList titleCaseMapping c
+toTitleString = toList titleCaseMapping
 
 -- | Convert a character to full /upper/ case if defined, else to itself.
 --
@@ -223,14 +205,10 @@ toTitleString = \case
 --
 -- @since 0.3.1
 toUpperString :: Char -> String
-toUpperString = \case
-    '\NUL' -> "\NUL"
-    c      -> toList upperCaseMapping c
+toUpperString = toList upperCaseMapping
 
 -- | Extract the next character from a raw mapping.
 -- Each character is encoded on 21 bits.
---
--- **Note:** this does not work for character @\'\\NUL\'@.
 {-# INLINE step #-}
 step :: Int64 -> Step Int64 Char
 step = \case
