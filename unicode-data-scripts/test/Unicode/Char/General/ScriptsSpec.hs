@@ -1,4 +1,4 @@
-{-# LANGUAGE BlockArguments, CPP #-}
+{-# LANGUAGE BlockArguments, CPP, OverloadedLists #-}
 
 module Unicode.Char.General.ScriptsSpec
   ( spec
@@ -40,6 +40,89 @@ does not match the version of this package.
 spec :: Spec
 spec = do
   describe "Unicode scripts" do
+    describe "Examples" do
+        it "script" do
+            let check s = (== s) . UScripts.script
+            minBound  `shouldSatisfy` check UScripts.Common
+            maxBound  `shouldSatisfy` check UScripts.Unknown
+            '.'       `shouldSatisfy` check UScripts.Common
+            '1'       `shouldSatisfy` check UScripts.Common
+            'A'       `shouldSatisfy` check UScripts.Latin
+            'Α'       `shouldSatisfy` check UScripts.Greek -- Greek capital
+            'α'       `shouldSatisfy` check UScripts.Greek
+            '\x0300'  `shouldSatisfy` check UScripts.Inherited
+            '\x0485'  `shouldSatisfy` check UScripts.Inherited
+            '\x0600'  `shouldSatisfy` check UScripts.Arabic
+            '\x060c'  `shouldSatisfy` check UScripts.Common
+            '\x0965'  `shouldSatisfy` check UScripts.Common
+            '\x1100'  `shouldSatisfy` check UScripts.Hangul
+            '\x3000'  `shouldSatisfy` check UScripts.Common
+            '\x4E00'  `shouldSatisfy` check UScripts.Han
+            '\x11FD0' `shouldSatisfy` check UScripts.Tamil
+            '\x1F600' `shouldSatisfy` check UScripts.Common
+            '\x20000' `shouldSatisfy` check UScripts.Han
+            -- BOM
+            '\xFEFF'  `shouldSatisfy` check UScripts.Common
+            '\xFFFF'  `shouldSatisfy` check UScripts.Unknown
+            -- Private Use Areas
+            '\xE000'  `shouldSatisfy` check UScripts.Unknown
+            '\xF0000' `shouldSatisfy` check UScripts.Unknown
+        it "scriptExtensions" do
+            let check s = (== s) . UScripts.scriptExtensions
+            minBound  `shouldSatisfy` check [ UScripts.Common]
+            maxBound  `shouldSatisfy` check [ UScripts.Unknown]
+            '.'       `shouldSatisfy` check [ UScripts.Common]
+            '1'       `shouldSatisfy` check [ UScripts.Common]
+            'A'       `shouldSatisfy` check [ UScripts.Latin]
+            'Α'       `shouldSatisfy` check [ UScripts.Greek]
+            'α'       `shouldSatisfy` check [ UScripts.Greek]
+            '\x0300'  `shouldSatisfy` check [ UScripts.Inherited]
+            '\x0485'  `shouldSatisfy` check [ UScripts.Cyrillic, UScripts.Latin]
+            '\x0600'  `shouldSatisfy` check [ UScripts.Arabic]
+            '\x060C'  `shouldSatisfy` check [ UScripts.Arabic
+                                            , UScripts.Nko
+                                            , UScripts.HanifiRohingya
+                                            , UScripts.Syriac
+                                            , UScripts.Thaana
+                                            , UScripts.Yezidi ]
+            '\x0965'  `shouldSatisfy` check [ UScripts.Bengali
+                                            , UScripts.Devanagari
+                                            , UScripts.Dogra
+                                            , UScripts.GunjalaGondi
+                                            , UScripts.MasaramGondi
+                                            , UScripts.Grantha
+                                            , UScripts.Gujarati
+                                            , UScripts.Gurmukhi
+                                            , UScripts.Kannada
+                                            , UScripts.Limbu
+                                            , UScripts.Mahajani
+                                            , UScripts.Malayalam
+                                            , UScripts.Nandinagari
+                                            , UScripts.Oriya
+                                            , UScripts.Khudawadi
+                                            , UScripts.Sinhala
+                                            , UScripts.SylotiNagri
+                                            , UScripts.Takri
+                                            , UScripts.Tamil
+                                            , UScripts.Telugu
+                                            , UScripts.Tirhuta ]
+            '\x1100'  `shouldSatisfy` check [ UScripts.Hangul]
+            '\x3001'  `shouldSatisfy` check [ UScripts.Bopomofo
+                                            , UScripts.Hangul
+                                            , UScripts.Han
+                                            , UScripts.Hiragana
+                                            , UScripts.Katakana
+                                            , UScripts.Yi ]
+            '\x4E00'  `shouldSatisfy` check [ UScripts.Han]
+            '\x11FD0' `shouldSatisfy` check [ UScripts.Grantha, UScripts.Tamil ]
+            '\x1F600' `shouldSatisfy` check [ UScripts.Common]
+            '\x20000' `shouldSatisfy` check [ UScripts.Han]
+            -- BOM
+            '\xFEFF'  `shouldSatisfy` check [ UScripts.Common ]
+            '\xFFFF'  `shouldSatisfy` check [ UScripts.Unknown ]
+            -- Private Use Areas
+            '\xE000'  `shouldSatisfy` check [ UScripts.Unknown ]
+            '\xF0000' `shouldSatisfy` check [ UScripts.Unknown ]
     it "Characters are in the definition of their corresponding script"
         let {
             check c =
@@ -49,7 +132,7 @@ spec = do
                     else expectationFailure $ mconcat
                         [ "Char “", show c, "” in not in the definition of “"
                         , show s, "”." ]
-        } in traverse_ check [minBound..maxBound]
+        } in traverse_ check (enumFromTo minBound maxBound)
     it "Characters in a script definition have the corresponding script"
         let {
             checkChar s c = let s' = UScripts.script c in if s' == s
@@ -59,7 +142,22 @@ spec = do
                     , show s, "” but got: “", show s', "”." ];
             check s = let chars = UScripts.scriptDefinition s
                       in traverse_ (checkChar s) chars
-        } in traverse_ check [minBound..maxBound]
+        } in traverse_ check (enumFromTo minBound maxBound)
+    it "Characters in with a script extension different from its script"
+        let {
+            check c =
+                let script = UScripts.script c
+                    exts = UScripts.scriptExtensions c
+                in if  exts == pure script
+                    || (isSpecialScript script && script `notElem` exts)
+                    || (script `elem` exts)
+                    then pure ()
+                    else expectationFailure (show (c, script, exts));
+            isSpecialScript = \case
+                UScripts.Common    -> True
+                UScripts.Inherited -> True
+                _                  -> False
+        } in traverse_ check (enumFromTo minBound maxBound)
 
 {- HLINT ignore inScript "Eta reduce" -}
 -- Check if a character is in a 'S.Script'.

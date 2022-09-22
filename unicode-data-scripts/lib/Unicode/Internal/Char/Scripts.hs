@@ -6,7 +6,6 @@
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 
-{-# LANGUAGE MultiWayIf #-}
 {-# OPTIONS_HADDOCK hide #-}
 
 module Unicode.Internal.Char.Scripts
@@ -19,172 +18,177 @@ import Data.Ix (Ix)
 import GHC.Exts (Ptr(..))
 import Unicode.Internal.Bits (lookupIntN)
 
--- | Unicode script.
+-- | Unicode [script](https://www.unicode.org/reports/tr24/).
+--
+-- The constructors descriptions are the original Unicode values
+-- (short and long forms).
+--
+-- There is a total of 162 scripts.
 --
 -- @since 0.1.0
 data Script
-  = Adlam -- ^ @Adlam@
-  | Ahom -- ^ @Ahom@
-  | AnatolianHieroglyphs -- ^ @Anatolian_Hieroglyphs@
-  | Arabic -- ^ @Arabic@
-  | Armenian -- ^ @Armenian@
-  | Avestan -- ^ @Avestan@
-  | Balinese -- ^ @Balinese@
-  | Bamum -- ^ @Bamum@
-  | BassaVah -- ^ @Bassa_Vah@
-  | Batak -- ^ @Batak@
-  | Bengali -- ^ @Bengali@
-  | Bhaiksuki -- ^ @Bhaiksuki@
-  | Bopomofo -- ^ @Bopomofo@
-  | Brahmi -- ^ @Brahmi@
-  | Braille -- ^ @Braille@
-  | Buginese -- ^ @Buginese@
-  | Buhid -- ^ @Buhid@
-  | CanadianAboriginal -- ^ @Canadian_Aboriginal@
-  | Carian -- ^ @Carian@
-  | CaucasianAlbanian -- ^ @Caucasian_Albanian@
-  | Chakma -- ^ @Chakma@
-  | Cham -- ^ @Cham@
-  | Cherokee -- ^ @Cherokee@
-  | Chorasmian -- ^ @Chorasmian@
-  | Common -- ^ @Common@
-  | Coptic -- ^ @Coptic@
-  | Cuneiform -- ^ @Cuneiform@
-  | Cypriot -- ^ @Cypriot@
-  | CyproMinoan -- ^ @Cypro_Minoan@
-  | Cyrillic -- ^ @Cyrillic@
-  | Deseret -- ^ @Deseret@
-  | Devanagari -- ^ @Devanagari@
-  | DivesAkuru -- ^ @Dives_Akuru@
-  | Dogra -- ^ @Dogra@
-  | Duployan -- ^ @Duployan@
-  | EgyptianHieroglyphs -- ^ @Egyptian_Hieroglyphs@
-  | Elbasan -- ^ @Elbasan@
-  | Elymaic -- ^ @Elymaic@
-  | Ethiopic -- ^ @Ethiopic@
-  | Georgian -- ^ @Georgian@
-  | Glagolitic -- ^ @Glagolitic@
-  | Gothic -- ^ @Gothic@
-  | Grantha -- ^ @Grantha@
-  | Greek -- ^ @Greek@
-  | Gujarati -- ^ @Gujarati@
-  | GunjalaGondi -- ^ @Gunjala_Gondi@
-  | Gurmukhi -- ^ @Gurmukhi@
-  | Han -- ^ @Han@
-  | Hangul -- ^ @Hangul@
-  | HanifiRohingya -- ^ @Hanifi_Rohingya@
-  | Hanunoo -- ^ @Hanunoo@
-  | Hatran -- ^ @Hatran@
-  | Hebrew -- ^ @Hebrew@
-  | Hiragana -- ^ @Hiragana@
-  | ImperialAramaic -- ^ @Imperial_Aramaic@
-  | Inherited -- ^ @Inherited@
-  | InscriptionalPahlavi -- ^ @Inscriptional_Pahlavi@
-  | InscriptionalParthian -- ^ @Inscriptional_Parthian@
-  | Javanese -- ^ @Javanese@
-  | Kaithi -- ^ @Kaithi@
-  | Kannada -- ^ @Kannada@
-  | Katakana -- ^ @Katakana@
-  | KayahLi -- ^ @Kayah_Li@
-  | Kharoshthi -- ^ @Kharoshthi@
-  | KhitanSmallScript -- ^ @Khitan_Small_Script@
-  | Khmer -- ^ @Khmer@
-  | Khojki -- ^ @Khojki@
-  | Khudawadi -- ^ @Khudawadi@
-  | Lao -- ^ @Lao@
-  | Latin -- ^ @Latin@
-  | Lepcha -- ^ @Lepcha@
-  | Limbu -- ^ @Limbu@
-  | LinearA -- ^ @Linear_A@
-  | LinearB -- ^ @Linear_B@
-  | Lisu -- ^ @Lisu@
-  | Lycian -- ^ @Lycian@
-  | Lydian -- ^ @Lydian@
-  | Mahajani -- ^ @Mahajani@
-  | Makasar -- ^ @Makasar@
-  | Malayalam -- ^ @Malayalam@
-  | Mandaic -- ^ @Mandaic@
-  | Manichaean -- ^ @Manichaean@
-  | Marchen -- ^ @Marchen@
-  | MasaramGondi -- ^ @Masaram_Gondi@
-  | Medefaidrin -- ^ @Medefaidrin@
-  | MeeteiMayek -- ^ @Meetei_Mayek@
-  | MendeKikakui -- ^ @Mende_Kikakui@
-  | MeroiticCursive -- ^ @Meroitic_Cursive@
-  | MeroiticHieroglyphs -- ^ @Meroitic_Hieroglyphs@
-  | Miao -- ^ @Miao@
-  | Modi -- ^ @Modi@
-  | Mongolian -- ^ @Mongolian@
-  | Mro -- ^ @Mro@
-  | Multani -- ^ @Multani@
-  | Myanmar -- ^ @Myanmar@
-  | Nabataean -- ^ @Nabataean@
-  | Nandinagari -- ^ @Nandinagari@
-  | NewTaiLue -- ^ @New_Tai_Lue@
-  | Newa -- ^ @Newa@
-  | Nko -- ^ @Nko@
-  | Nushu -- ^ @Nushu@
-  | NyiakengPuachueHmong -- ^ @Nyiakeng_Puachue_Hmong@
-  | Ogham -- ^ @Ogham@
-  | OlChiki -- ^ @Ol_Chiki@
-  | OldHungarian -- ^ @Old_Hungarian@
-  | OldItalic -- ^ @Old_Italic@
-  | OldNorthArabian -- ^ @Old_North_Arabian@
-  | OldPermic -- ^ @Old_Permic@
-  | OldPersian -- ^ @Old_Persian@
-  | OldSogdian -- ^ @Old_Sogdian@
-  | OldSouthArabian -- ^ @Old_South_Arabian@
-  | OldTurkic -- ^ @Old_Turkic@
-  | OldUyghur -- ^ @Old_Uyghur@
-  | Oriya -- ^ @Oriya@
-  | Osage -- ^ @Osage@
-  | Osmanya -- ^ @Osmanya@
-  | PahawhHmong -- ^ @Pahawh_Hmong@
-  | Palmyrene -- ^ @Palmyrene@
-  | PauCinHau -- ^ @Pau_Cin_Hau@
-  | PhagsPa -- ^ @Phags_Pa@
-  | Phoenician -- ^ @Phoenician@
-  | PsalterPahlavi -- ^ @Psalter_Pahlavi@
-  | Rejang -- ^ @Rejang@
-  | Runic -- ^ @Runic@
-  | Samaritan -- ^ @Samaritan@
-  | Saurashtra -- ^ @Saurashtra@
-  | Sharada -- ^ @Sharada@
-  | Shavian -- ^ @Shavian@
-  | Siddham -- ^ @Siddham@
-  | SignWriting -- ^ @SignWriting@
-  | Sinhala -- ^ @Sinhala@
-  | Sogdian -- ^ @Sogdian@
-  | SoraSompeng -- ^ @Sora_Sompeng@
-  | Soyombo -- ^ @Soyombo@
-  | Sundanese -- ^ @Sundanese@
-  | SylotiNagri -- ^ @Syloti_Nagri@
-  | Syriac -- ^ @Syriac@
-  | Tagalog -- ^ @Tagalog@
-  | Tagbanwa -- ^ @Tagbanwa@
-  | TaiLe -- ^ @Tai_Le@
-  | TaiTham -- ^ @Tai_Tham@
-  | TaiViet -- ^ @Tai_Viet@
-  | Takri -- ^ @Takri@
-  | Tamil -- ^ @Tamil@
-  | Tangsa -- ^ @Tangsa@
-  | Tangut -- ^ @Tangut@
-  | Telugu -- ^ @Telugu@
-  | Thaana -- ^ @Thaana@
-  | Thai -- ^ @Thai@
-  | Tibetan -- ^ @Tibetan@
-  | Tifinagh -- ^ @Tifinagh@
-  | Tirhuta -- ^ @Tirhuta@
-  | Toto -- ^ @Toto@
-  | Ugaritic -- ^ @Ugaritic@
-  | Unknown -- ^ @Unknown@
-  | Vai -- ^ @Vai@
-  | Vithkuqi -- ^ @Vithkuqi@
-  | Wancho -- ^ @Wancho@
-  | WarangCiti -- ^ @Warang_Citi@
-  | Yezidi -- ^ @Yezidi@
-  | Yi -- ^ @Yi@
-  | ZanabazarSquare -- ^ @Zanabazar_Square@
+  = Adlam -- ^ @Adlm@: @Adlam@
+  | Ahom -- ^ @Ahom@: @Ahom@
+  | AnatolianHieroglyphs -- ^ @Hluw@: @Anatolian_Hieroglyphs@
+  | Arabic -- ^ @Arab@: @Arabic@
+  | Armenian -- ^ @Armn@: @Armenian@
+  | Avestan -- ^ @Avst@: @Avestan@
+  | Balinese -- ^ @Bali@: @Balinese@
+  | Bamum -- ^ @Bamu@: @Bamum@
+  | BassaVah -- ^ @Bass@: @Bassa_Vah@
+  | Batak -- ^ @Batk@: @Batak@
+  | Bengali -- ^ @Beng@: @Bengali@
+  | Bhaiksuki -- ^ @Bhks@: @Bhaiksuki@
+  | Bopomofo -- ^ @Bopo@: @Bopomofo@
+  | Brahmi -- ^ @Brah@: @Brahmi@
+  | Braille -- ^ @Brai@: @Braille@
+  | Buginese -- ^ @Bugi@: @Buginese@
+  | Buhid -- ^ @Buhd@: @Buhid@
+  | CanadianAboriginal -- ^ @Cans@: @Canadian_Aboriginal@
+  | Carian -- ^ @Cari@: @Carian@
+  | CaucasianAlbanian -- ^ @Aghb@: @Caucasian_Albanian@
+  | Chakma -- ^ @Cakm@: @Chakma@
+  | Cham -- ^ @Cham@: @Cham@
+  | Cherokee -- ^ @Cher@: @Cherokee@
+  | Chorasmian -- ^ @Chrs@: @Chorasmian@
+  | Common -- ^ @Zyyy@: @Common@
+  | Coptic -- ^ @Copt@, @Qaac@: @Coptic@
+  | Cuneiform -- ^ @Xsux@: @Cuneiform@
+  | Cypriot -- ^ @Cprt@: @Cypriot@
+  | CyproMinoan -- ^ @Cpmn@: @Cypro_Minoan@
+  | Cyrillic -- ^ @Cyrl@: @Cyrillic@
+  | Deseret -- ^ @Dsrt@: @Deseret@
+  | Devanagari -- ^ @Deva@: @Devanagari@
+  | DivesAkuru -- ^ @Diak@: @Dives_Akuru@
+  | Dogra -- ^ @Dogr@: @Dogra@
+  | Duployan -- ^ @Dupl@: @Duployan@
+  | EgyptianHieroglyphs -- ^ @Egyp@: @Egyptian_Hieroglyphs@
+  | Elbasan -- ^ @Elba@: @Elbasan@
+  | Elymaic -- ^ @Elym@: @Elymaic@
+  | Ethiopic -- ^ @Ethi@: @Ethiopic@
+  | Georgian -- ^ @Geor@: @Georgian@
+  | Glagolitic -- ^ @Glag@: @Glagolitic@
+  | Gothic -- ^ @Goth@: @Gothic@
+  | Grantha -- ^ @Gran@: @Grantha@
+  | Greek -- ^ @Grek@: @Greek@
+  | Gujarati -- ^ @Gujr@: @Gujarati@
+  | GunjalaGondi -- ^ @Gong@: @Gunjala_Gondi@
+  | Gurmukhi -- ^ @Guru@: @Gurmukhi@
+  | Han -- ^ @Hani@: @Han@
+  | Hangul -- ^ @Hang@: @Hangul@
+  | HanifiRohingya -- ^ @Rohg@: @Hanifi_Rohingya@
+  | Hanunoo -- ^ @Hano@: @Hanunoo@
+  | Hatran -- ^ @Hatr@: @Hatran@
+  | Hebrew -- ^ @Hebr@: @Hebrew@
+  | Hiragana -- ^ @Hira@: @Hiragana@
+  | ImperialAramaic -- ^ @Armi@: @Imperial_Aramaic@
+  | Inherited -- ^ @Zinh@, @Qaai@: @Inherited@
+  | InscriptionalPahlavi -- ^ @Phli@: @Inscriptional_Pahlavi@
+  | InscriptionalParthian -- ^ @Prti@: @Inscriptional_Parthian@
+  | Javanese -- ^ @Java@: @Javanese@
+  | Kaithi -- ^ @Kthi@: @Kaithi@
+  | Kannada -- ^ @Knda@: @Kannada@
+  | Katakana -- ^ @Kana@: @Katakana@
+  | KayahLi -- ^ @Kali@: @Kayah_Li@
+  | Kharoshthi -- ^ @Khar@: @Kharoshthi@
+  | KhitanSmallScript -- ^ @Kits@: @Khitan_Small_Script@
+  | Khmer -- ^ @Khmr@: @Khmer@
+  | Khojki -- ^ @Khoj@: @Khojki@
+  | Khudawadi -- ^ @Sind@: @Khudawadi@
+  | Lao -- ^ @Laoo@: @Lao@
+  | Latin -- ^ @Latn@: @Latin@
+  | Lepcha -- ^ @Lepc@: @Lepcha@
+  | Limbu -- ^ @Limb@: @Limbu@
+  | LinearA -- ^ @Lina@: @Linear_A@
+  | LinearB -- ^ @Linb@: @Linear_B@
+  | Lisu -- ^ @Lisu@: @Lisu@
+  | Lycian -- ^ @Lyci@: @Lycian@
+  | Lydian -- ^ @Lydi@: @Lydian@
+  | Mahajani -- ^ @Mahj@: @Mahajani@
+  | Makasar -- ^ @Maka@: @Makasar@
+  | Malayalam -- ^ @Mlym@: @Malayalam@
+  | Mandaic -- ^ @Mand@: @Mandaic@
+  | Manichaean -- ^ @Mani@: @Manichaean@
+  | Marchen -- ^ @Marc@: @Marchen@
+  | MasaramGondi -- ^ @Gonm@: @Masaram_Gondi@
+  | Medefaidrin -- ^ @Medf@: @Medefaidrin@
+  | MeeteiMayek -- ^ @Mtei@: @Meetei_Mayek@
+  | MendeKikakui -- ^ @Mend@: @Mende_Kikakui@
+  | MeroiticCursive -- ^ @Merc@: @Meroitic_Cursive@
+  | MeroiticHieroglyphs -- ^ @Mero@: @Meroitic_Hieroglyphs@
+  | Miao -- ^ @Plrd@: @Miao@
+  | Modi -- ^ @Modi@: @Modi@
+  | Mongolian -- ^ @Mong@: @Mongolian@
+  | Mro -- ^ @Mroo@: @Mro@
+  | Multani -- ^ @Mult@: @Multani@
+  | Myanmar -- ^ @Mymr@: @Myanmar@
+  | Nabataean -- ^ @Nbat@: @Nabataean@
+  | Nandinagari -- ^ @Nand@: @Nandinagari@
+  | NewTaiLue -- ^ @Talu@: @New_Tai_Lue@
+  | Newa -- ^ @Newa@: @Newa@
+  | Nko -- ^ @Nkoo@: @Nko@
+  | Nushu -- ^ @Nshu@: @Nushu@
+  | NyiakengPuachueHmong -- ^ @Hmnp@: @Nyiakeng_Puachue_Hmong@
+  | Ogham -- ^ @Ogam@: @Ogham@
+  | OlChiki -- ^ @Olck@: @Ol_Chiki@
+  | OldHungarian -- ^ @Hung@: @Old_Hungarian@
+  | OldItalic -- ^ @Ital@: @Old_Italic@
+  | OldNorthArabian -- ^ @Narb@: @Old_North_Arabian@
+  | OldPermic -- ^ @Perm@: @Old_Permic@
+  | OldPersian -- ^ @Xpeo@: @Old_Persian@
+  | OldSogdian -- ^ @Sogo@: @Old_Sogdian@
+  | OldSouthArabian -- ^ @Sarb@: @Old_South_Arabian@
+  | OldTurkic -- ^ @Orkh@: @Old_Turkic@
+  | OldUyghur -- ^ @Ougr@: @Old_Uyghur@
+  | Oriya -- ^ @Orya@: @Oriya@
+  | Osage -- ^ @Osge@: @Osage@
+  | Osmanya -- ^ @Osma@: @Osmanya@
+  | PahawhHmong -- ^ @Hmng@: @Pahawh_Hmong@
+  | Palmyrene -- ^ @Palm@: @Palmyrene@
+  | PauCinHau -- ^ @Pauc@: @Pau_Cin_Hau@
+  | PhagsPa -- ^ @Phag@: @Phags_Pa@
+  | Phoenician -- ^ @Phnx@: @Phoenician@
+  | PsalterPahlavi -- ^ @Phlp@: @Psalter_Pahlavi@
+  | Rejang -- ^ @Rjng@: @Rejang@
+  | Runic -- ^ @Runr@: @Runic@
+  | Samaritan -- ^ @Samr@: @Samaritan@
+  | Saurashtra -- ^ @Saur@: @Saurashtra@
+  | Sharada -- ^ @Shrd@: @Sharada@
+  | Shavian -- ^ @Shaw@: @Shavian@
+  | Siddham -- ^ @Sidd@: @Siddham@
+  | SignWriting -- ^ @Sgnw@: @SignWriting@
+  | Sinhala -- ^ @Sinh@: @Sinhala@
+  | Sogdian -- ^ @Sogd@: @Sogdian@
+  | SoraSompeng -- ^ @Sora@: @Sora_Sompeng@
+  | Soyombo -- ^ @Soyo@: @Soyombo@
+  | Sundanese -- ^ @Sund@: @Sundanese@
+  | SylotiNagri -- ^ @Sylo@: @Syloti_Nagri@
+  | Syriac -- ^ @Syrc@: @Syriac@
+  | Tagalog -- ^ @Tglg@: @Tagalog@
+  | Tagbanwa -- ^ @Tagb@: @Tagbanwa@
+  | TaiLe -- ^ @Tale@: @Tai_Le@
+  | TaiTham -- ^ @Lana@: @Tai_Tham@
+  | TaiViet -- ^ @Tavt@: @Tai_Viet@
+  | Takri -- ^ @Takr@: @Takri@
+  | Tamil -- ^ @Taml@: @Tamil@
+  | Tangsa -- ^ @Tnsa@: @Tangsa@
+  | Tangut -- ^ @Tang@: @Tangut@
+  | Telugu -- ^ @Telu@: @Telugu@
+  | Thaana -- ^ @Thaa@: @Thaana@
+  | Thai -- ^ @Thai@: @Thai@
+  | Tibetan -- ^ @Tibt@: @Tibetan@
+  | Tifinagh -- ^ @Tfng@: @Tifinagh@
+  | Tirhuta -- ^ @Tirh@: @Tirhuta@
+  | Toto -- ^ @Toto@: @Toto@
+  | Ugaritic -- ^ @Ugar@: @Ugaritic@
+  | Unknown -- ^ @Zzzz@: @Unknown@
+  | Vai -- ^ @Vaii@: @Vai@
+  | Vithkuqi -- ^ @Vith@: @Vithkuqi@
+  | Wancho -- ^ @Wcho@: @Wancho@
+  | WarangCiti -- ^ @Wara@: @Warang_Citi@
+  | Yezidi -- ^ @Yezi@: @Yezidi@
+  | Yi -- ^ @Yiii@: @Yi@
+  | ZanabazarSquare -- ^ @Zanb@: @Zanabazar_Square@
   deriving (Enum, Bounded, Eq, Ord, Ix, Show)
 
 -- | Script definition: list of corresponding characters.

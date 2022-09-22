@@ -4,7 +4,7 @@ version:             0.1.0
 synopsis:            Unicode characters scripts
 description:
   @unicode-data-scripts@ provides Haskell APIs to access the Unicode
-  character /scripts/ from the
+  character <https://www.unicode.org/reports/tr24/ scripts> from the
   <https://www.unicode.org/ucd/ Unicode character database> (UCD).
   .
   The Haskell data structures are generated programmatically from the UCD.
@@ -74,6 +74,7 @@ library
       -- This module structure is largely based on the UCD file names from which
       -- the properties are generated.
       Unicode.Internal.Char.Scripts
+      Unicode.Internal.Char.ScriptExtensions
 
   hs-source-dirs: lib
   build-depends:

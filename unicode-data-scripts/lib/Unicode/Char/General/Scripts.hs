@@ -1,13 +1,13 @@
 {-# LANGUAGE CPP #-}
 
 -- |
--- Module      : Unicode.Char.General
+-- Module      : Unicode.Char.General.Scripts
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
 -- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 --
--- Unicode scripts related functions.
+-- Unicode [scripts](https://www.unicode.org/reports/tr24/) related functions.
 --
 -- @since 0.1.0
 --
@@ -15,11 +15,13 @@
 module Unicode.Char.General.Scripts
     ( S.Script(..)
     , script
+    , scriptExtensions
     , scriptDefinition
     )
 where
 
 import Data.Char (chr)
+import Data.List.NonEmpty (NonEmpty)
 import GHC.Exts
        (Ptr(..), Char(..), Int(..),
         indexWord32OffAddr#, word2Int#,
@@ -32,8 +34,9 @@ import GHC.Exts (byteSwap32#)
 #endif
 
 import qualified Unicode.Internal.Char.Scripts as S
+import qualified Unicode.Internal.Char.ScriptExtensions as S
 
--- | Character script.
+-- | Character [script](https://www.unicode.org/reports/tr24/).
 --
 -- @since 0.1.0
 {-# INLINE script #-}
@@ -82,3 +85,11 @@ scriptDefinition = unpack . S.scriptDefinition
                 } in addRange (k# -# 2#) acc'
                 else addRange (k# -# 1#) (C# (chr# c1#) : acc)
     } in addRange (n# -# 1#) mempty
+
+-- | Character
+-- [script extensions](https://www.unicode.org/reports/tr24/#Script_Extensions).
+--
+-- @since 0.1.0
+{-# INLINE scriptExtensions #-}
+scriptExtensions :: Char -> NonEmpty S.Script
+scriptExtensions = S.decodeScriptExtensions . S.scriptExtensions
