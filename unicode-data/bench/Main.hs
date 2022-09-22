@@ -5,6 +5,9 @@ import Test.Tasty.Bench
     (Benchmark, bgroup, bench, bcompare, defaultMain, env, nf)
 
 import qualified Data.Char as Char
+import qualified Data.Text as T
+import qualified Data.Text.Internal.Fusion as TF
+import qualified Data.Text.Internal.Fusion.Size as TF
 import qualified Unicode.Char.Case as C
 import qualified Unicode.Char.Case.Compat as CC
 import qualified Unicode.Char.General as G
@@ -41,6 +44,21 @@ main = defaultMain
       ]
     , bgroup "toUpperString"
       [ benchChars "unicode-data" C.toUpperString
+      ]
+    , bgroup "toLowerText"
+      [ benchCaseConv "text" T.toLower
+      , bcompare' "toLowerText" "text"
+            (benchCaseConv "unicode-data" (caseConvertText C.lowerCaseMapping))
+      ]
+    , bgroup "toUpperText"
+      [ benchCaseConv "text" T.toUpper
+      , bcompare' "toUpperText" "text"
+            (benchCaseConv "unicode-data" (caseConvertText C.upperCaseMapping))
+      ]
+    , bgroup "toCaseFoldText"
+      [ benchCaseConv "text" T.toCaseFold
+      , bcompare' "toCaseFoldText" "text"
+            (benchCaseConv "unicode-data" (caseConvertText C.caseFoldMapping))
       ]
     ]
   , bgroup "Unicode.Char.Case.Compat"
@@ -130,7 +148,7 @@ main = defaultMain
       [ benchChars "unicode-data"  (show . B.block)
       ]
     , bgroup "blockDefinition"
-      [ benchNF "unicode-data"  (show . B.blockDefinition)
+      [ benchRangeNF "unicode-data"  (show . B.blockDefinition)
       ]
     , bgroup "allBlockRanges"
       [ benchChars "unicode-data"  (const B.allBlockRanges)
@@ -227,10 +245,13 @@ main = defaultMain
       ]
 
     -- [NOTE] Works if groupTitle uniquely identifies the benchmark group.
+    bcompare' :: String -> String -> Benchmark -> Benchmark
+    bcompare' groupTitle ref = bcompare
+        (mconcat ["$NF == \"", ref, "\" && $(NF-1) == \"", groupTitle, "\""])
+
     benchChars' groupTitle title = case title of
       "base" -> benchChars title
-      _      -> bcompare ("$NF == \"base\" && $(NF-1) == \"" ++ groupTitle ++ "\"")
-              . benchChars title
+      _      -> bcompare' groupTitle "base" . benchChars title
 
     benchChars :: forall a. (NFData a) => String -> (Char -> a) -> Benchmark
     benchChars t = benchCharsNF t isValid
@@ -267,12 +288,12 @@ main = defaultMain
     foldString :: forall a. (NFData a) => (Char -> a) -> String -> ()
     foldString f = foldr (deepseq . f) ()
 
-    benchNF
+    benchRangeNF
         :: forall a b. (Bounded a, Ix a, NFData b)
         => String
         -> (a -> b)
         -> Benchmark
-    benchNF t f = bench t (nf (fold_ f) (minBound, maxBound))
+    benchRangeNF t f = bench t (nf (fold_ f) (minBound, maxBound))
 
     fold_
         :: forall a b. (Ix a, NFData b)
@@ -280,3 +301,45 @@ main = defaultMain
         -> (a, a)
         -> ()
     fold_ f = foldr (deepseq . f) () . range
+
+    benchCaseConv
+        :: String
+        -> (T.Text -> T.Text)
+        -> Benchmark
+    benchCaseConv t f = benchNF t f (T.pack (filter isValid [minBound..maxBound]))
+        where isValid c = G.generalCategory c < G.Surrogate
+
+    benchNF
+        :: forall a b. (NFData a, NFData b)
+        => String
+        -> (a -> b)
+        -> a
+        -> Benchmark
+    benchNF t f a =
+        -- Avoid side-effects with garbage collection (see tasty-bench doc)
+        env
+            (evaluate (force a)) -- initialize
+            (bench t . nf f) -- benchmark
+
+-- Text case operations
+
+data CC s a = CC !s !(C.Step a Char)
+
+caseConvertStream :: C.Unfold Char Char -> TF.Stream Char -> TF.Stream Char
+caseConvertStream remap = case remap of
+    C.Unfold step inject -> \stream -> case stream of
+        (TF.Stream next0 s0 len) -> TF.Stream next
+                        (CC s0 C.Stop)
+                        (len `TF.unionSize` (3*len))
+            where
+                next (CC s C.Stop) = case next0 s of
+                    TF.Done       -> TF.Done
+                    TF.Skip s'    -> TF.Skip (CC s' C.Stop)
+                    TF.Yield c s' -> case inject c of
+                        C.Yield c' st -> TF.Yield c' (CC s' (step st))
+                        -- impossible: there is always at least one Char
+                        C.Stop        -> TF.Skip (CC s' C.Stop)
+                next (CC s (C.Yield c st)) = TF.Yield c (CC s (step st))
+
+caseConvertText :: C.Unfold Char Char -> T.Text -> T.Text
+caseConvertText u t = TF.unstream (caseConvertStream u (TF.stream t))
