@@ -8,6 +8,7 @@ This repository provides packages to use the
 - [`unicode-data`](#unicode-data) for general character properties.
 - [`unicode-data-names`](#unicode-data-names) for characters names and aliases.
 - [`unicode-data-scripts`](#unicode-data-scripts) for characters scripts.
+- [`unicode-data-security`](#unicode-data-security) for security mechanisms.
 
 The Haskell data structures are generated programmatically from the UCD files.
 The latest Unicode version supported by these libraries is

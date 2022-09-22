@@ -13,18 +13,6 @@ Please see the
 [Haddock documentation](https://hackage.haskell.org/package/unicode-data-security)
 for reference documentation.
 
-## Comparing with Python
-
-In order to check Unicode implementation in Haskell, we compare the results obtained
-with Python.
-
-__Warning:__ A Python version with the _exact same Unicode version_ is required.
-
-```bash
-cabal run -f "export-all-chars" -v0 export-all-chars > ./test/all_chars.csv
-python3 ./test/check.py -v ./test/all_chars.csv
-```
-
 ## Licensing
 
 `unicode-data-security` is an [open source](https://github.com/composewell/unicode-data)
