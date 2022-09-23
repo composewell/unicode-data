@@ -222,10 +222,10 @@ generalCategory = toEnum . UC.generalCategory
 and title-case letters, plus letters of caseless scripts and modifiers
 letters).
 
-__Note:__ this function is /not/ equivalent to 'Unicode.Char.General.Compat.isAlpha'
-/'Unicode.Char.General.Compat.isLetter':
+__Note:__ this function is /not/ equivalent to
+'Unicode.Char.General.Compat.isAlpha' / 'Unicode.Char.General.Compat.isLetter':
 
-* 'isAlpha' matches the following general categories:
+* 'Unicode.Char.General.Compat.isAlpha' matches the following general categories:
 
     * 'UppercaseLetter' (@Lu@)
     * 'LowercaseLetter' (@Ll@)

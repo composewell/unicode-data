@@ -6,7 +6,7 @@
 -- Stability   : experimental
 --
 -- Unicode Security Mechanisms functions based on
--- [Unicode Technical Standard #39](https://www.unicode.org/reports/tr39/)
+-- [Unicode Technical Standard #39](https://www.unicode.org/reports/tr39/).
 --
 -- @since 0.1.0
 

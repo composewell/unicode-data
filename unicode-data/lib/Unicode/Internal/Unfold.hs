@@ -22,13 +22,11 @@ module Unicode.Internal.Unfold
 -- seed of type @a@.
 --
 -- @since 0.3.1
-data Unfold a b =
-    -- | @Unfold step inject@
-    forall s. Unfold
-        (s -> Step s b)
-        -- ^ Step function: compute the next step from the current one.
-        (a -> Step s b)
-        -- ^ Inject function: initialize the state with a seed value.
+data Unfold a b = forall s. Unfold
+    (s -> Step s b)
+    -- ^ /Step/ function: compute the next step from the current one.
+    (a -> Step s b)
+    -- ^ /Inject/ function: initialize the state with a seed value.
 
 -- | A stream is a succession of 'Step's.
 --

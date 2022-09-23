@@ -41,8 +41,10 @@ streamUnfold (C.Unfold step inject) = \case
                 TF.Done       -> TF.Done
                 TF.Skip s'    -> TF.Skip (CC s' C.Stop)
                 TF.Yield c s' -> case inject c of
-                    C.Yield c' st -> TF.Yield c' (CC s' (step st))
+                    -- Unchanged character
                     C.Stop        -> TF.Yield c  (CC s' C.Stop)
+                    -- New character (s)
+                    C.Yield c' st -> TF.Yield c' (CC s' (step st))
             next (CC s (C.Yield c st)) = TF.Yield c (CC s (step st))
 
 caseConvertStream :: C.Unfold Char Char -> T.Text -> T.Text
@@ -98,34 +100,37 @@ caseConvertText ascii (C.Unfold (step :: u -> C.Step u Char) inject) (T.Text src
               2 -> do
                 let !c = chr2 m0 m1
                 dstOff' <- case inject c of
-                  -- Unchanged
+                  -- Unchanged character
                   C.Stop -> do
                     A.unsafeWrite dst dstOff m0
                     A.unsafeWrite dst (dstOff + 1) m1
                     pure $ dstOff + 2
+                  -- New character (s)
                   st -> writeMapping st dstOff
                 inner (srcOff + 2) dstOff'
               3 -> do
                 let !c = chr3 m0 m1 m2
                 dstOff' <- case inject c of
-                  -- Unchanged
+                  -- Unchanged character
                   C.Stop -> do
                     A.unsafeWrite dst dstOff m0
                     A.unsafeWrite dst (dstOff + 1) m1
                     A.unsafeWrite dst (dstOff + 2) m2
                     pure $ dstOff + 3
+                  -- New character (s)
                   st -> writeMapping st dstOff
                 inner (srcOff + 3) dstOff'
               _ -> do
                 let !c = chr4 m0 m1 m2 m3
                 dstOff' <- case inject c of
-                  -- Unchanged
+                  -- Unchanged character
                   C.Stop -> do
                     A.unsafeWrite dst dstOff m0
                     A.unsafeWrite dst (dstOff + 1) m1
                     A.unsafeWrite dst (dstOff + 2) m2
                     A.unsafeWrite dst (dstOff + 3) m3
                     pure $ dstOff + 4
+                  -- New character (s)
                   st -> writeMapping st dstOff
                 inner (srcOff + 4) dstOff'
 

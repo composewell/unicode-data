@@ -26,7 +26,8 @@ import Unicode.Char.General (GeneralCategory(..), generalCategory)
 -- * 'LetterNumber'
 -- * 'OtherNumber'
 --
--- __Note:__ a character may have a numeric value (see 'numericValue') but return
+-- __Note:__ a character may have a numeric value (see
+-- 'Unicode.Char.Numeric.numericValue') but return
 -- 'False', because 'isNumber' only tests 'GeneralCategory':
 -- some CJK characters are 'OtherLetter' and do have a numeric value.
 -- Use 'Unicode.Char.Numeric.isNumeric' to cover those cases as well.

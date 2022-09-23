@@ -4,10 +4,10 @@
 
 - Added full case conversions to `Unicode.Char.Case`:
 
-  - Case folding: `caseFoldMapping`, `toCaseFoldString`.
-  - Lower case: `lowerCaseMapping`, `toLowerString`.
-  - Upper case: `upperCaseMapping`, `toUpperString`.
-  - Title case: `titleCaseMapping`, `toTitleString`.
+  - Case folding: `caseFoldMapping`, `caseFoldMapping'`, `toCaseFoldString`.
+  - Lower case: `lowerCaseMapping`, `lowerCaseMapping'`, `toLowerString`.
+  - Upper case: `upperCaseMapping`, `upperCaseMapping'`, `toUpperString`.
+  - Title case: `titleCaseMapping`, `titleCaseMapping'`, `toTitleString`.
   - Stream mechanism: `Unfold` and `Step`.
 
 - Added `isNumeric`, `numericValue` and `integerValue`

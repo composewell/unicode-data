@@ -35,7 +35,7 @@ module Unicode.Char.Case
     , upperCaseMapping
     , upperCaseMapping'
     , toUpperString
-      -- ** Types
+      -- ** Unfold
     , Unfold(..)
     , Step(..)
     )
@@ -105,11 +105,8 @@ caseFoldMapping = Unfold step inject
         0 -> Yield c 0
         k -> step k
 
--- | Alternative to 'caseFoldMapping'.
--- Returns the full /folded/ case mapping of a character if the character is
--- changed, else nothing.
---
--- It uses the character property @Case_Folding@.
+-- | Variant of 'caseFoldMapping' that return nothing if the character is
+-- unchanged.
 --
 -- @since 0.3.1
 {-# INLINE caseFoldMapping' #-}
@@ -134,11 +131,8 @@ lowerCaseMapping = Unfold step inject
         0 -> Yield c 0
         k -> step k
 
--- | Alternative to 'lowerCaseMapping'.
--- Returns the full /lower/ case mapping of a character if the character is
--- changed, else nothing.
---
--- It uses the character property @Lowercase_Mapping@.
+-- | Variant of 'lowerCaseMapping' that return nothing if the character is
+-- unchanged.
 --
 -- @since 0.3.1
 {-# INLINE lowerCaseMapping' #-}
@@ -162,11 +156,8 @@ titleCaseMapping = Unfold step inject
         0 -> Yield c 0
         k -> step k
 
--- | Alternative to 'titleCaseMapping'.
--- Returns the full /title/ case mapping of a character if the character is
--- changed, else nothing.
---
--- It uses the character property @Titlecase_Mapping@.
+-- | Variant of 'titleCaseMapping' that return nothing if the character is
+-- unchanged.
 --
 -- @since 0.3.1
 {-# INLINE titleCaseMapping' #-}
@@ -190,11 +181,8 @@ upperCaseMapping = Unfold step inject
         0 -> Yield c 0
         k -> step k
 
--- | Alternative to 'upperCaseMapping'.
--- Returns the full /upper/ case mapping of a character if the character is
--- changed, else nothing.
---
--- It uses the character property @Uppercase_Mapping@.
+-- | Variant of 'upperCaseMapping' that return nothing if the character is
+-- unchanged.
 --
 -- @since 0.3.1
 {-# INLINE upperCaseMapping' #-}
