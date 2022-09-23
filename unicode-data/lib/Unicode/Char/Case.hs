@@ -20,16 +20,20 @@ module Unicode.Char.Case
 
       -- ** Case folding mapping
     , caseFoldMapping
+    , caseFoldMapping'
     , toCaseFoldString
 
       -- ** Lower case mapping
     , lowerCaseMapping
+    , lowerCaseMapping'
     , toLowerString
       -- ** Title case mapping
     , titleCaseMapping
+    , titleCaseMapping'
     , toTitleString
       -- ** Upper case mapping
     , upperCaseMapping
+    , upperCaseMapping'
     , toUpperString
       -- ** Types
     , Unfold(..)
@@ -98,7 +102,23 @@ caseFoldMapping :: Unfold Char Char
 caseFoldMapping = Unfold step inject
     where
     inject c = case C.toCasefold c of
-        0 -> Last c
+        0 -> Yield c 0
+        k -> step k
+
+-- | Alternative to 'caseFoldMapping'.
+-- Returns the full /folded/ case mapping of a character if the character is
+-- changed, else nothing.
+--
+-- It uses the character property @Case_Folding@.
+--
+-- @since 0.3.1
+{-# INLINE caseFoldMapping' #-}
+caseFoldMapping' :: Unfold Char Char
+caseFoldMapping' = Unfold step inject
+    where
+
+    inject c = case C.toCasefold c of
+        0 -> Stop
         k -> step k
 
 -- | Returns the full /lower/ case mapping of a character.
@@ -111,7 +131,22 @@ lowerCaseMapping :: Unfold Char Char
 lowerCaseMapping = Unfold step inject
     where
     inject c = case C.toSpecialLowerCase c of
-        0 -> Last c
+        0 -> Yield c 0
+        k -> step k
+
+-- | Alternative to 'lowerCaseMapping'.
+-- Returns the full /lower/ case mapping of a character if the character is
+-- changed, else nothing.
+--
+-- It uses the character property @Lowercase_Mapping@.
+--
+-- @since 0.3.1
+{-# INLINE lowerCaseMapping' #-}
+lowerCaseMapping' :: Unfold Char Char
+lowerCaseMapping' = Unfold step inject
+    where
+    inject c = case C.toSpecialLowerCase c of
+        0 -> Stop
         k -> step k
 
 -- | Returns the full /title/ case mapping of a character.
@@ -124,7 +159,22 @@ titleCaseMapping :: Unfold Char Char
 titleCaseMapping = Unfold step inject
     where
     inject c = case C.toSpecialTitleCase c of
-        0 -> Last c
+        0 -> Yield c 0
+        k -> step k
+
+-- | Alternative to 'titleCaseMapping'.
+-- Returns the full /title/ case mapping of a character if the character is
+-- changed, else nothing.
+--
+-- It uses the character property @Titlecase_Mapping@.
+--
+-- @since 0.3.1
+{-# INLINE titleCaseMapping' #-}
+titleCaseMapping' :: Unfold Char Char
+titleCaseMapping' = Unfold step inject
+    where
+    inject c = case C.toSpecialTitleCase c of
+        0 -> Stop
         k -> step k
 
 -- | Returns the full /upper/ case mapping of a character.
@@ -137,7 +187,22 @@ upperCaseMapping :: Unfold Char Char
 upperCaseMapping = Unfold step inject
     where
     inject c = case C.toSpecialUpperCase c of
-        0 -> Last c
+        0 -> Yield c 0
+        k -> step k
+
+-- | Alternative to 'upperCaseMapping'.
+-- Returns the full /upper/ case mapping of a character if the character is
+-- changed, else nothing.
+--
+-- It uses the character property @Uppercase_Mapping@.
+--
+-- @since 0.3.1
+{-# INLINE upperCaseMapping' #-}
+upperCaseMapping' :: Unfold Char Char
+upperCaseMapping' = Unfold step inject
+    where
+    inject c = case C.toSpecialUpperCase c of
+        0 -> Stop
         k -> step k
 
 -- | Convert a character to full /folded/ case if defined, else to itself.

@@ -42,26 +42,23 @@ streamUnfold (C.Unfold step inject) = \case
                 TF.Skip s'    -> TF.Skip (CC s' C.Stop)
                 TF.Yield c s' -> case inject c of
                     C.Yield c' st -> TF.Yield c' (CC s' (step st))
-                    C.Last  c'    -> TF.Yield c' (CC s' C.Stop)
-                    -- impossible: there is always at least one Char
-                    C.Stop        -> TF.Skip (CC s' C.Stop)
+                    C.Stop        -> TF.Yield c  (CC s' C.Stop)
             next (CC s (C.Yield c st)) = TF.Yield c (CC s (step st))
-            next (CC s (C.Last  c   )) = TF.Yield c (CC s C.Stop)
 
 caseConvertStream :: C.Unfold Char Char -> T.Text -> T.Text
 caseConvertStream u t = TF.unstream (streamUnfold u (TF.stream t))
 
 {-# INLINE toUpperStream #-}
 toUpperStream :: T.Text -> T.Text
-toUpperStream = caseConvertStream C.upperCaseMapping
+toUpperStream = caseConvertStream C.upperCaseMapping'
 
 {-# INLINE toLowerStream #-}
 toLowerStream :: T.Text -> T.Text
-toLowerStream = caseConvertStream C.lowerCaseMapping
+toLowerStream = caseConvertStream C.lowerCaseMapping'
 
 {-# INLINE toCaseFoldStream #-}
 toCaseFoldStream :: T.Text -> T.Text
-toCaseFoldStream = caseConvertStream C.caseFoldMapping
+toCaseFoldStream = caseConvertStream C.caseFoldMapping'
 
 #if MIN_VERSION_text(2,0,0)
 
@@ -102,7 +99,7 @@ caseConvertText ascii (C.Unfold (step :: u -> C.Step u Char) inject) (T.Text src
                 let !c = chr2 m0 m1
                 dstOff' <- case inject c of
                   -- Unchanged
-                  C.Last _ -> do
+                  C.Stop -> do
                     A.unsafeWrite dst dstOff m0
                     A.unsafeWrite dst (dstOff + 1) m1
                     pure $ dstOff + 2
@@ -112,7 +109,7 @@ caseConvertText ascii (C.Unfold (step :: u -> C.Step u Char) inject) (T.Text src
                 let !c = chr3 m0 m1 m2
                 dstOff' <- case inject c of
                   -- Unchanged
-                  C.Last _ -> do
+                  C.Stop -> do
                     A.unsafeWrite dst dstOff m0
                     A.unsafeWrite dst (dstOff + 1) m1
                     A.unsafeWrite dst (dstOff + 2) m2
@@ -123,7 +120,7 @@ caseConvertText ascii (C.Unfold (step :: u -> C.Step u Char) inject) (T.Text src
                 let !c = chr4 m0 m1 m2 m3
                 dstOff' <- case inject c of
                   -- Unchanged
-                  C.Last _ -> do
+                  C.Stop -> do
                     A.unsafeWrite dst dstOff m0
                     A.unsafeWrite dst (dstOff + 1) m1
                     A.unsafeWrite dst (dstOff + 2) m2
@@ -138,27 +135,24 @@ caseConvertText ascii (C.Unfold (step :: u -> C.Step u Char) inject) (T.Text src
             C.Yield ch st -> \dstOff -> do
                 d <- unsafeWrite dst dstOff ch
                 writeMapping (step st) (dstOff + d)
-            C.Last  ch    -> \dstOff -> do
-                d <- unsafeWrite dst dstOff ch
-                pure (dstOff + d)
 {-# INLINE caseConvertText #-}
 
 {-# INLINE toUpperText #-}
 toUpperText :: T.Text -> T.Text
 toUpperText = caseConvertText
     (\w -> if w - 97 <= 25 then w - 32 else w)
-    C.upperCaseMapping
+    C.upperCaseMapping'
 
 {-# INLINE toLowerText #-}
 toLowerText :: T.Text -> T.Text
 toLowerText = caseConvertText
     (\w -> if w - 65 <= 25 then w + 32 else w)
-    C.lowerCaseMapping
+    C.lowerCaseMapping'
 
 {-# INLINE toCaseFoldText #-}
 toCaseFoldText :: T.Text -> T.Text
 toCaseFoldText = caseConvertText
     (\w -> if w - 65 <= 25 then w + 32 else w)
-    C.caseFoldMapping
+    C.caseFoldMapping'
 
 #endif
