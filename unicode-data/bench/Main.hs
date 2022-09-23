@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 import Control.DeepSeq (NFData, deepseq, force)
 import Control.Exception (evaluate)
 import Data.Ix (Ix(..))
@@ -6,8 +8,7 @@ import Test.Tasty.Bench
 
 import qualified Data.Char as Char
 import qualified Data.Text as T
-import qualified Data.Text.Internal.Fusion as TF
-import qualified Data.Text.Internal.Fusion.Size as TF
+import qualified Text.Case as C
 import qualified Unicode.Char.Case as C
 import qualified Unicode.Char.Case.Compat as CC
 import qualified Unicode.Char.General as G
@@ -48,17 +49,17 @@ main = defaultMain
     , bgroup "toLowerText"
       [ benchCaseConv "text" T.toLower
       , bcompare' "toLowerText" "text"
-            (benchCaseConv "unicode-data" (caseConvertText C.lowerCaseMapping))
+            (benchCaseConv "unicode-data" C.toLowerStream)
       ]
     , bgroup "toUpperText"
       [ benchCaseConv "text" T.toUpper
       , bcompare' "toUpperText" "text"
-            (benchCaseConv "unicode-data" (caseConvertText C.upperCaseMapping))
+            (benchCaseConv "unicode-data" C.toUpperStream)
       ]
     , bgroup "toCaseFoldText"
       [ benchCaseConv "text" T.toCaseFold
       , bcompare' "toCaseFoldText" "text"
-            (benchCaseConv "unicode-data" (caseConvertText C.caseFoldMapping))
+            (benchCaseConv "unicode-data" C.toCaseFoldStream)
       ]
     ]
   , bgroup "Unicode.Char.Case.Compat"
@@ -307,7 +308,8 @@ main = defaultMain
         -> (T.Text -> T.Text)
         -> Benchmark
     benchCaseConv t f = benchNF t f (T.pack (filter isValid [minBound..maxBound]))
-        where isValid c = G.generalCategory c < G.Surrogate
+        -- where isValid c = G.generalCategory c < G.Surrogate
+        where isValid = G.isAlphabetic
 
     benchNF
         :: forall a b. (NFData a, NFData b)
@@ -320,26 +322,3 @@ main = defaultMain
         env
             (evaluate (force a)) -- initialize
             (bench t . nf f) -- benchmark
-
--- Text case operations
-
-data CC s a = CC !s !(C.Step a Char)
-
-caseConvertStream :: C.Unfold Char Char -> TF.Stream Char -> TF.Stream Char
-caseConvertStream remap = case remap of
-    C.Unfold step inject -> \stream -> case stream of
-        (TF.Stream next0 s0 len) -> TF.Stream next
-                        (CC s0 C.Stop)
-                        (len `TF.unionSize` (3*len))
-            where
-                next (CC s C.Stop) = case next0 s of
-                    TF.Done       -> TF.Done
-                    TF.Skip s'    -> TF.Skip (CC s' C.Stop)
-                    TF.Yield c s' -> case inject c of
-                        C.Yield c' st -> TF.Yield c' (CC s' (step st))
-                        -- impossible: there is always at least one Char
-                        C.Stop        -> TF.Skip (CC s' C.Stop)
-                next (CC s (C.Yield c st)) = TF.Yield c (CC s (step st))
-
-caseConvertText :: C.Unfold Char Char -> T.Text -> T.Text
-caseConvertText u t = TF.unstream (caseConvertStream u (TF.stream t))
