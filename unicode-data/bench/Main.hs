@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase, CPP #-}
 
 import Control.DeepSeq (NFData, deepseq, force)
 import Control.Exception (evaluate)
@@ -49,17 +49,29 @@ main = defaultMain
     , bgroup "toLowerText"
       [ benchCaseConv "text" T.toLower
       , bcompare' "toLowerText" "text"
-            (benchCaseConv "unicode-data" C.toLowerStream)
+            (benchCaseConv "unicode-data (fusion)" C.toLowerStream)
+#if MIN_VERSION_text(2,0,0)
+      , bcompare' "toLowerText" "text"
+            (benchCaseConv "unicode-data (no fusion)" C.toLowerText)
+#endif
       ]
     , bgroup "toUpperText"
       [ benchCaseConv "text" T.toUpper
       , bcompare' "toUpperText" "text"
-            (benchCaseConv "unicode-data" C.toUpperStream)
+            (benchCaseConv "unicode-data (fusion)" C.toUpperStream)
+#if MIN_VERSION_text(2,0,0)
+      , bcompare' "toUpperText" "text"
+            (benchCaseConv "unicode-data (no fusion)" C.toUpperText)
+#endif
       ]
     , bgroup "toCaseFoldText"
       [ benchCaseConv "text" T.toCaseFold
       , bcompare' "toCaseFoldText" "text"
-            (benchCaseConv "unicode-data" C.toCaseFoldStream)
+            (benchCaseConv "unicode-data (fusion)" C.toCaseFoldStream)
+#if MIN_VERSION_text(2,0,0)
+      , bcompare' "toCaseFoldText" "text"
+            (benchCaseConv "unicode-data (no fusion)" C.toCaseFoldText)
+#endif
       ]
     ]
   , bgroup "Unicode.Char.Case.Compat"

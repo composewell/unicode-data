@@ -32,12 +32,15 @@ data Unfold a b =
 data Step s a
     = Yield !a !s
     -- ^ Produces a single value and the next state of the stream.
+    | Last !a
+    -- ^ Produces the last value of the stream.
     | Stop
     -- ^ Indicates there are no more values in the stream.
 
 instance Functor (Step s) where
     {-# INLINE fmap #-}
     fmap f (Yield x s) = Yield (f x) s
+    fmap f (Last x)    = Last (f x)
     fmap _ Stop        = Stop
 
 -- | Convert an 'Unfold' to a list.
@@ -49,4 +52,5 @@ toList (Unfold step inject) = go . inject
     where
     go = \case
         Yield b s -> let !s' = step s in b : go s'
+        Last  b   -> [b]
         Stop      -> []

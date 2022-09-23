@@ -98,7 +98,7 @@ caseFoldMapping :: Unfold Char Char
 caseFoldMapping = Unfold step inject
     where
     inject c = case C.toCasefold c of
-        0 -> Yield c 0
+        0 -> Last c
         k -> step k
 
 -- | Returns the full /lower/ case mapping of a character.
@@ -111,7 +111,7 @@ lowerCaseMapping :: Unfold Char Char
 lowerCaseMapping = Unfold step inject
     where
     inject c = case C.toSpecialLowerCase c of
-        0 -> Yield c 0
+        0 -> Last c
         k -> step k
 
 -- | Returns the full /title/ case mapping of a character.
@@ -124,7 +124,7 @@ titleCaseMapping :: Unfold Char Char
 titleCaseMapping = Unfold step inject
     where
     inject c = case C.toSpecialTitleCase c of
-        0 -> Yield c 0
+        0 -> Last c
         k -> step k
 
 -- | Returns the full /upper/ case mapping of a character.
@@ -137,7 +137,7 @@ upperCaseMapping :: Unfold Char Char
 upperCaseMapping = Unfold step inject
     where
     inject c = case C.toSpecialUpperCase c of
-        0 -> Yield c 0
+        0 -> Last c
         k -> step k
 
 -- | Convert a character to full /folded/ case if defined, else to itself.
