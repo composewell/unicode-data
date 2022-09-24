@@ -155,6 +155,8 @@ upperCaseMapping = Unfold step inject
 --
 -- It uses the character property @Case_Folding@.
 --
+-- prop> toCaseFoldString c == foldMap toCaseFoldString (toCaseFoldString c)
+--
 -- @since 0.3.1
 {-# INLINE toCaseFoldString #-}
 toCaseFoldString :: Char -> String
@@ -170,6 +172,8 @@ toCaseFoldString = toList caseFoldMapping
 -- It uses the character property @Lowercase_Mapping@.
 --
 -- See: 'Unicode.Char.Case.Compat.toLower' for /simple/ lower case conversion.
+--
+-- prop> toLowerString c == foldMap toLowerString (toLowerString c)
 --
 -- @since 0.3.1
 {-# INLINE toLowerString #-}
@@ -201,6 +205,8 @@ toTitleString = toList titleCaseMapping
 -- It uses the character property @Uppercase_Mapping@.
 --
 -- See: 'Unicode.Char.Case.Compat.toUpper' for /simple/ upper case conversion.
+--
+-- prop> toUpperString c == foldMap toUpperString (toUpperString c)
 --
 -- @since 0.3.1
 {-# INLINE toUpperString #-}
