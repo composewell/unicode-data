@@ -64,6 +64,11 @@ main = defaultMain
             (benchCaseConv "unicode-data (no fusion)" C.toUpperText)
 #endif
       ]
+    , bgroup "toTitleText"
+      [ benchCaseConv "text" T.toTitle
+      , bcompare' "toTitleText" "text"
+            (benchCaseConv "unicode-data (fusion)" C.toTitleStream)
+      ]
     , bgroup "toCaseFoldText"
       [ benchCaseConv "text" T.toCaseFold
       , bcompare' "toCaseFoldText" "text"

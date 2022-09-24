@@ -3,6 +3,7 @@
 module Text.Case
     ( toUpperStream
     , toLowerStream
+    , toTitleStream
     , toCaseFoldStream
 #if MIN_VERSION_text(2,0,0)
     , toUpperText
@@ -11,10 +12,14 @@ module Text.Case
 #endif
     ) where
 
+import           Data.Int (Int64)
 import qualified Data.Text as T
 import qualified Data.Text.Internal.Fusion as TF
 import qualified Data.Text.Internal.Fusion.Size as TF
+import           Data.Text.Internal.Fusion.Types (PairS(..))
 import qualified Unicode.Char.Case as C
+import qualified Unicode.Char.General.Compat as UChar
+import           Unsafe.Coerce (unsafeCoerce)
 
 #if MIN_VERSION_text(2,0,0)
 
@@ -61,6 +66,48 @@ toLowerStream = caseConvertStream C.lowerCaseMapping
 {-# INLINE toCaseFoldStream #-}
 toCaseFoldStream :: T.Text -> T.Text
 toCaseFoldStream = caseConvertStream C.caseFoldMapping
+
+data CC2 s = CC2 !s !Int64
+
+streamUnfoldToTitle :: TF.Stream Char -> TF.Stream Char
+streamUnfoldToTitle = case C.lowerCaseMapping of
+    C.Unfold stepL injectL -> case C.titleCaseMapping of
+        C.Unfold _stepT injectT -> \case
+            (TF.Stream next0 s0 len) -> TF.Stream next
+                (CC2 (False :*: s0) 0)
+                (len `TF.unionSize` (3*len))
+                where
+
+                step :: Int64 -> C.Step Int64 Char
+                step = unsafeCoerce stepL
+
+                next (CC2 (letter :*: s) 0) = case next0 s of
+                    TF.Done       -> TF.Done
+                    TF.Skip    s' -> TF.Skip (CC2 (letter :*: s') 0)
+                    TF.Yield c s'
+                        | nonSpace, letter -> case injectL c of
+                            -- Unchanged character
+                            C.Stop -> TF.Yield c (CC2 (nonSpace :*: s') 0)
+                            -- New character (s)
+                            C.Yield c' st -> TF.Yield c'
+                                (CC2 (nonSpace :*: s') (unsafeCoerce st))
+                        | nonSpace -> case injectT c of
+                            -- Unchanged character
+                            C.Stop -> TF.Yield c (CC2 (letter' :*: s') 0)
+                            -- New character (s)
+                            C.Yield c' st -> TF.Yield c'
+                                (CC2 (letter' :*: s') (unsafeCoerce st))
+                        | otherwise -> TF.Yield c (CC2 (letter' :*: s') 0)
+                        where nonSpace = not (UChar.isSpace c)
+                              letter'  = UChar.isLetter c
+                next (CC2 s st) = case step st of
+                  C.Stop        -> next (CC2 s 0)
+                  C.Yield c st' -> TF.Yield c (CC2 s st')
+{-# INLINE [0] streamUnfoldToTitle #-}
+
+{-# INLINE toTitleStream #-}
+toTitleStream :: T.Text -> T.Text
+toTitleStream = TF.unstream . streamUnfoldToTitle . TF.stream
 
 #if MIN_VERSION_text(2,0,0)
 
