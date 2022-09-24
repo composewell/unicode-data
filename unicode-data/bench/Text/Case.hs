@@ -52,15 +52,15 @@ caseConvertStream u t = TF.unstream (streamUnfold u (TF.stream t))
 
 {-# INLINE toUpperStream #-}
 toUpperStream :: T.Text -> T.Text
-toUpperStream = caseConvertStream C.upperCaseMapping'
+toUpperStream = caseConvertStream C.upperCaseMapping
 
 {-# INLINE toLowerStream #-}
 toLowerStream :: T.Text -> T.Text
-toLowerStream = caseConvertStream C.lowerCaseMapping'
+toLowerStream = caseConvertStream C.lowerCaseMapping
 
 {-# INLINE toCaseFoldStream #-}
 toCaseFoldStream :: T.Text -> T.Text
-toCaseFoldStream = caseConvertStream C.caseFoldMapping'
+toCaseFoldStream = caseConvertStream C.caseFoldMapping
 
 #if MIN_VERSION_text(2,0,0)
 
@@ -146,18 +146,18 @@ caseConvertText ascii (C.Unfold (step :: u -> C.Step u Char) inject) (T.Text src
 toUpperText :: T.Text -> T.Text
 toUpperText = caseConvertText
     (\w -> if w - 97 <= 25 then w - 32 else w)
-    C.upperCaseMapping'
+    C.upperCaseMapping
 
 {-# INLINE toLowerText #-}
 toLowerText :: T.Text -> T.Text
 toLowerText = caseConvertText
     (\w -> if w - 65 <= 25 then w + 32 else w)
-    C.lowerCaseMapping'
+    C.lowerCaseMapping
 
 {-# INLINE toCaseFoldText #-}
 toCaseFoldText :: T.Text -> T.Text
 toCaseFoldText = caseConvertText
     (\w -> if w - 65 <= 25 then w + 32 else w)
-    C.caseFoldMapping'
+    C.caseFoldMapping
 
 #endif

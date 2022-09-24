@@ -42,12 +42,15 @@ instance Functor (Step s) where
     fmap f (Yield x s) = Yield (f x) s
     fmap _ Stop        = Stop
 
--- | Convert an 'Unfold' to a list.
+-- | Convert an 'Unfold a a' to a list [a], if the resulting list is empty the
+-- seed is used as a default output.
 --
--- @since 0.3.1
 {-# INLINE toList #-}
-toList :: Unfold a b -> a -> [b]
-toList (Unfold step inject) = go . inject
+toList :: Unfold a a -> a -> [a]
+toList (Unfold step inject) input =
+    case inject input of
+        Stop -> [input]
+        Yield b s -> b : go (step s)
     where
     go = \case
         Yield b s -> let !s' = step s in b : go s'

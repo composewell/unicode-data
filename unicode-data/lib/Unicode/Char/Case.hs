@@ -20,20 +20,16 @@ module Unicode.Char.Case
 
       -- ** Case folding mapping
     , caseFoldMapping
-    , caseFoldMapping'
     , toCaseFoldString
 
       -- ** Lower case mapping
     , lowerCaseMapping
-    , lowerCaseMapping'
     , toLowerString
       -- ** Title case mapping
     , titleCaseMapping
-    , titleCaseMapping'
     , toTitleString
       -- ** Upper case mapping
     , upperCaseMapping
-    , upperCaseMapping'
     , toUpperString
       -- ** Unfold
     , Unfold(..)
@@ -42,8 +38,8 @@ module Unicode.Char.Case
 where
 
 import Data.Bits (Bits(..))
-import Data.Char (chr)
 import Data.Int (Int64)
+import GHC.Base (unsafeChr)
 
 import Unicode.Internal.Unfold
 import qualified Unicode.Internal.Char.CaseFolding as C
@@ -92,7 +88,8 @@ isUpper = P.isUppercase
 -- context-dependent operation. The case conversion functions in this
 -- module are /not/ locale nor context sensitive.
 
--- | Returns the full /folded/ case mapping of a character.
+-- | Returns the full /folded/ case mapping of a character if the character is
+-- changed, else nothing.
 --
 -- It uses the character property @Case_Folding@.
 --
@@ -101,24 +98,10 @@ isUpper = P.isUppercase
 caseFoldMapping :: Unfold Char Char
 caseFoldMapping = Unfold step inject
     where
-    inject c = case C.toCasefold c of
-        0 -> Yield c 0
-        k -> step k
+    inject = step . C.toCasefold
 
--- | Variant of 'caseFoldMapping' that return nothing if the character is
--- unchanged.
---
--- @since 0.3.1
-{-# INLINE caseFoldMapping' #-}
-caseFoldMapping' :: Unfold Char Char
-caseFoldMapping' = Unfold step inject
-    where
-
-    inject c = case C.toCasefold c of
-        0 -> Stop
-        k -> step k
-
--- | Returns the full /lower/ case mapping of a character.
+-- | Returns the full /lower/ case mapping of a character if the character is
+-- changed, else nothing.
 --
 -- It uses the character property @Lowercase_Mapping@.
 --
@@ -127,23 +110,10 @@ caseFoldMapping' = Unfold step inject
 lowerCaseMapping :: Unfold Char Char
 lowerCaseMapping = Unfold step inject
     where
-    inject c = case C.toSpecialLowerCase c of
-        0 -> Yield c 0
-        k -> step k
+    inject = step . C.toSpecialLowerCase
 
--- | Variant of 'lowerCaseMapping' that return nothing if the character is
--- unchanged.
---
--- @since 0.3.1
-{-# INLINE lowerCaseMapping' #-}
-lowerCaseMapping' :: Unfold Char Char
-lowerCaseMapping' = Unfold step inject
-    where
-    inject c = case C.toSpecialLowerCase c of
-        0 -> Stop
-        k -> step k
-
--- | Returns the full /title/ case mapping of a character.
+-- | Returns the full /title/ case mapping of a character if the character is
+-- changed, else nothing.
 --
 -- It uses the character property @Titlecase_Mapping@.
 --
@@ -152,23 +122,10 @@ lowerCaseMapping' = Unfold step inject
 titleCaseMapping :: Unfold Char Char
 titleCaseMapping = Unfold step inject
     where
-    inject c = case C.toSpecialTitleCase c of
-        0 -> Yield c 0
-        k -> step k
+    inject = step . C.toSpecialTitleCase
 
--- | Variant of 'titleCaseMapping' that return nothing if the character is
--- unchanged.
---
--- @since 0.3.1
-{-# INLINE titleCaseMapping' #-}
-titleCaseMapping' :: Unfold Char Char
-titleCaseMapping' = Unfold step inject
-    where
-    inject c = case C.toSpecialTitleCase c of
-        0 -> Stop
-        k -> step k
-
--- | Returns the full /upper/ case mapping of a character.
+-- | Returns the full /upper/ case mapping of a character if the character is
+-- changed, else nothing.
 --
 -- It uses the character property @Uppercase_Mapping@.
 --
@@ -177,21 +134,7 @@ titleCaseMapping' = Unfold step inject
 upperCaseMapping :: Unfold Char Char
 upperCaseMapping = Unfold step inject
     where
-    inject c = case C.toSpecialUpperCase c of
-        0 -> Yield c 0
-        k -> step k
-
--- | Variant of 'upperCaseMapping' that return nothing if the character is
--- unchanged.
---
--- @since 0.3.1
-{-# INLINE upperCaseMapping' #-}
-upperCaseMapping' :: Unfold Char Char
-upperCaseMapping' = Unfold step inject
-    where
-    inject c = case C.toSpecialUpperCase c of
-        0 -> Stop
-        k -> step k
+    inject = step . C.toSpecialUpperCase
 
 -- | Convert a character to full /folded/ case if defined, else to itself.
 --
@@ -213,6 +156,7 @@ upperCaseMapping' = Unfold step inject
 -- It uses the character property @Case_Folding@.
 --
 -- @since 0.3.1
+{-# INLINE toCaseFoldString #-}
 toCaseFoldString :: Char -> String
 toCaseFoldString = toList caseFoldMapping
 
@@ -228,6 +172,7 @@ toCaseFoldString = toList caseFoldMapping
 -- See: 'Unicode.Char.Case.Compat.toLower' for /simple/ lower case conversion.
 --
 -- @since 0.3.1
+{-# INLINE toLowerString #-}
 toLowerString :: Char -> String
 toLowerString = toList lowerCaseMapping
 
@@ -243,6 +188,7 @@ toLowerString = toList lowerCaseMapping
 -- See: 'Unicode.Char.Case.Compat.toTitle' for /simple/ title case conversion.
 --
 -- @since 0.3.1
+{-# INLINE toTitleString #-}
 toTitleString :: Char -> String
 toTitleString = toList titleCaseMapping
 
@@ -257,6 +203,7 @@ toTitleString = toList titleCaseMapping
 -- See: 'Unicode.Char.Case.Compat.toUpper' for /simple/ upper case conversion.
 --
 -- @since 0.3.1
+{-# INLINE toUpperString #-}
 toUpperString :: Char -> String
 toUpperString = toList upperCaseMapping
 
@@ -266,7 +213,7 @@ toUpperString = toList upperCaseMapping
 step :: Int64 -> Step Int64 Char
 step = \case
     0 -> Stop
-    s -> Yield (chr cp) (s `shiftR` 21)
+    s -> Yield (unsafeChr cp) (s `shiftR` 21)
         where
             -- Mask for a single Unicode code point: (1 << 21) - 1
             mask = 0x1fffff
