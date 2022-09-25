@@ -18,40 +18,40 @@ spec = do
     let cs = T.pack [minBound..maxBound]
     describe "toLower" do
         it "Idempotent" do
-            let cs' = C.toLowerStream cs in cs' `shouldBe` C.toLowerStream cs'
+            let cs' = C.toLowerFusion cs in cs' `shouldBe` C.toLowerFusion cs'
 #if MIN_VERSION_text(2,0,0)
-            let cs' = C.toLowerText cs in cs' `shouldBe` C.toLowerText cs'
+            let cs' = C.toLower cs in cs' `shouldBe` C.toLower cs'
 #endif
         it' "Compare with `text`" do
-            C.toLowerStream cs `shouldBe` T.toLower cs
+            C.toLowerFusion cs `shouldBe` T.toLower cs
 #if MIN_VERSION_text(2,0,0)
-            C.toLowerText cs `shouldBe` T.toLower cs
+            C.toLower cs `shouldBe` T.toLower cs
 #endif
     describe "toUpper" do
         it "Idempotent" do
-            let cs' = C.toUpperStream cs in cs' `shouldBe` C.toUpperStream cs'
+            let cs' = C.toUpperFusion cs in cs' `shouldBe` C.toUpperFusion cs'
 #if MIN_VERSION_text(2,0,0)
-            let cs' = C.toUpperText cs in cs' `shouldBe` C.toUpperText cs'
+            let cs' = C.toUpper cs in cs' `shouldBe` C.toUpper cs'
 #endif
         it' "Compare with `text`" do
-            C.toUpperStream cs `shouldBe` T.toUpper cs
+            C.toUpperFusion cs `shouldBe` T.toUpper cs
 #if MIN_VERSION_text(2,0,0)
-            C.toUpperText cs `shouldBe` T.toUpper cs
+            C.toUpper cs `shouldBe` T.toUpper cs
 #endif
     describe "toTitle" do
         let cs' = T.concatMap (\c -> T.pack [c, 'a', ' ', 'a', c, ' ']) cs
         it' "Compare with `text`" do
-            C.toTitleStream cs' `shouldBe` T.toTitle cs'
+            C.toTitleFusion cs' `shouldBe` T.toTitle cs'
     describe "toCaseFold" do
         it "Idempotent" do
-            let cs' = C.toCaseFoldStream cs in cs' `shouldBe` C.toCaseFoldStream cs'
+            let cs' = C.toCaseFoldFusion cs in cs' `shouldBe` C.toCaseFoldFusion cs'
 #if MIN_VERSION_text(2,0,0)
-            let cs' = C.toCaseFoldText cs in cs' `shouldBe` C.toCaseFoldText cs'
+            let cs' = C.toCaseFold cs in cs' `shouldBe` C.toCaseFold cs'
 #endif
         it' "Compare with `text`" do
-            C.toCaseFoldStream cs `shouldBe` T.toCaseFold cs
+            C.toCaseFoldFusion cs `shouldBe` T.toCaseFold cs
 #if MIN_VERSION_text(2,0,0)
-            C.toCaseFoldText cs `shouldBe` T.toCaseFold cs
+            C.toCaseFold cs `shouldBe` T.toCaseFold cs
 #endif
 
 

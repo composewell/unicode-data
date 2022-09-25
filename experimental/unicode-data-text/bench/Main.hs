@@ -12,36 +12,36 @@ import qualified Unicode.Text.Case as C
 main :: IO ()
 main = defaultMain
   [ bgroup "Unicode.Char.Case"
-    [ bgroup "toLowerText"
+    [ bgroup "toLower"
       [ benchCaseConv "text" T.toLower
-      , bcompare' "toLowerText" "text"
-            (benchCaseConv "unicode-data (fusion)" C.toLowerStream)
+      , bcompare' "toLower" "text"
+            (benchCaseConv "unicode-data (fusion)" C.toLowerFusion)
 #if MIN_VERSION_text(2,0,0)
-      , bcompare' "toLowerText" "text"
-            (benchCaseConv "unicode-data (no fusion)" C.toLowerText)
+      , bcompare' "toLower" "text"
+            (benchCaseConv "unicode-data (no fusion)" C.toLower)
 #endif
       ]
-    , bgroup "toUpperText"
+    , bgroup "toUpper"
       [ benchCaseConv "text" T.toUpper
-      , bcompare' "toUpperText" "text"
-            (benchCaseConv "unicode-data (fusion)" C.toUpperStream)
+      , bcompare' "toUpper" "text"
+            (benchCaseConv "unicode-data (fusion)" C.toUpperFusion)
 #if MIN_VERSION_text(2,0,0)
-      , bcompare' "toUpperText" "text"
-            (benchCaseConv "unicode-data (no fusion)" C.toUpperText)
+      , bcompare' "toUpper" "text"
+            (benchCaseConv "unicode-data (no fusion)" C.toUpper)
 #endif
       ]
     , bgroup "toTitleText"
       [ benchCaseConv "text" T.toTitle
       , bcompare' "toTitleText" "text"
-            (benchCaseConv "unicode-data (fusion)" C.toTitleStream)
+            (benchCaseConv "unicode-data (fusion)" C.toTitleFusion)
       ]
-    , bgroup "toCaseFoldText"
+    , bgroup "toCaseFold"
       [ benchCaseConv "text" T.toCaseFold
-      , bcompare' "toCaseFoldText" "text"
-            (benchCaseConv "unicode-data (fusion)" C.toCaseFoldStream)
+      , bcompare' "toCaseFold" "text"
+            (benchCaseConv "unicode-data (fusion)" C.toCaseFoldFusion)
 #if MIN_VERSION_text(2,0,0)
-      , bcompare' "toCaseFoldText" "text"
-            (benchCaseConv "unicode-data (no fusion)" C.toCaseFoldText)
+      , bcompare' "toCaseFold" "text"
+            (benchCaseConv "unicode-data (no fusion)" C.toCaseFold)
 #endif
       ]
     ]

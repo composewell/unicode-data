@@ -1,14 +1,14 @@
 {-# LANGUAGE LambdaCase, CPP #-}
 
 module Unicode.Text.Case
-    ( toUpperStream
-    , toLowerStream
-    , toTitleStream
-    , toCaseFoldStream
+    ( toUpperFusion
+    , toLowerFusion
+    , toTitleFusion
+    , toCaseFoldFusion
 #if MIN_VERSION_text(2,0,0)
-    , toUpperText
-    , toLowerText
-    , toCaseFoldText
+    , toUpper
+    , toLower
+    , toCaseFold
 #endif
     ) where
 
@@ -55,17 +55,17 @@ streamUnfold (C.Unfold step inject) = \case
 caseConvertStream :: C.Unfold Char Char -> T.Text -> T.Text
 caseConvertStream u t = TF.unstream (streamUnfold u (TF.stream t))
 
-{-# INLINE toUpperStream #-}
-toUpperStream :: T.Text -> T.Text
-toUpperStream = caseConvertStream C.upperCaseMapping
+{-# INLINE toUpperFusion #-}
+toUpperFusion :: T.Text -> T.Text
+toUpperFusion = caseConvertStream C.upperCaseMapping
 
-{-# INLINE toLowerStream #-}
-toLowerStream :: T.Text -> T.Text
-toLowerStream = caseConvertStream C.lowerCaseMapping
+{-# INLINE toLowerFusion #-}
+toLowerFusion :: T.Text -> T.Text
+toLowerFusion = caseConvertStream C.lowerCaseMapping
 
-{-# INLINE toCaseFoldStream #-}
-toCaseFoldStream :: T.Text -> T.Text
-toCaseFoldStream = caseConvertStream C.caseFoldMapping
+{-# INLINE toCaseFoldFusion #-}
+toCaseFoldFusion :: T.Text -> T.Text
+toCaseFoldFusion = caseConvertStream C.caseFoldMapping
 
 data CC2 s = CC2 !s !Int64
 
@@ -105,9 +105,9 @@ streamUnfoldToTitle = case C.lowerCaseMapping of
                   C.Yield c st' -> TF.Yield c (CC2 s st')
 {-# INLINE [0] streamUnfoldToTitle #-}
 
-{-# INLINE toTitleStream #-}
-toTitleStream :: T.Text -> T.Text
-toTitleStream = TF.unstream . streamUnfoldToTitle . TF.stream
+{-# INLINE toTitleFusion #-}
+toTitleFusion :: T.Text -> T.Text
+toTitleFusion = TF.unstream . streamUnfoldToTitle . TF.stream
 
 #if MIN_VERSION_text(2,0,0)
 
@@ -189,21 +189,21 @@ caseConvertText ascii (C.Unfold (step :: u -> C.Step u Char) inject) (T.Text src
                 writeMapping (step st) (dstOff + d)
 {-# INLINE caseConvertText #-}
 
-{-# INLINE toUpperText #-}
-toUpperText :: T.Text -> T.Text
-toUpperText = caseConvertText
+{-# INLINE toUpper #-}
+toUpper :: T.Text -> T.Text
+toUpper = caseConvertText
     (\w -> if w - 97 <= 25 then w - 32 else w)
     C.upperCaseMapping
 
-{-# INLINE toLowerText #-}
-toLowerText :: T.Text -> T.Text
-toLowerText = caseConvertText
+{-# INLINE toLower #-}
+toLower :: T.Text -> T.Text
+toLower = caseConvertText
     (\w -> if w - 65 <= 25 then w + 32 else w)
     C.lowerCaseMapping
 
-{-# INLINE toCaseFoldText #-}
-toCaseFoldText :: T.Text -> T.Text
-toCaseFoldText = caseConvertText
+{-# INLINE toCaseFold #-}
+toCaseFold :: T.Text -> T.Text
+toCaseFold = caseConvertText
     (\w -> if w - 65 <= 25 then w + 32 else w)
     C.caseFoldMapping
 
