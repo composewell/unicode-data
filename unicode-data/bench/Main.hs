@@ -7,8 +7,6 @@ import Test.Tasty.Bench
     (Benchmark, bgroup, bench, bcompare, defaultMain, env, nf)
 
 import qualified Data.Char as Char
-import qualified Data.Text as T
-import qualified Text.Case as C
 import qualified Unicode.Char.Case as C
 import qualified Unicode.Char.Case.Compat as CC
 import qualified Unicode.Char.General as G
@@ -45,38 +43,6 @@ main = defaultMain
       ]
     , bgroup "toUpperString"
       [ benchChars "unicode-data" C.toUpperString
-      ]
-    , bgroup "toLowerText"
-      [ benchCaseConv "text" T.toLower
-      , bcompare' "toLowerText" "text"
-            (benchCaseConv "unicode-data (fusion)" C.toLowerStream)
-#if MIN_VERSION_text(2,0,0)
-      , bcompare' "toLowerText" "text"
-            (benchCaseConv "unicode-data (no fusion)" C.toLowerText)
-#endif
-      ]
-    , bgroup "toUpperText"
-      [ benchCaseConv "text" T.toUpper
-      , bcompare' "toUpperText" "text"
-            (benchCaseConv "unicode-data (fusion)" C.toUpperStream)
-#if MIN_VERSION_text(2,0,0)
-      , bcompare' "toUpperText" "text"
-            (benchCaseConv "unicode-data (no fusion)" C.toUpperText)
-#endif
-      ]
-    , bgroup "toTitleText"
-      [ benchCaseConv "text" T.toTitle
-      , bcompare' "toTitleText" "text"
-            (benchCaseConv "unicode-data (fusion)" C.toTitleStream)
-      ]
-    , bgroup "toCaseFoldText"
-      [ benchCaseConv "text" T.toCaseFold
-      , bcompare' "toCaseFoldText" "text"
-            (benchCaseConv "unicode-data (fusion)" C.toCaseFoldStream)
-#if MIN_VERSION_text(2,0,0)
-      , bcompare' "toCaseFoldText" "text"
-            (benchCaseConv "unicode-data (no fusion)" C.toCaseFoldText)
-#endif
       ]
     ]
   , bgroup "Unicode.Char.Case.Compat"
@@ -319,23 +285,3 @@ main = defaultMain
         -> (a, a)
         -> ()
     fold_ f = foldr (deepseq . f) () . range
-
-    benchCaseConv
-        :: String
-        -> (T.Text -> T.Text)
-        -> Benchmark
-    benchCaseConv t f = benchNF t f (T.pack (filter isValid [minBound..maxBound]))
-        -- where isValid c = G.generalCategory c < G.Surrogate
-        where isValid = G.isAlphabetic
-
-    benchNF
-        :: forall a b. (NFData a, NFData b)
-        => String
-        -> (a -> b)
-        -> a
-        -> Benchmark
-    benchNF t f a =
-        -- Avoid side-effects with garbage collection (see tasty-bench doc)
-        env
-            (evaluate (force a)) -- initialize
-            (bench t . nf f) -- benchmark

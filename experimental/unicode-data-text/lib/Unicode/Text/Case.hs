@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase, CPP #-}
 
-module Text.Case
+module Unicode.Text.Case
     ( toUpperStream
     , toLowerStream
     , toTitleStream
