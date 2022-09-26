@@ -68,7 +68,7 @@ library
   build-depends:
     base             >= 4.7   && < 4.18,
     text             >= 1.2.4 && < 2.1,
-    unicode-data     >= 0.3   && < 0.4
+    unicode-data     >= 0.3   && < 0.5
 
 test-suite test
   import: default-extensions, compile-options
@@ -100,6 +100,6 @@ benchmark bench
     tasty-bench      >= 0.2.5 && < 0.4,
     tasty            >= 1.4.1,
     text             >= 1.2.4 && < 2.1,
-    unicode-data     >= 0.3   && < 0.4,
+    unicode-data     >= 0.3   && < 0.5,
     unicode-data-text
   ghc-options: -O2 -fdicts-strict -rtsopts
