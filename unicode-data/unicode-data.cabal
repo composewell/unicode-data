@@ -152,7 +152,7 @@ test-suite test
       hspec-discover:hspec-discover >= 2.0 && < 2.11
   -- We need to match a GHC version with the same Unicode version.
   -- See: test/Unicode/CharSpec.hs for compatibility table.
-  if impl(ghc >= 9.2.1)
+  if impl(ghc >= 9.5.1)
     cpp-options: -DCOMPATIBLE_GHC_UNICODE
   default-language: Haskell2010
 
