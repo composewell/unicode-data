@@ -4,16 +4,36 @@ module Unicode.Text.CaseSpec
   ( spec
   ) where
 
+import Data.Foldable (traverse_)
 import qualified Data.Text as T
 import qualified Unicode.Text.Case as C
 import Test.Hspec
 
+{- [NOTE]
+These tests may fail if the compiler’s Unicode version
+does not match the version of this package.
+
++-------------+----------------+-----------------+
+| GHC version | @base@ version | Unicode version |
++=============+================+=================+
+| 8.8         | 4.13           | 12.0            |
+| 8.10.[1-4]  | 4.14.{0,1}     | 12.0            |
+| 8.10.5+     | 4.14.2+        | 13.0            |
+| 9.0.[1-2]   | 4.15.0         | 12.1            |
+| 9.2.[1-4]   | 4.16.0         | 14.0            |
+| 9.4.[1-2]   | 4.1/.0         | 14.0            |
++-------------+----------------+-----------------+
+-}
+
 spec :: Spec
 spec = do
-#if MIN_VERSION_text(2,0,0)
-    let it' = it
+#ifndef COMPATIBLE_GHC_UNICODE
+    let it' t = before_ (pendingWith "Incompatible GHC Unicode version") . it t
+#elif !MIN_VERSION_text(2,0,1)
+    let it' t = before_ (pendingWith "Incompatible: required text >= 2.0.1")
+              . it t
 #else
-    let it' t = before_ (pendingWith "Incompatible text version") . it t
+    let it' = it
 #endif
     let cs = T.pack [minBound..maxBound]
     describe "toLower" do
@@ -39,9 +59,11 @@ spec = do
             C.toUpper cs `shouldBe` T.toUpper cs
 #endif
     describe "toTitle" do
-        let cs' = T.concatMap (\c -> T.pack [c, 'a', ' ', 'a', c, ' ']) cs
         it' "Compare with `text`" do
-            C.toTitleFusion cs' `shouldBe` T.toTitle cs'
+            let cmpTitle c = let t = T.pack [c, 'a', ' ', 'a', c, ' ']
+                             in C.toTitleFusion t == T.toTitle t
+            let check = (`shouldSatisfy` cmpTitle)
+            traverse_ check [minBound..maxBound]
     describe "toCaseFold" do
         it "Idempotent" do
             let cs' = C.toCaseFoldFusion cs in cs' `shouldBe` C.toCaseFoldFusion cs'
