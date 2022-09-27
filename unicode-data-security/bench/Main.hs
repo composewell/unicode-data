@@ -24,11 +24,11 @@ main = defaultMain
             [ benchNF "identifierTypes"     (show . Security.identifierTypes)
             ]
         , bgroup "Confusables"
-            [ bgroup' "prototypeIfConfusable"
-                [ Bench "CString" Confusables.prototypeIfConfusable
-                , Bench "String"  Security.prototypeIfConfusable
+            [ bgroup' "confusablePrototype"
+                [ Bench "CString" Confusables.confusablePrototype
+                , Bench "String"  Security.confusablePrototype
                 ]
-            , benchNF "prototype"                 Security.prototype
+            -- , benchNF "prototype" Security.prototype
             , bgroup' "intentionalConfusables"
                 [ Bench "CString" Confusables.intentionalConfusables
                 , Bench "String"  Security.intentionalConfusables

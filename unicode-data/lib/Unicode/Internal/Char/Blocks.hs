@@ -16,7 +16,9 @@ where
 import Data.Ix (Ix)
 import GHC.Exts
 
--- | Unicode block.
+-- | Unicode [block](https://www.unicode.org/glossary/#block).
+--
+-- There is a total of 320 blocks.
 --
 -- @since 0.3.1
 data Block

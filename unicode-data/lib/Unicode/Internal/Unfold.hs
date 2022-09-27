@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                       #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE LambdaCase                #-}
 
@@ -22,9 +23,17 @@ module Unicode.Internal.Unfold
 -- seed of type @a@.
 --
 -- @since 0.3.1
+#if MIN_VERSION_base(4,12,0)
+data Unfold a b = forall s. Unfold
+    (s -> Step s b)
+    -- ^ /Step/ function: compute the next step from the current one.
+    (a -> Step s b)
+    -- ^ /Inject/ function: initialize the state with a seed value.
+#else
 data Unfold a b =
     -- | @Unfold step inject@
-    forall s. Unfold (s -> Step s b) (a -> s)
+    forall s. Unfold (s -> Step s b) (a -> Step s b)
+#endif
 
 -- | A stream is a succession of 'Step's.
 --
@@ -40,13 +49,16 @@ instance Functor (Step s) where
     fmap f (Yield x s) = Yield (f x) s
     fmap _ Stop        = Stop
 
--- | Convert an 'Unfold' to a list.
+-- | Convert an 'Unfold a a' to a list [a], if the resulting list is empty the
+-- seed is used as a default output.
 --
--- @since 0.3.1
 {-# INLINE toList #-}
-toList :: Unfold a b -> a -> [b]
-toList (Unfold step inject) a = go (inject a)
+toList :: Unfold a a -> a -> [a]
+toList (Unfold step inject) input =
+    case inject input of
+        Stop -> [input]
+        Yield b s -> b : go (step s)
     where
-    go s = case step s of
-        Yield b s' -> b : go s'
-        Stop       -> []
+    go = \case
+        Yield b s -> let !s' = step s in b : go s'
+        Stop      -> []

@@ -7,7 +7,7 @@ description:
   character <https://www.unicode.org/reports/tr24/ scripts> from the
   <https://www.unicode.org/ucd/ Unicode character database> (UCD).
   .
-  The Haskell data structures are generated programmatically from the UCD.
+  The Haskell data structures are generated programmatically from the UCD files.
   The latest Unicode version supported by this library is
   @<https://www.unicode.org/versions/Unicode14.0.0/ 14.0.0>@.
 homepage:            http://github.com/composewell/unicode-data

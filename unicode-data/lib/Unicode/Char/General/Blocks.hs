@@ -5,7 +5,7 @@
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 --
--- Unicode blocks related functions.
+-- Unicode [blocks](https://www.unicode.org/glossary/#block) related functions.
 --
 -- @since 0.3.1
 
@@ -15,33 +15,23 @@ module Unicode.Char.General.Blocks
     , block
     , B.blockDefinition
     , allBlockRanges
-    , allBlockRanges'
     )
 
 where
 
-import Control.Arrow ((***))
-import Data.Char (chr)
 import qualified Unicode.Internal.Char.Blocks as B
 
--- | Character block, if defined.
+-- | Character [block](https://www.unicode.org/glossary/#block), if defined.
 --
 -- @since 0.3.1
 {-# INLINE block #-}
 block :: Char -> Maybe B.Block
 block = fmap toEnum . B.block
 
--- | All the block ranges, in ascending order.
+-- | All the [block](https://www.unicode.org/glossary/#block) ranges,
+-- in ascending order.
 --
 -- @since 0.3.1
 {-# INLINE allBlockRanges #-}
 allBlockRanges :: [(Int, Int)]
 allBlockRanges = B.allBlockRanges
-
--- | Variant of 'allBlockRanges', with ranges expressed as 'Char's instead of
--- 'Int's.
---
--- @since 0.3.1
-{-# INLINE allBlockRanges' #-}
-allBlockRanges' :: [(Char, Char)]
-allBlockRanges' = (chr *** chr) <$> B.allBlockRanges

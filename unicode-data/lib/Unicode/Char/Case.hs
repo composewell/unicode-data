@@ -31,15 +31,15 @@ module Unicode.Char.Case
       -- ** Upper case mapping
     , upperCaseMapping
     , toUpperString
-      -- ** Types
+      -- ** Unfold
     , Unfold(..)
     , Step(..)
     )
 where
 
 import Data.Bits (Bits(..))
-import Data.Char (chr, ord)
 import Data.Int (Int64)
+import GHC.Base (unsafeChr)
 
 import Unicode.Internal.Unfold
 import qualified Unicode.Internal.Char.CaseFolding as C
@@ -88,69 +88,53 @@ isUpper = P.isUppercase
 -- context-dependent operation. The case conversion functions in this
 -- module are /not/ locale nor context sensitive.
 
--- | Returns the full /folded/ case mapping of a character.
+-- | Returns the full /folded/ case mapping of a character if the character is
+-- changed, else nothing.
 --
 -- It uses the character property @Case_Folding@.
---
--- __Note:__ @\'\\NUL\'@ requires special handling.
--- See 'toCaseFoldString' source code for an example.
 --
 -- @since 0.3.1
 {-# INLINE caseFoldMapping #-}
 caseFoldMapping :: Unfold Char Char
 caseFoldMapping = Unfold step inject
     where
-    inject c = case C.toCasefold c of
-        0 -> fromIntegral (ord c)
-        k -> k
+    inject = step . C.toCasefold
 
--- | Returns the full /lower/ case mapping of a character.
+-- | Returns the full /lower/ case mapping of a character if the character is
+-- changed, else nothing.
 --
 -- It uses the character property @Lowercase_Mapping@.
---
--- __Note:__ @\'\\NUL\'@ requires special handling.
--- See 'toLowerString' source code for an example.
 --
 -- @since 0.3.1
 {-# INLINE lowerCaseMapping #-}
 lowerCaseMapping :: Unfold Char Char
 lowerCaseMapping = Unfold step inject
     where
-    inject c = case C.toSpecialLowerCase c of
-        0 -> fromIntegral (ord c)
-        k -> k
+    inject = step . C.toSpecialLowerCase
 
--- | Returns the full /title/ case mapping of a character.
+-- | Returns the full /title/ case mapping of a character if the character is
+-- changed, else nothing.
 --
 -- It uses the character property @Titlecase_Mapping@.
---
--- __Note:__ @\'\\NUL\'@ requires special handling.
--- See 'toTitleString' source code for an example.
 --
 -- @since 0.3.1
 {-# INLINE titleCaseMapping #-}
 titleCaseMapping :: Unfold Char Char
 titleCaseMapping = Unfold step inject
     where
-    inject c = case C.toSpecialTitleCase c of
-        0 -> fromIntegral (ord c)
-        k -> k
+    inject = step . C.toSpecialTitleCase
 
--- | Returns the full /upper/ case mapping of a character.
+-- | Returns the full /upper/ case mapping of a character if the character is
+-- changed, else nothing.
 --
 -- It uses the character property @Uppercase_Mapping@.
---
--- __Note:__ @\'\\NUL\'@ requires special handling.
--- See 'toUpperString' source code for an example.
 --
 -- @since 0.3.1
 {-# INLINE upperCaseMapping #-}
 upperCaseMapping :: Unfold Char Char
 upperCaseMapping = Unfold step inject
     where
-    inject c = case C.toSpecialUpperCase c of
-        0 -> fromIntegral (ord c)
-        k -> k
+    inject = step . C.toSpecialUpperCase
 
 -- | Convert a character to full /folded/ case if defined, else to itself.
 --
@@ -171,11 +155,12 @@ upperCaseMapping = Unfold step inject
 --
 -- It uses the character property @Case_Folding@.
 --
+-- prop> toCaseFoldString c == foldMap toCaseFoldString (toCaseFoldString c)
+--
 -- @since 0.3.1
+{-# INLINE toCaseFoldString #-}
 toCaseFoldString :: Char -> String
-toCaseFoldString = \case
-    '\NUL' -> "\NUL"
-    c      -> toList caseFoldMapping c
+toCaseFoldString = toList caseFoldMapping
 
 -- | Convert a character to full /lower/ case if defined, else to itself.
 --
@@ -188,11 +173,12 @@ toCaseFoldString = \case
 --
 -- See: 'Unicode.Char.Case.Compat.toLower' for /simple/ lower case conversion.
 --
+-- prop> toLowerString c == foldMap toLowerString (toLowerString c)
+--
 -- @since 0.3.1
+{-# INLINE toLowerString #-}
 toLowerString :: Char -> String
-toLowerString = \case
-    '\NUL' -> "\NUL"
-    c      -> toList lowerCaseMapping c
+toLowerString = toList lowerCaseMapping
 
 -- | Convert a character to full /title/ case if defined, else to itself.
 --
@@ -206,10 +192,9 @@ toLowerString = \case
 -- See: 'Unicode.Char.Case.Compat.toTitle' for /simple/ title case conversion.
 --
 -- @since 0.3.1
+{-# INLINE toTitleString #-}
 toTitleString :: Char -> String
-toTitleString = \case
-    '\NUL' -> "\NUL"
-    c      -> toList titleCaseMapping c
+toTitleString = toList titleCaseMapping
 
 -- | Convert a character to full /upper/ case if defined, else to itself.
 --
@@ -221,21 +206,20 @@ toTitleString = \case
 --
 -- See: 'Unicode.Char.Case.Compat.toUpper' for /simple/ upper case conversion.
 --
+-- prop> toUpperString c == foldMap toUpperString (toUpperString c)
+--
 -- @since 0.3.1
+{-# INLINE toUpperString #-}
 toUpperString :: Char -> String
-toUpperString = \case
-    '\NUL' -> "\NUL"
-    c      -> toList upperCaseMapping c
+toUpperString = toList upperCaseMapping
 
 -- | Extract the next character from a raw mapping.
 -- Each character is encoded on 21 bits.
---
--- **Note:** this does not work for character @\'\\NUL\'@.
 {-# INLINE step #-}
 step :: Int64 -> Step Int64 Char
 step = \case
     0 -> Stop
-    s -> Yield (chr cp) (s `shiftR` 21)
+    s -> Yield (unsafeChr cp) (s `shiftR` 21)
         where
             -- Mask for a single Unicode code point: (1 << 21) - 1
             mask = 0x1fffff

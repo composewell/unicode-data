@@ -1,15 +1,11 @@
 cabal-version:       2.2
-name:                unicode-data-security
+name:                unicode-data-text
 version:             0.1.0
-synopsis:            Unicode security mechanisms database
+synopsis:            Unicode features for “text” package
 description:
-  @unicode-data-security@ provides Haskell APIs to access the
-  <https://www.unicode.org/reports/tr39/ Unicode security mechanisms>
-  <https://www.unicode.org/Public/security/ database>.
-  .
-  The Haskell data structures are generated programmatically from the database.
-  The latest Unicode version supported by this library is
-  @<https://www.unicode.org/versions/Unicode14.0.0/ 14.0.0>@.
+  @unicode-data-text@ provides Unicode features from
+  <https://hackage.haskell.org/package/unicode-data @unicode-data@> package
+  for the <https://hackage.haskell.org/package/text @text@> package.
 homepage:            http://github.com/composewell/unicode-data
 bug-reports:         https://github.com/composewell/unicode-data/issues
 license:             Apache-2.0
@@ -66,37 +62,31 @@ library
   import: default-extensions, compile-options
   default-language: Haskell2010
   exposed-modules:
-      -- The module structure is derived from
-      -- https://www.unicode.org/reports/tr44/#Property_Index_Table
-      Unicode.Char.Identifiers.Security
-
-      -- Generated files
-      -- This module structure is largely based on the UCD file names from which
-      -- the properties are generated.
-      Unicode.Internal.Char.Security.Confusables
-      Unicode.Internal.Char.Security.IdentifierStatus
-      Unicode.Internal.Char.Security.IdentifierType
-      Unicode.Internal.Char.Security.IntentionalConfusables
+    Unicode.Text.Case
 
   hs-source-dirs: lib
   build-depends:
-      base             >= 4.7   && < 4.18
-    , unicode-data     >= 0.3   && < 0.4
+    base             >= 4.7   && < 4.18,
+    text             >= 1.2.4 && < 2.1,
+    unicode-data     >= 0.3   && < 0.4
 
 test-suite test
   import: default-extensions, compile-options
   type: exitcode-stdio-1.0
   main-is: Main.hs
   hs-source-dirs:
-      test
+    test
   other-modules:
-      Unicode.Char.Identifiers.SecuritySpec
+    Unicode.Text.CaseSpec
   build-depends:
-      base             >= 4.7   && < 4.18
-    , hspec            >= 2.0   && < 2.11
-    , unicode-data-security
+    base             >= 4.7   && < 4.18,
+    hspec            >= 2.0   && < 2.11,
+    text             >= 1.2.4 && < 2.1,
+    unicode-data-text
   build-tool-depends:
-      hspec-discover:hspec-discover >= 2.0 && < 2.11
+    hspec-discover:hspec-discover >= 2.0 && < 2.11
+  if impl(ghc >= 9.2.1)
+    cpp-options: -DCOMPATIBLE_GHC_UNICODE
   default-language: Haskell2010
 
 benchmark bench
@@ -105,9 +95,11 @@ benchmark bench
   hs-source-dirs: bench
   main-is: Main.hs
   build-depends:
-    base        >= 4.7   && < 4.18,
-    deepseq     >= 1.1   && < 1.5,
-    tasty-bench >= 0.2.5 && < 0.4,
-    tasty       >= 1.4.1,
-    unicode-data-security
+    base             >= 4.7   && < 4.18,
+    deepseq          >= 1.1   && < 1.5,
+    tasty-bench      >= 0.2.5 && < 0.4,
+    tasty            >= 1.4.1,
+    text             >= 1.2.4 && < 2.1,
+    unicode-data     >= 0.3   && < 0.4,
+    unicode-data-text
   ghc-options: -O2 -fdicts-strict -rtsopts

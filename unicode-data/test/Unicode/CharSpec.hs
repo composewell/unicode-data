@@ -31,8 +31,9 @@ does not match the version of this package.
 | 8.8         | 4.13           | 12.0            |
 | 8.10.[1-4]  | 4.14.{0,1}     | 12.0            |
 | 8.10.5+     | 4.14.2+        | 13.0            |
-| 9.0.1       | 4.15.0         | 12.1            |
-| 9.2.1       | 4.16.0         | 14.0            |
+| 9.0.[1-2]   | 4.15.0         | 12.1            |
+| 9.2.[1-4]   | 4.16.0         | 14.0            |
+| 9.4.[1-2]   | 4.17.0         | 14.0            |
 +-------------+----------------+-----------------+
 -}
 
@@ -121,6 +122,11 @@ spec = do
                         [c'] -> c `shouldSatisfy` ((== c') . UChar.toLower)
                         _    -> pure ()
             traverse_ check [minBound..maxBound]
+        it "Idempotency of 'foldMap toLowerString'" do
+            let check c = c `shouldSatisfy` \c' ->
+                    let cf = UChar.toLowerString c'
+                    in cf == foldMap UChar.toLowerString cf
+            traverse_ check [minBound..maxBound]
     it' "toUpper" do
       UChar.toUpper `shouldBeEqualTo` Char.toUpper
     describe "toUpperString" do
@@ -136,6 +142,11 @@ spec = do
             let check c = case UChar.toUpperString c of
                         [c'] -> c `shouldSatisfy` ((== c') . UChar.toUpper)
                         _    -> pure ()
+            traverse_ check [minBound..maxBound]
+        it "Idempotency of 'foldMap toUpperString'" do
+            let check c = c `shouldSatisfy` \c' ->
+                    let cf = UChar.toUpperString c'
+                    in cf == foldMap UChar.toUpperString cf
             traverse_ check [minBound..maxBound]
     it' "toTitle" do
       UChar.toTitle `shouldBeEqualTo` Char.toTitle
@@ -163,6 +174,11 @@ spec = do
                            , ('\xb5', "\x3bc")
                            , ('\xfb13', "\x574\x576") ]
             traverse_ (caseCheck UChar.toCaseFoldString) examples
+        it "Idempotency of 'foldMap toCaseFoldString'" do
+            let check c = c `shouldSatisfy` \c' ->
+                    let cf = UChar.toCaseFoldString c'
+                    in cf == foldMap UChar.toCaseFoldString cf
+            traverse_ check [minBound..maxBound]
   describe "Numeric" do
     it' "isNumber" do
       UNumericCompat.isNumber `shouldBeEqualTo` Char.isNumber

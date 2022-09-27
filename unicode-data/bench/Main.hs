@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase, CPP #-}
+
 import Control.DeepSeq (NFData, deepseq, force)
 import Control.Exception (evaluate)
 import Data.Ix (Ix(..))
@@ -130,7 +132,7 @@ main = defaultMain
       [ benchChars "unicode-data"  (show . B.block)
       ]
     , bgroup "blockDefinition"
-      [ benchNF "unicode-data"  (show . B.blockDefinition)
+      [ benchRangeNF "unicode-data"  (show . B.blockDefinition)
       ]
     , bgroup "allBlockRanges"
       [ benchChars "unicode-data"  (const B.allBlockRanges)
@@ -227,10 +229,13 @@ main = defaultMain
       ]
 
     -- [NOTE] Works if groupTitle uniquely identifies the benchmark group.
+    bcompare' :: String -> String -> Benchmark -> Benchmark
+    bcompare' groupTitle ref = bcompare
+        (mconcat ["$NF == \"", ref, "\" && $(NF-1) == \"", groupTitle, "\""])
+
     benchChars' groupTitle title = case title of
       "base" -> benchChars title
-      _      -> bcompare ("$NF == \"base\" && $(NF-1) == \"" ++ groupTitle ++ "\"")
-              . benchChars title
+      _      -> bcompare' groupTitle "base" . benchChars title
 
     benchChars :: forall a. (NFData a) => String -> (Char -> a) -> Benchmark
     benchChars t = benchCharsNF t isValid
@@ -267,12 +272,12 @@ main = defaultMain
     foldString :: forall a. (NFData a) => (Char -> a) -> String -> ()
     foldString f = foldr (deepseq . f) ()
 
-    benchNF
+    benchRangeNF
         :: forall a b. (Bounded a, Ix a, NFData b)
         => String
         -> (a -> b)
         -> Benchmark
-    benchNF t f = bench t (nf (fold_ f) (minBound, maxBound))
+    benchRangeNF t f = bench t (nf (fold_ f) (minBound, maxBound))
 
     fold_
         :: forall a b. (Ix a, NFData b)

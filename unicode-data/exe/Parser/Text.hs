@@ -321,7 +321,9 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , "import Data.Ix (Ix)"
         , "import GHC.Exts"
         , ""
-        , "-- | Unicode block."
+        , "-- | Unicode [block](https://www.unicode.org/glossary/#block)."
+        , "--"
+        , "-- There is a total of " <> show (length blocks) <> " blocks."
         , "--"
         , "-- @since 0.3.1"
         , "data Block"
@@ -1589,7 +1591,7 @@ genConfusablesModule moduleName =
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
-        , "(prototypeIfConfusable)"
+        , "(confusablePrototype)"
         , "where"
         , ""
         , "import Foreign.C.String (CString)"
@@ -1600,8 +1602,8 @@ genConfusablesModule moduleName =
         , "-- The resulting 'CString' is null-terminated and encoded in UTF-8."
         , "--"
         , "-- @since 0.1.0"
-        , "prototypeIfConfusable :: Char -> Maybe CString"
-        , "prototypeIfConfusable = \\case" <> confusables
+        , "confusablePrototype :: Char -> Maybe CString"
+        , "confusablePrototype = \\case" <> confusables
         , "    _ -> Nothing"
         ]
 
