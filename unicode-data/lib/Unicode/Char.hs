@@ -55,4 +55,4 @@ import Unicode.Char.Normalization
 --
 -- @since 0.3.0
 unicodeVersion :: Version
-unicodeVersion = makeVersion [14, 0, 0]
+unicodeVersion = makeVersion [15, 0, 0]
