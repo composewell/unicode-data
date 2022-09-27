@@ -17,7 +17,7 @@ import Data.Maybe (fromMaybe)
 import Foreign.C.String (CString)
 import GHC.Exts (Ptr(..))
 
--- | Type of name alias. See Unicode Standard 14.0.0, section 4.8.
+-- | Type of name alias. See Unicode Standard 15.0.0, section 4.8.
 --
 -- @since 0.1.0
 data NameAliasType

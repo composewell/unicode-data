@@ -7,7 +7,7 @@
 --
 -- This module provides APIs to access the Unicode character database (UCD)
 -- corresponding to [Unicode Standard version
--- 14.0.0](https://www.unicode.org/versions/Unicode14.0.0/).
+-- 15.0.0](https://www.unicode.org/versions/Unicode15.0.0/).
 --
 -- This module re-exports several sub-modules under it.  The sub-module
 -- structure under `Unicode.Char` is largely based on the

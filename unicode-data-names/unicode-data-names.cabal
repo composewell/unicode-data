@@ -9,7 +9,7 @@ description:
   .
   The Haskell data structures are generated programmatically from the UCD files.
   The latest Unicode version supported by this library is
-  @<https://www.unicode.org/versions/Unicode14.0.0/ 14.0.0>@.
+  @<https://www.unicode.org/versions/Unicode15.0.0/ 15.0.0>@.
 homepage:            http://github.com/composewell/unicode-data
 bug-reports:         https://github.com/composewell/unicode-data/issues
 license:             Apache-2.0
