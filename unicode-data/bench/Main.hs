@@ -134,9 +134,6 @@ main = defaultMain
     , bgroup "blockDefinition"
       [ benchRangeNF "unicode-data"  (show . B.blockDefinition)
       ]
-    , bgroup "allBlockRanges"
-      [ benchChars "unicode-data"  (const B.allBlockRanges)
-      ]
     ]
   , bgroup "Unicode.Char.General.Compat"
     [ bgroup' "isAlpha"
