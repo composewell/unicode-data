@@ -10,14 +10,14 @@
 -- @since 0.3.0
 module Unicode.Char.Numeric
     ( -- * Predicates
-      isNumber
-    , isNumeric
+      isNumeric
+    , isNumber
 
       -- * Numeric values
     , numericValue
     , integerValue
 
-      -- * Re-export
+      -- * Re-export from @base@
     , isDigit
     , isOctDigit
     , isHexDigit

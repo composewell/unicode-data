@@ -35,6 +35,7 @@ import Unicode.Char.General (GeneralCategory(..), generalCategory)
 -- prop> isNumber c == Data.Char.isNumber c
 --
 -- @since 0.3.1 moved to Compat module.
+--
 -- @since 0.3.0
 isNumber :: Char -> Bool
 isNumber c = case generalCategory c of

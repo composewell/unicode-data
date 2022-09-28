@@ -1,5 +1,5 @@
 -- |
--- Module      : Unicode.Char.General
+-- Module      : Unicode.Char.General.Blocks
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
 -- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com

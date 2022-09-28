@@ -66,7 +66,7 @@ See `unicode-data`’s [guide](unicode-data/README.md#unicode-database-version-u
 ## Licensing
 
 `unicode-data*` packages are an [open source](https://github.com/composewell/unicode-data)
-project available under a liberal [Apache-2.0 license](LICENSE).
+project available under a liberal [Apache-2.0 license](unicode-data/LICENSE).
 
 ## Contributing
 

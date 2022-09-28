@@ -55,14 +55,17 @@ streamUnfold (C.Unfold step inject) = \case
 caseConvertStream :: C.Unfold Char Char -> T.Text -> T.Text
 caseConvertStream u t = TF.unstream (streamUnfold u (TF.stream t))
 
+-- | Convert to full upper case using 'T.Text' fusion.
 {-# INLINE toUpperFusion #-}
 toUpperFusion :: T.Text -> T.Text
 toUpperFusion = caseConvertStream C.upperCaseMapping
 
+-- | Convert to full lower case using 'T.Text' fusion.
 {-# INLINE toLowerFusion #-}
 toLowerFusion :: T.Text -> T.Text
 toLowerFusion = caseConvertStream C.lowerCaseMapping
 
+-- | Convert to full case fold using 'T.Text' fusion.
 {-# INLINE toCaseFoldFusion #-}
 toCaseFoldFusion :: T.Text -> T.Text
 toCaseFoldFusion = caseConvertStream C.caseFoldMapping
@@ -105,6 +108,7 @@ streamUnfoldToTitle = case C.lowerCaseMapping of
                   C.Yield c st' -> TF.Yield c (CC2 s st')
 {-# INLINE [0] streamUnfoldToTitle #-}
 
+-- | Convert to full title case using 'T.Text' fusion.
 {-# INLINE toTitleFusion #-}
 toTitleFusion :: T.Text -> T.Text
 toTitleFusion = TF.unstream . streamUnfoldToTitle . TF.stream
@@ -189,18 +193,21 @@ caseConvertText ascii (C.Unfold (step :: u -> C.Step u Char) inject) (T.Text src
                 writeMapping (step st) (dstOff + d)
 {-# INLINE caseConvertText #-}
 
+-- | Convert to full upper case /without/ 'T.Text' fusion.
 {-# INLINE toUpper #-}
 toUpper :: T.Text -> T.Text
 toUpper = caseConvertText
     (\w -> if w - 97 <= 25 then w - 32 else w)
     C.upperCaseMapping
 
+-- | Convert to full lower case /without/ 'T.Text' fusion.
 {-# INLINE toLower #-}
 toLower :: T.Text -> T.Text
 toLower = caseConvertText
     (\w -> if w - 65 <= 25 then w + 32 else w)
     C.lowerCaseMapping
 
+-- | Convert to full case fold /without/ 'T.Text' fusion.
 {-# INLINE toCaseFold #-}
 toCaseFold :: T.Text -> T.Text
 toCaseFold = caseConvertText
