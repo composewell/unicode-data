@@ -1,5 +1,5 @@
 -- |
--- Module      : Unicode.Char.General
+-- Module      : Unicode.Char.General.Blocks
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
 -- License     : Apache-2.0
 -- Maintainer  : streamly@composewell.com
@@ -14,7 +14,6 @@ module Unicode.Char.General.Blocks
     , B.BlockDefinition(..)
     , block
     , B.blockDefinition
-    , allBlockRanges
     )
 
 where
@@ -27,11 +26,3 @@ import qualified Unicode.Internal.Char.Blocks as B
 {-# INLINE block #-}
 block :: Char -> Maybe B.Block
 block = fmap toEnum . B.block
-
--- | All the [block](https://www.unicode.org/glossary/#block) ranges,
--- in ascending order.
---
--- @since 0.3.1
-{-# INLINE allBlockRanges #-}
-allBlockRanges :: [(Int, Int)]
-allBlockRanges = B.allBlockRanges

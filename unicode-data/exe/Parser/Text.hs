@@ -315,7 +315,7 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
-        , "(Block(..), BlockDefinition(..), block, blockDefinition, allBlockRanges)"
+        , "(Block(..), BlockDefinition(..), block, blockDefinition)"
         , "where"
         , ""
         , "import Data.Ix (Ix)"
@@ -344,14 +344,6 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , "blockDefinition :: Block -> BlockDefinition"
         , "blockDefinition b = case b of"
         , mconcat (reverse defs)
-        , "-- | All the block ranges, in ascending order."
-        , "--"
-        , "-- @since 0.3.1"
-        , "{-# INLINE allBlockRanges #-}"
-        , "allBlockRanges :: [(Int, Int)]"
-        , "allBlockRanges ="
-        , "    " <> show ranges'
-        , ""
         , "-- | Character block, if defined."
         , "--"
         , "-- @since 0.3.1"

@@ -44,7 +44,7 @@ SECURITY_FILES="\
 # and verify the $checksum if $VERIFY_CHECKSUM is enabled
 # $1 = file:checksum
 download_file() {
-    local directory="data/$1"
+    local directory="data/$VERSION/$1"
     local url="$2"
     local pair="$3"
     local file="$(echo "$pair" | cut -f1 -d':')"
@@ -81,7 +81,7 @@ download_files() {
 run_generator() {
     # Compile and run ucd2haskell
     cabal run --flag ucd2haskell ucd2haskell -- \
-          --input ./data/ \
+          --input "./data/$VERSION" \
           --output-core ./unicode-data/lib/ \
           --output-names ./unicode-data-names/lib/ \
           --output-scripts ./unicode-data-scripts/lib/ \

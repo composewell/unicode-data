@@ -35,7 +35,7 @@ module Unicode.Char
     , module Unicode.Char.Identifiers
     , unicodeVersion
 
-    -- * Re-export
+    -- * Re-export from @base@
     , ord
     , chr
     )

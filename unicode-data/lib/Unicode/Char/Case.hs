@@ -9,6 +9,12 @@
 --
 -- Case and case mapping related functions.
 --
+-- This module provides /full/ predicates and mappings that are /not/ compatible
+-- with those in "Data.Char", which rely on simple properties.
+-- See "Unicode.Char.Case.Compat" for a drop-in replacement of the functions in
+-- "Data.Char".
+--
+
 module Unicode.Char.Case
     ( -- * Predicates
       isLowerCase
@@ -48,14 +54,20 @@ import qualified Unicode.Internal.Char.SpecialCasing.LowerCaseMapping as C
 import qualified Unicode.Internal.Char.SpecialCasing.TitleCaseMapping as C
 import qualified Unicode.Internal.Char.SpecialCasing.UpperCaseMapping as C
 
--- | Returns 'True' for lower-case letters.
+-- | Returns 'True' for lower-case characters.
+--
+-- It uses the character property
+-- <https://www.unicode.org/reports/tr44/#Lowercase Lowercase>.
 --
 -- @since 0.3.0
 {-# INLINE isLowerCase #-}
 isLowerCase :: Char -> Bool
 isLowerCase = P.isLowercase
 
--- | Returns 'True' for lower-case letters.
+-- | Returns 'True' for lower-case characters.
+--
+-- It uses the character property
+-- <https://www.unicode.org/reports/tr44/#Lowercase Lowercase>.
 --
 -- @since 0.1.0
 {-# INLINE isLower #-}
@@ -63,14 +75,28 @@ isLowerCase = P.isLowercase
 isLower :: Char -> Bool
 isLower = P.isLowercase
 
--- | Returns 'True' for upper-case letters.
+-- | Returns 'True' for upper-case characters.
+--
+-- It uses the character property
+-- <https://www.unicode.org/reports/tr44/#Uppercase Uppercase>.
+--
+-- Note: it does /not/ match title-cased letters. Those are matched using:
+-- @'Unicode.Char.General.generalCategory' c ==
+-- 'Unicode.Char.General.TitlecaseLetter'@.
 --
 -- @since 0.3.0
 {-# INLINE isUpperCase #-}
 isUpperCase :: Char -> Bool
 isUpperCase = P.isUppercase
 
--- | Returns 'True' for upper-case letters.
+-- | Returns 'True' for upper-case characters.
+--
+-- It uses the character property
+-- <https://www.unicode.org/reports/tr44/#Uppercase Uppercase>.
+--
+-- Note: it does /not/ match title-cased letters. Those are matched using:
+-- @'Unicode.Char.General.generalCategory' c ==
+-- 'Unicode.Char.General.TitlecaseLetter'@.
 --
 -- @since 0.1.0
 {-# INLINE isUpper #-}

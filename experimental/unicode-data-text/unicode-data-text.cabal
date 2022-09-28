@@ -4,8 +4,8 @@ version:             0.1.0
 synopsis:            Unicode features for “text” package
 description:
   @unicode-data-text@ provides Unicode features from
-  <https://hackage.haskell.org/package/unicode-data @unicode-data@> package
-  for the <https://hackage.haskell.org/package/text @text@> package.
+  <https://hackage.haskell.org/package/unicode-data unicode-data> package
+  for the <https://hackage.haskell.org/package/text text> package.
 homepage:            http://github.com/composewell/unicode-data
 bug-reports:         https://github.com/composewell/unicode-data/issues
 license:             Apache-2.0

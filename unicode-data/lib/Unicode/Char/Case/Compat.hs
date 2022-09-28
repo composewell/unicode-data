@@ -5,7 +5,7 @@
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 --
--- Compatibility module for case and case mapping related functions..
+-- Compatibility module for case and case mapping related functions.
 --
 -- The functions of this module are drop-in replacement for those in "Data.Char".
 -- They are similar but not identical to some functions in "Unicode.Char.Case",
@@ -30,6 +30,11 @@ import qualified Unicode.Internal.Char.UnicodeData.SimpleUpperCaseMapping as C
 -- Title case is used by a small number of letter ligatures like the
 -- single-character form of /Lj/.
 --
+-- It matches characters with general category 'UppercaseLetter' and
+-- 'TitlecaseLetter'.
+--
+-- See: 'Unicode.Char.Case.isUpperCase' for the /full upper/ case predicate.
+--
 -- prop> isUpper c == Data.Char.isUpper c
 --
 -- @since 0.3.0
@@ -40,6 +45,10 @@ isUpper c = case generalCategory c of
     _               -> False
 
 -- | Selects lower-case alphabetic Unicode characters (letters).
+--
+-- It matches characters with general category 'LowercaseLetter'.
+--
+-- See: 'Unicode.Char.Case.isLowerCase' for the /full/ lower case predicate.
 --
 -- prop> isLower c == Data.Char.isLower c
 --
