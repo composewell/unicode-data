@@ -34,6 +34,7 @@ does not match the version of this package.
 | 9.0.[1-2]   | 4.15.0         | 12.1            |
 | 9.2.[1-4]   | 4.16.0         | 14.0            |
 | 9.4.[1-2]   | 4.17.0         | 14.0            |
+| 9.6.1       | 4.18.0         | 15.0            |
 +-------------+----------------+-----------------+
 -}
 
@@ -184,8 +185,8 @@ spec = do
       UNumericCompat.isNumber `shouldBeEqualTo` Char.isNumber
     it "isNumber implies a numeric value" do
       -- [NOTE] the following does not hold with the current predicate `isNumber`.
-      --        As of Unicode 14.0.0, there are 81 such characters (all CJK).
-      -- 'let check c = (UNumeric.isNumber c `xor` isNothing (UNumeric.numericValue c))
+      --        As of Unicode 15.0.0, there are 81 such characters (all CJK).
+      -- let check c = (UNumeric.isNumber c `xor` isNothing (UNumeric.numericValue c))
       let check c = not (UNumericCompat.isNumber c) || isJust (UNumeric.numericValue c)
       traverse_ (`shouldSatisfy` check) [minBound..maxBound]
   where

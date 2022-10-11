@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0 (September 2022)
+
+- Update to [Unicode 15.0.0](https://www.unicode.org/versions/Unicode15.0.0/).
+
 ## 0.3.1 (September 2022)
 
 - Added full case conversions to `Unicode.Char.Case`:

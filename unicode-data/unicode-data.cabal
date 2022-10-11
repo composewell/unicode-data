@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                unicode-data
-version:             0.3.1
+version:             0.4.0
 synopsis:            Access Unicode Character Database (UCD)
 description:
   @unicode-data@ provides Haskell APIs to efficiently access the
@@ -9,7 +9,7 @@ description:
   .
   The Haskell data structures are generated programmatically from the UCD files.
   The latest Unicode version supported by this library is
-  @<https://www.unicode.org/versions/Unicode14.0.0/ 14.0.0>@.
+  @<https://www.unicode.org/versions/Unicode15.0.0/ 15.0.0>@.
 homepage:            http://github.com/composewell/unicode-data
 bug-reports:         https://github.com/composewell/unicode-data/issues
 license:             Apache-2.0
@@ -152,7 +152,7 @@ test-suite test
       hspec-discover:hspec-discover >= 2.0 && < 2.11
   -- We need to match a GHC version with the same Unicode version.
   -- See: test/Unicode/CharSpec.hs for compatibility table.
-  if impl(ghc >= 9.2.1)
+  if impl(ghc >= 9.5.1)
     cpp-options: -DCOMPATIBLE_GHC_UNICODE
   default-language: Haskell2010
 

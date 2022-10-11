@@ -7,7 +7,7 @@
 --
 -- This module provides APIs to access the Unicode character database (UCD)
 -- corresponding to [Unicode Standard version
--- 14.0.0](https://www.unicode.org/versions/Unicode14.0.0/).
+-- 15.0.0](https://www.unicode.org/versions/Unicode15.0.0/).
 --
 -- This module re-exports several sub-modules under it.  The sub-module
 -- structure under `Unicode.Char` is largely based on the
@@ -55,4 +55,4 @@ import Unicode.Char.Normalization
 --
 -- @since 0.3.0
 unicodeVersion :: Version
-unicodeVersion = makeVersion [14, 0, 0]
+unicodeVersion = makeVersion [15, 0, 0]

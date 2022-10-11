@@ -6,7 +6,7 @@
 -- Stability   : experimental
 --
 -- Unicode character names and name aliases.
--- See Unicode standard 14.0.0, section 4.8.
+-- See Unicode standard 15.0.0, section 4.8.
 --
 -- @since 0.1.0
 
@@ -84,7 +84,7 @@ nameAliasesWithTypes
   = fmap (fmap (fmap unpack))
   . NameAliases.nameAliasesWithTypes
 
--- Note: names are ASCII. See Unicode Standard 14.0.0, section 4.8.
+-- Note: names are ASCII. See Unicode Standard 15.0.0, section 4.8.
 {-# INLINE unpack #-}
 unpack :: CString -> String
 unpack = unsafePerformIO . peekCAString

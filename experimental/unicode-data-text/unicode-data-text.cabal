@@ -68,7 +68,7 @@ library
   build-depends:
     base             >= 4.7   && < 4.18,
     text             >= 1.2.4 && < 2.1,
-    unicode-data     >= 0.3   && < 0.4
+    unicode-data     >= 0.3   && < 0.5
 
 test-suite test
   import: default-extensions, compile-options
@@ -85,7 +85,7 @@ test-suite test
     unicode-data-text
   build-tool-depends:
     hspec-discover:hspec-discover >= 2.0 && < 2.11
-  if impl(ghc >= 9.2.1)
+  if impl(ghc >= 9.5.1)
     cpp-options: -DCOMPATIBLE_GHC_UNICODE
   default-language: Haskell2010
 
@@ -100,6 +100,6 @@ benchmark bench
     tasty-bench      >= 0.2.5 && < 0.4,
     tasty            >= 1.4.1,
     text             >= 1.2.4 && < 2.1,
-    unicode-data     >= 0.3   && < 0.4,
+    unicode-data     >= 0.3   && < 0.5,
     unicode-data-text
   ghc-options: -O2 -fdicts-strict -rtsopts

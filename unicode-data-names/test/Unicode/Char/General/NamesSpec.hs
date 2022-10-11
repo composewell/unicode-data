@@ -28,7 +28,7 @@ spec = do
         name '\x1f41d' `shouldBe` Just "HONEYBEE"
         -- Name generated using pattern (example from UCD file)
         name '\x2f89f' `shouldBe` Just "CJK COMPATIBILITY IDEOGRAPH-2F89F"
-        -- Last name defined, as of Unicode 14.0.0
+        -- Last name defined, as of Unicode 15.0.0
         name '\xe01ef' `shouldBe` Just "VARIATION SELECTOR-256"
         name maxBound  `shouldBe` Nothing
     it "correctedName: Test some characters" do
@@ -48,7 +48,7 @@ spec = do
         correctedName '\x1f41d' `shouldBe` Just "HONEYBEE"
         -- Name generated using pattern (example from UCD file)
         correctedName '\x2f89f' `shouldBe` Just "CJK COMPATIBILITY IDEOGRAPH-2F89F"
-        -- Last name defined, as of Unicode 14.0.0
+        -- Last name defined, as of Unicode 15.0.0
         correctedName '\xe01ef' `shouldBe` Just "VARIATION SELECTOR-256"
         correctedName maxBound  `shouldBe` Nothing
     it "nameOrAlias: Test some characters" do
@@ -68,7 +68,7 @@ spec = do
         nameOrAlias '\x1f41d' `shouldBe` Just "HONEYBEE"
         -- Name generated using pattern (example from UCD file)
         nameOrAlias '\x2f89f' `shouldBe` Just "CJK COMPATIBILITY IDEOGRAPH-2F89F"
-        -- Last name defined, as of Unicode 14.0.0
+        -- Last name defined, as of Unicode 15.0.0
         nameOrAlias '\xe01ef' `shouldBe` Just "VARIATION SELECTOR-256"
         nameOrAlias maxBound  `shouldBe` Nothing
     it "Every defined character has at least a name or an alias" do

@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                unicode-data-security
-version:             0.1.0
+version:             0.2.0
 synopsis:            Unicode security mechanisms database
 description:
   @unicode-data-security@ provides Haskell APIs to access the
@@ -9,7 +9,7 @@ description:
   .
   The Haskell data structures are generated programmatically from the database.
   The latest Unicode version supported by this library is
-  @<https://www.unicode.org/versions/Unicode14.0.0/ 14.0.0>@.
+  @<https://www.unicode.org/versions/Unicode15.0.0/ 15.0.0>@.
 homepage:            http://github.com/composewell/unicode-data
 bug-reports:         https://github.com/composewell/unicode-data/issues
 license:             Apache-2.0
@@ -81,7 +81,7 @@ library
   hs-source-dirs: lib
   build-depends:
       base             >= 4.7   && < 4.18
-    , unicode-data     >= 0.3   && < 0.4
+    , unicode-data     >= 0.4   && < 0.5
 
 test-suite test
   import: default-extensions, compile-options
