@@ -729,9 +729,9 @@ block (C# c#) = getBlock 0# 326#
     getRawCodePoint# k# =
 #ifdef WORDS_BIGENDIAN
 #if MIN_VERSION_base(4,16,0)
-        byteSwap32# (word32ToWord# (indexWord32OffAddr# addr# k#))
+        narrow32Word# (byteSwap32# (word32ToWord# (indexWord32OffAddr# ranges# k#)))
 #else
-        byteSwap32# (indexWord32OffAddr# ranges# k#)
+        narrow32Word# (byteSwap32# (indexWord32OffAddr# ranges# k#))
 #endif
 #elif MIN_VERSION_base(4,16,0)
         word32ToWord# (indexWord32OffAddr# ranges# k#)
