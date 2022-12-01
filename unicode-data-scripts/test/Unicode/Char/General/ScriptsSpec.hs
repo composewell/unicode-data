@@ -4,6 +4,8 @@ module Unicode.Char.General.ScriptsSpec
   ( spec
   ) where
 
+#include "MachDeps.h"
+
 import Data.Foldable (traverse_)
 import Test.Hspec
 import qualified Unicode.Char.General.Scripts as UScripts

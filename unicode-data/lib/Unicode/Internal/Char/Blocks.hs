@@ -13,6 +13,8 @@ module Unicode.Internal.Char.Blocks
 (Block(..), BlockDefinition(..), block, blockDefinition)
 where
 
+#include "MachDeps.h"
+
 import Data.Ix (Ix)
 import GHC.Exts
 

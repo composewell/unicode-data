@@ -318,6 +318,8 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , "(Block(..), BlockDefinition(..), block, blockDefinition)"
         , "where"
         , ""
+        , "#include \"MachDeps.h\""
+        , ""
         , "import Data.Ix (Ix)"
         , "import GHC.Exts"
         , ""

@@ -20,6 +20,8 @@ module Unicode.Char.General.Scripts
     )
 where
 
+#include "MachDeps.h"
+
 import Data.Char (chr)
 import Data.List.NonEmpty (NonEmpty)
 import GHC.Exts
