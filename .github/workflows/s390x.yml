@@ -1,0 +1,42 @@
+name: s390x
+on:
+  push:
+    branches:
+      - master
+  # [TODO] maybe limit it to those file which include "MachDeps.h" to spare resources
+  pull_request: {} # Validate all PRs
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # Emulation on s390x platform is incredibly slow and memory demanding.
+  # It seems that any executable with GHC RTS takes at least 7-8 Gb of RAM, so we can
+  # run `cabal` or `ghc` on their own, but cannot run them both at the same time, striking
+  # out `cabal test`. Instead we rely on system packages and invoke `ghc --make` manually,
+  # and even so `ghc -O` is prohibitively expensive.
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: uraimo/run-on-arch-action@v2.1.1
+      timeout-minutes: 60
+      with:
+        arch: s390x
+        distro: ubuntu20.04
+        githubToken: ${{ github.token }}
+        install: |
+          apt-get update -y
+          apt-get install -y ghc libghc-quickcheck2-dev libghc-hspec-dev libghc-getopt-generics-dev libghc-split-dev curl
+        run: |
+          ghc --version
+          export LC_ALL=C.UTF-8
+          ghc --make -XMagicHash -XBangPatterns -XUnboxedTuples -iunicode-data/test:unicode-data/lib -o core-test unicode-data/test/Main.hs
+          ./core-test
+          ghc --make -XMagicHash -XBangPatterns -XUnboxedTuples -iunicode-data-names/test:unicode-data-names/lib:unicode-data/lib -o names-test unicode-data-names/test/Main.hs
+          ./names-test
+          ghc --make -XMagicHash -XBangPatterns -XUnboxedTuples -iunicode-data-scripts/test:unicode-data-scripts/lib:unicode-data/lib -o scripts-test unicode-data-scripts/test/Main.hs
+          ./scripts-test
+          ghc --make -XMagicHash -XBangPatterns -XUnboxedTuples -iunicode-data-security/test:unicode-data-security/lib:unicode-data/lib -o security-test unicode-data-security/test/Main.hs
+          ./security-test
