@@ -148,8 +148,6 @@ test-suite test
       base             >= 4.7   && < 4.18
     , hspec            >= 2.0   && < 2.11
     , unicode-data
-  build-tool-depends:
-      hspec-discover:hspec-discover >= 2.0 && < 2.11
   -- We need to match a GHC version with the same Unicode version.
   -- See: test/Unicode/CharSpec.hs for compatibility table.
   if impl(ghc >= 9.5.1)

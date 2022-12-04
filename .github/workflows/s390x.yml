@@ -32,11 +32,27 @@ jobs:
         run: |
           ghc --version
           export LC_ALL=C.UTF-8
-          ghc --make -XMagicHash -XBangPatterns -XUnboxedTuples -iunicode-data/test:unicode-data/lib -o core-test unicode-data/test/Main.hs
+          ghc --make \
+            -XMagicHash -XBangPatterns -XUnboxedTuples -XScopedTypeVariables \
+            -XLambdaCase -XBlockArguments -XTupleSections \
+            -iunicode-data/test:unicode-data/lib \
+            -o core-test unicode-data/test/Main.hs
           ./core-test
-          ghc --make -XMagicHash -XBangPatterns -XUnboxedTuples -iunicode-data-names/test:unicode-data-names/lib:unicode-data/lib -o names-test unicode-data-names/test/Main.hs
+          ghc --make \
+            -XMagicHash -XBangPatterns -XUnboxedTuples -XScopedTypeVariables \
+            -XLambdaCase -XBlockArguments -XTupleSections \
+            -iunicode-data-names/test:unicode-data-names/lib:unicode-data/lib \
+            -o names-test unicode-data-names/test/Main.hs
           ./names-test
-          ghc --make -XMagicHash -XBangPatterns -XUnboxedTuples -iunicode-data-scripts/test:unicode-data-scripts/lib:unicode-data/lib -o scripts-test unicode-data-scripts/test/Main.hs
+          ghc --make \
+            -XMagicHash -XBangPatterns -XUnboxedTuples -XScopedTypeVariables \
+            -XLambdaCase -XBlockArguments -XTupleSections \
+            -iunicode-data-scripts/test:unicode-data-scripts/lib:unicode-data/lib \
+            -o scripts-test unicode-data-scripts/test/Main.hs
           ./scripts-test
-          ghc --make -XMagicHash -XBangPatterns -XUnboxedTuples -iunicode-data-security/test:unicode-data-security/lib:unicode-data/lib -o security-test unicode-data-security/test/Main.hs
+          ghc --make \
+            -XMagicHash -XBangPatterns -XUnboxedTuples -XScopedTypeVariables \
+            -XLambdaCase -XBlockArguments -XTupleSections \
+            -iunicode-data-security/test:unicode-data-security/lib:unicode-data/lib \
+            -o security-test unicode-data-security/test/Main.hs
           ./security-test
