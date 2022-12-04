@@ -5,10 +5,10 @@
 # we used to generate them earlier are exactly the same as the ones we are
 # downloading. To ensure that verfication of the checksum is necessary.
 
-VERSION=15.0.0
+VERSION=12.1.0
 
 # When downloading fresh new version comment this out
-VERIFY_CHECKSUM=y
+# VERIFY_CHECKSUM=y
 
 # UCD files (https://www.unicode.org/Public/$VERSION/ucd/$file)
 UCD_URL="https://www.unicode.org/Public/$VERSION/ucd"

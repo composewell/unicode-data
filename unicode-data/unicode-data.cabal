@@ -150,7 +150,7 @@ test-suite test
     , unicode-data
   -- We need to match a GHC version with the same Unicode version.
   -- See: test/Unicode/CharSpec.hs for compatibility table.
-  if impl(ghc >= 9.5.1)
+  if impl(ghc == 9.0.2)
     cpp-options: -DCOMPATIBLE_GHC_UNICODE
   default-language: Haskell2010
 

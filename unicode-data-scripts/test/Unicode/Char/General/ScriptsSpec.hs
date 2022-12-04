@@ -84,11 +84,11 @@ spec = do
             '\x0485'  `shouldSatisfy` check [ UScripts.Cyrillic, UScripts.Latin]
             '\x0600'  `shouldSatisfy` check [ UScripts.Arabic]
             '\x060C'  `shouldSatisfy` check [ UScripts.Arabic
-                                            , UScripts.Nko
+                                            -- , UScripts.Nko
                                             , UScripts.HanifiRohingya
                                             , UScripts.Syriac
-                                            , UScripts.Thaana
-                                            , UScripts.Yezidi ]
+                                            , UScripts.Thaana ]
+                                            -- , UScripts.Yezidi ]
             '\x0965'  `shouldSatisfy` check [ UScripts.Bengali
                                             , UScripts.Devanagari
                                             , UScripts.Dogra
