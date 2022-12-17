@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                unicode-data-scripts
-version:             0.2.0
+version:             0.2.0.1
 synopsis:            Unicode characters scripts
 description:
   @unicode-data-scripts@ provides Haskell APIs to access the Unicode

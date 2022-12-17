@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0.1 (December 2022)
+
+- Fix [Unicode blocks handling on big-endian architectures](https://github.com/composewell/unicode-data/issues/97).
+
 ## 0.4.0 (September 2022)
 
 - Update to [Unicode 15.0.0](https://www.unicode.org/versions/Unicode15.0.0/).
