@@ -94,8 +94,6 @@ test-suite test
     , hspec            >= 2.0   && < 2.11
     , unicode-data
     , unicode-data-scripts
-  build-tool-depends:
-      hspec-discover:hspec-discover >= 2.0 && < 2.11
   default-language: Haskell2010
 
 benchmark bench

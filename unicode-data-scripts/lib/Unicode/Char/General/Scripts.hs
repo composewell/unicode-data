@@ -20,6 +20,8 @@ module Unicode.Char.General.Scripts
     )
 where
 
+#include "MachDeps.h"
+
 import Data.Char (chr)
 import Data.List.NonEmpty (NonEmpty)
 import GHC.Exts
@@ -30,7 +32,7 @@ import GHC.Exts
 import GHC.Exts (word32ToWord#)
 #endif
 #ifdef WORDS_BIGENDIAN
-import GHC.Exts (byteSwap32#)
+import GHC.Exts (byteSwap32#, narrow32Word#)
 #endif
 
 import qualified Unicode.Internal.Char.Scripts as S
@@ -62,9 +64,9 @@ scriptDefinition = unpack . S.scriptDefinition
         getRawCodePoint k# =
 #ifdef WORDS_BIGENDIAN
 #if MIN_VERSION_base(4,16,0)
-            byteSwap32# (word32ToWord# (indexWord32OffAddr# addr# k#));
+            narrow32Word# (byteSwap32# (word32ToWord# (indexWord32OffAddr# addr# k#)));
 #else
-            byteSwap32# (indexWord32OffAddr# addr# k#);
+            narrow32Word# (byteSwap32# (indexWord32OffAddr# addr# k#));
 #endif
 #elif MIN_VERSION_base(4,16,0)
             word32ToWord# (indexWord32OffAddr# addr# k#);
