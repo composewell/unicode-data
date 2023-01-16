@@ -123,14 +123,14 @@ jobs:
             cabal_version: 3.2
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
-    - uses: haskell/actions/setup@v1
+    - uses: haskell/actions/setup@v2
       with:
         ghc-version: ${{ matrix.ghc_version }}
         cabal-version: ${{ matrix.cabal_version }}
 
-    - uses: actions/cache@v1
+    - uses: actions/cache@v3
       name: Cache ~/.cabal
       with:
         path: ~/.cabal
