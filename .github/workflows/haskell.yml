@@ -52,6 +52,7 @@ jobs:
           - 9.0.2+exe
           - 9.2.5
           - 9.4.4
+          - 9.6.0
           - head
           - hlint
 
@@ -110,6 +111,11 @@ jobs:
 
           - name: 9.4.4
             ghc_version: 9.4.4
+            runner: ubuntu-latest
+            cabal_version: 3.8.1.0
+
+          - name: 9.6.0
+            ghc_version: 9.6.0
             runner: ubuntu-latest
             cabal_version: 3.8.1.0
 
