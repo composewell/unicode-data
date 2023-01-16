@@ -50,8 +50,8 @@ jobs:
           - 8.8.4
           - 8.10.7+exe
           - 9.0.1+exe
-          - 9.2.1
-          - 9.4.2
+          - 9.2.5
+          - 9.4.4
           - hlint
 
         include:
@@ -102,13 +102,18 @@ jobs:
             runner: ubuntu-latest
             cabal_version: 3.2
 
-          - name: 9.2.1
-            ghc_version: 9.2.1
+          - name: 9.2.5
+            ghc_version: 9.2.5
             runner: ubuntu-latest
             cabal_version: 3.6
 
-          - name: 9.4.2
-            ghc_version: 9.4.2
+          - name: 9.4.4
+            ghc_version: 9.4.4
+            runner: ubuntu-latest
+            cabal_version: 3.8.1.0
+
+          - name: 9.6.0
+            ghc_version: 9.6.0
             runner: ubuntu-latest
             cabal_version: 3.8.1.0
 
