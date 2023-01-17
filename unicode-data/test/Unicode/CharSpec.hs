@@ -105,8 +105,16 @@ spec = do
   describe "Case" do
     it' "isLower" do
       UCharCompat.isLower `shouldBeEqualTo` Char.isLower
+#if MIN_VERSION_base(4,18,0)
+    it' "isLowerCase" do
+      UChar.isLowerCase `shouldBeEqualTo` Char.isLowerCase
+#endif
     it' "isUpper" do
       UCharCompat.isUpper `shouldBeEqualTo` Char.isUpper
+#if MIN_VERSION_base(4,18,0)
+    it' "isUpperCase" do
+      UChar.isUpperCase `shouldBeEqualTo` Char.isUpperCase
+#endif
     it' "toLower" do
       UChar.toLower `shouldBeEqualTo` Char.toLower
     let caseCheck f (c, cs) = c `shouldSatisfy` (== cs) . f

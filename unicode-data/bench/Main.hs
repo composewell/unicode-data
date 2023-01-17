@@ -26,12 +26,24 @@ data Bench a = Bench
 main :: IO ()
 main = defaultMain
   [ bgroup "Unicode.Char.Case"
-    [ bgroup "isLowerCase"
+    [
+#if MIN_VERSION_base(4,18,0)
+      bgroup' "isLowerCase"
+      [ Bench "base"         Char.isLowerCase
+      , Bench "unicode-data" C.isLowerCase
+      ]
+    , bgroup' "isUpperCase"
+      [ Bench "base"         Char.isUpperCase
+      , Bench "unicode-data" C.isUpperCase
+      ]
+#else
+      bgroup "isLowerCase"
       [ benchChars "unicode-data" C.isLowerCase
       ]
     , bgroup "isUpperCase"
       [ benchChars "unicode-data" C.isUpperCase
       ]
+#endif
     , bgroup "toCaseFoldString"
       [ benchChars "unicode-data" C.toCaseFoldString
       ]
