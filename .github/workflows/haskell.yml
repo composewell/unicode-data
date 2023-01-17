@@ -114,8 +114,10 @@ jobs:
             runner: ubuntu-latest
             cabal_version: 3.8.1.0
 
+          # [TODO] Remove release channel once GHC 9.6.1 is published and supported by ghcup
           - name: 9.6.0
             ghc_version: 9.6.0
+            ghcup_release_channel: "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml"
             runner: ubuntu-latest
             cabal_version: 3.8.1.0
 
@@ -136,6 +138,7 @@ jobs:
       if: ${{ matrix.ghc_version != 'head' }}
       with:
         ghc-version: ${{ matrix.ghc_version }}
+        ghcup-release-channel: ${{ matrix.ghcup_release_channel }}
         cabal-version: ${{ matrix.cabal_version }}
 
     # Adapted from https://github.com/composewell/streamly/blob/master/.github/workflows/haskell.yml
