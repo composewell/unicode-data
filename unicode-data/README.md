@@ -15,7 +15,8 @@ for reference documentation.
 
 ## Performance
 
-`unicode-data` is up to _5 times faster_ than `base`.
+`unicode-data` is up to _5 times faster_ than `base` ≤ 4.17 (see
+[partial integration to `base`](#partial-integration-of-unicode-data-into-base)).
 
 The following benchmark compares the time taken in milliseconds to process all
 the Unicode code points for `base-4.16` (GHC 9.2.1) and this package (v0.3).
@@ -113,6 +114,14 @@ All
       unicode-data:   OK (2.41s)
         4.7 ms ±  41 μs, 0.19x
 ```
+
+### Partial integration of `unicode-data` into `base`
+
+Since `base` 4.18, `unicode-data` has been
+_partially_ [integrated to GHC](https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8072),
+so there should be no relevant difference. However, using `unicode-data` allows
+to select the _exact_ version of Unicode to support, therefore not relying on
+the version supported by GHC.
 
 ## Unicode database version update
 
