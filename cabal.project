@@ -1,3 +1,5 @@
 packages:
     */*.cabal,
     experimental/*/*.cabal
+
+allow-newer: base
