@@ -2,4 +2,14 @@ packages:
     */*.cabal,
     experimental/*/*.cabal
 
-allow-newer: base
+-- Allow any newer non-upgradable package
+allow-newer:
+    *:base,
+    *:ghc-bignum,
+    *:ghc-prim,
+    *:ghc-boot,
+    *:ghc,
+    *:ghci,
+    *:integer-gmp,
+    *:integer-simple,
+    *:template-haskell
