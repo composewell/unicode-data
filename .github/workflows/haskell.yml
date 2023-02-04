@@ -49,8 +49,8 @@ jobs:
           - 8.8.4
           - 8.8.4+macOS+exe
           - 8.10.7+exe
-          - 9.0.2+exe
-          - 9.2.5
+          - 9.0.2
+          - 9.2.5+exe
           - 9.4.4
           - 9.6.0
           - head
@@ -98,14 +98,15 @@ jobs:
             runner: ubuntu-latest
             cabal_version: 3.2
 
-          - name: 9.0.2+exe
+          - name: 9.0.2
             ghc_version: 9.0.2
-            pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
             runner: ubuntu-latest
             cabal_version: 3.2
 
-          - name: 9.2.5
+            # [NOTE] GHC > 9.2 cannot build ucd2haskell
+          - name: 9.2.5+exe
             ghc_version: 9.2.5
+            pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
             runner: ubuntu-latest
             cabal_version: 3.6
 
@@ -114,17 +115,23 @@ jobs:
             runner: ubuntu-latest
             cabal_version: 3.8.1.0
 
-          # [TODO] Remove release channel once GHC 9.6.1 is published and supported by ghcup
+          # [TODO] Once GHC 9.6.1 is published and supported by ghcup:
+          # • Remove release channel
+          # • Set GHC version to 9.6.1
+          # • Set Cabal version to 3.10
           - name: 9.6.0
-            ghc_version: 9.6.0.20230111
+            ghc_version: 9.6.0.20230128
             ghcup_release_channel: "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml"
             runner: ubuntu-latest
             cabal_version: 3.8.1.0
 
+          # [TODO] Use latest cabal (pre-)release
           - name: head
             ghc_version: head
+            # ghcup_release_channel: "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml"
             runner: ubuntu-latest
-            cabal_version: 3.8.1.0
+            # cabal_version: 3.9.0.0
+            cabal_version: latest
 
           - name: hlint
             pack_options: HLINT_OPTIONS="lint" HLINT_TARGETS="lib exe"
