@@ -123,14 +123,14 @@ jobs:
             ghc_version: 9.6.0.20230128
             ghcup_release_channel: "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml"
             runner: ubuntu-latest
-            cabal_version: 3.9
+            cabal_version: 3.9.0.0
 
           - name: head
             ghc_version: head
             ghcup_release_channel: "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml"
             runner: ubuntu-latest
             # [WARNING] Ensure to use latest cabal (pre-)release
-            cabal_version: 3.9
+            cabal_version: 3.9.0.0
 
           - name: hlint
             pack_options: HLINT_OPTIONS="lint" HLINT_TARGETS="lib exe"

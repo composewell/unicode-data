@@ -37,24 +37,24 @@ jobs:
           ghc --make \
             -XMagicHash -XBangPatterns -XUnboxedTuples -XScopedTypeVariables \
             -XLambdaCase -XBlockArguments -XTupleSections \
-            -iunicode-data/test:unicode-data/lib \
-            -o core-test unicode-data/test/Main.hs
+            -iunicode-data-core/test:unicode-data-core/lib \
+            -o core-test unicode-data-core/test/Main.hs
           ./core-test
           ghc --make \
             -XMagicHash -XBangPatterns -XUnboxedTuples -XScopedTypeVariables \
             -XLambdaCase -XBlockArguments -XTupleSections \
-            -iunicode-data-names/test:unicode-data-names/lib:unicode-data/lib \
+            -iunicode-data-names/test:unicode-data-names/lib:unicode-data-core/lib \
             -o names-test unicode-data-names/test/Main.hs
           ./names-test
           ghc --make \
             -XMagicHash -XBangPatterns -XUnboxedTuples -XScopedTypeVariables \
             -XLambdaCase -XBlockArguments -XTupleSections \
-            -iunicode-data-scripts/test:unicode-data-scripts/lib:unicode-data/lib \
+            -iunicode-data-scripts/test:unicode-data-scripts/lib:unicode-data-core/lib \
             -o scripts-test unicode-data-scripts/test/Main.hs
           ./scripts-test
           ghc --make \
             -XMagicHash -XBangPatterns -XUnboxedTuples -XScopedTypeVariables \
             -XLambdaCase -XBlockArguments -XTupleSections \
-            -iunicode-data-security/test:unicode-data-security/lib:unicode-data/lib \
+            -iunicode-data-security/test:unicode-data-security/lib:unicode-data-core/lib \
             -o security-test unicode-data-security/test/Main.hs
           ./security-test
