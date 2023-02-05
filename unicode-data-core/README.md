@@ -1,6 +1,6 @@
 # README
 
-`unicode-data` provides Haskell APIs to efficiently access the Unicode
+`unicode-data-core` provides Haskell APIs to efficiently access the Unicode
 character database. [Performance](#performance) is the primary goal in the
 design of this package.
 
@@ -10,12 +10,12 @@ The latest Unicode version supported by this library is
 [`15.0.0`](https://www.unicode.org/versions/Unicode15.0.0/).
 
 Please see the
-[Haddock documentation](https://hackage.haskell.org/package/unicode-data)
+[Haddock documentation](https://hackage.haskell.org/package/unicode-data-core)
 for reference documentation.
 
 ## Performance
 
-`unicode-data` is up to _5 times faster_ than `base` ≤ 4.17 (see
+`unicode-data-core` is up to _5 times faster_ than `base` ≤ 4.17 (see
 [partial integration to `base`](#partial-integration-of-unicode-data-into-base)).
 
 The following benchmark compares the time taken in milliseconds to process all
@@ -115,11 +115,11 @@ All
         4.7 ms ±  41 μs, 0.19x
 ```
 
-### Partial integration of `unicode-data` into `base`
+### Partial integration of `unicode-data-core` into `base`
 
-Since `base` 4.18, `unicode-data` has been
+Since `base` 4.18, `unicode-data-core` has been
 _partially_ [integrated to GHC](https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8072),
-so there should be no relevant difference. However, using `unicode-data` allows
+so there should be no relevant difference. However, using `unicode-data-core` allows
 to select the _exact_ version of Unicode to support, therefore not relying on
 the version supported by GHC.
 
@@ -153,7 +153,7 @@ $ cabal-docspec --check-properties --property-variables c
 
 ## Licensing
 
-`unicode-data` is an [open source](https://github.com/composewell/unicode-data)
+`unicode-data-core` is an [open source](https://github.com/composewell/unicode-data)
 project available under a liberal [Apache-2.0 license](LICENSE).
 
 ## Contributing

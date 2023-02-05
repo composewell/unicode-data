@@ -84,7 +84,7 @@ library
 
   hs-source-dirs: lib
   build-depends:
-      base             >= 4.7   && < 4.19
+      base              >= 4.7   && < 4.19
 
 test-suite test
   import: default-extensions, compile-options
@@ -95,9 +95,9 @@ test-suite test
   other-modules:
       Unicode.Char.General.NamesSpec
   build-depends:
-      base             >= 4.7   && < 4.19
-    , hspec            >= 2.0   && < 2.11
-    , unicode-data     >= 0.4   && < 0.5
+      base              >= 4.7   && < 4.19
+    , hspec             >= 2.0   && < 2.11
+    , unicode-data-core >= 0.4   && < 0.5
     , unicode-data-names
   default-language: Haskell2010
 
@@ -122,9 +122,9 @@ benchmark bench
   hs-source-dirs: bench
   main-is: Main.hs
   build-depends:
-    base        >= 4.7   && < 4.19,
-    deepseq     >= 1.1   && < 1.5,
-    tasty-bench >= 0.2.5 && < 0.4,
-    tasty       >= 1.4.1,
+    base              >= 4.7   && < 4.19,
+    deepseq           >= 1.1   && < 1.5,
+    tasty-bench       >= 0.2.5 && < 0.4,
+    tasty             >= 1.4.1,
     unicode-data-names
   ghc-options: -O2 -fdicts-strict -rtsopts

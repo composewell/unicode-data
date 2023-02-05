@@ -16,13 +16,13 @@ data CLIOptions =
     CLIOptions
         { input :: FilePath
         , output_core :: FilePath
-        -- ^ `unicode-data`
+        -- ^ @unicode-data-core@
         , output_names :: FilePath
-        -- ^ `unicode-data-names`
+        -- ^ @unicode-data-names@
         , output_scripts :: FilePath
-        -- ^ `unicode-data-scripts`
+        -- ^ @unicode-data-scripts@
         , output_security :: FilePath
-        -- ^ `unicode-data-security`
+        -- ^ @unicode-data-security@
         , core_prop :: [String]
         }
     deriving (Show, Generic, HasArguments)

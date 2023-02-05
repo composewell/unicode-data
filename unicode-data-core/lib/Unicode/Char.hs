@@ -51,7 +51,7 @@ import Unicode.Char.Identifiers
 import Unicode.Char.Numeric
 import Unicode.Char.Normalization
 
--- | Version of Unicode standard used by @unicode-data@.
+-- | Version of Unicode standard used by @unicode-data-core@.
 --
 -- @since 0.3.0
 unicodeVersion :: Version

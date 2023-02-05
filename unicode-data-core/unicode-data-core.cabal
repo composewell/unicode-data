@@ -1,9 +1,9 @@
 cabal-version:       2.2
-name:                unicode-data
+name:                unicode-data-core
 version:             0.4.0.1
 synopsis:            Access Unicode Character Database (UCD)
 description:
-  @unicode-data@ provides Haskell APIs to efficiently access the
+  @unicode-data-core@ provides Haskell APIs to efficiently access the
   <https://www.unicode.org/ucd/ Unicode character database> (UCD).
   Performance is the primary goal in the design of this package.
   .
@@ -122,9 +122,9 @@ test-suite test
   other-modules:
       Unicode.CharSpec
   build-depends:
-      base             >= 4.7   && < 4.19
-    , hspec            >= 2.0   && < 2.11
-    , unicode-data
+      base              >= 4.7   && < 4.19
+    , hspec             >= 2.0   && < 2.11
+    , unicode-data-core
   -- We need to match a GHC version with the same Unicode version.
   -- See: test/Unicode/CharSpec.hs for compatibility table.
   if impl(ghc >= 9.6.0)
@@ -137,9 +137,9 @@ benchmark bench
   hs-source-dirs: bench
   main-is: Main.hs
   build-depends:
-    base        >= 4.7   && < 4.19,
-    deepseq     >= 1.1   && < 1.5,
-    tasty-bench >= 0.2.5 && < 0.4,
-    tasty       >= 1.4.1,
-    unicode-data
+    base              >= 4.7   && < 4.19,
+    deepseq           >= 1.1   && < 1.5,
+    tasty-bench       >= 0.2.5 && < 0.4,
+    tasty             >= 1.4.1,
+    unicode-data-core
   ghc-options: -O2 -fdicts-strict -rtsopts

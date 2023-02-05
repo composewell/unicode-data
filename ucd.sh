@@ -82,7 +82,7 @@ run_generator() {
     # Compile and run ucd2haskell
     cabal run --flag ucd2haskell ucd2haskell -- \
           --input "./data/$VERSION" \
-          --output-core ./unicode-data/lib/ \
+          --output-core ./unicode-data-core/lib/ \
           --output-names ./unicode-data-names/lib/ \
           --output-scripts ./unicode-data-scripts/lib/ \
           --output-security ./unicode-data-security/lib/ \
@@ -98,7 +98,7 @@ run_generator() {
           --core-prop Pattern_White_Space
     # Update unicodeVersion in Unicode.Char
     VERSION_AS_LIST=$(echo "$VERSION" | sed "s/\./, /g")
-    sed -ri "s/^(unicodeVersion = makeVersion \[)[^]]*\]/\1$VERSION_AS_LIST\]/" "unicode-data/lib/Unicode/Char.hs"
+    sed -ri "s/^(unicodeVersion = makeVersion \[)[^]]*\]/\1$VERSION_AS_LIST\]/" "unicode-data-core/lib/Unicode/Char.hs"
 }
 
 # Print help text
