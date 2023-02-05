@@ -1,0 +1,127 @@
+cabal-version:       2.2
+name:                unicode-data
+version:             15.0.0
+synopsis:            Access Unicode Character Database (UCD)
+description:
+  @unicode-data-core@ provides Haskell APIs to efficiently access the
+  <https://www.unicode.org/ucd/ Unicode character database> (UCD).
+  Performance is the primary goal in the design of this package.
+  .
+  The Haskell data structures are generated programmatically from the UCD files.
+  The latest Unicode version supported by this library is
+  @<https://www.unicode.org/versions/Unicode15.0.0/ 15.0.0>@.
+homepage:            http://github.com/composewell/unicode-data
+bug-reports:         https://github.com/composewell/unicode-data/issues
+license:             Apache-2.0
+license-file:        LICENSE
+author:              Composewell Technologies and Contributors
+maintainer:          dev@wismill.eu
+copyright:           2022 Composewell Technologies and Contributors
+category:            Data,Text,Unicode
+stability:           Experimental
+build-type:          Simple
+tested-with:         GHC==8.0.2
+                   , GHC==8.2.2
+                   , GHC==8.4.4
+                   , GHC==8.6.5
+                   , GHC==8.8.4
+                   , GHC==8.10.7
+                   , GHC==9.0.1
+                   , GHC==9.2.1
+                   , GHC==9.4.2
+
+extra-source-files:
+    Changelog.md
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/composewell/unicode-data
+
+common default-extensions
+  default-extensions:
+      BangPatterns
+      DeriveGeneric
+      MagicHash
+      RecordWildCards
+      ScopedTypeVariables
+      TupleSections
+      FlexibleContexts
+      LambdaCase
+
+      -- Experimental, may lead to issues
+      DeriveAnyClass
+      TemplateHaskell
+      UnboxedTuples
+
+common compile-options
+  ghc-options: -Wall
+               -fwarn-identities
+               -fwarn-incomplete-record-updates
+               -fwarn-incomplete-uni-patterns
+               -fwarn-tabs
+  default-language: Haskell2010
+
+library
+  import: default-extensions, compile-options
+  default-language: Haskell2010
+  reexported-modules:
+      Unicode.Char,
+
+      -- The module structure is derived from
+      -- https://www.unicode.org/reports/tr44/#Property_Index_Table
+      Unicode.Char.Case,
+      Unicode.Char.Case.Compat,
+      Unicode.Char.General,
+      Unicode.Char.General.Blocks,
+      Unicode.Char.General.Compat,
+      Unicode.Char.General.Names,
+      Unicode.Char.General.Scripts,
+      Unicode.Char.Identifiers,
+      Unicode.Char.Identifiers.Security,
+      Unicode.Char.Normalization,
+      Unicode.Char.Numeric,
+      Unicode.Char.Numeric.Compat,
+
+      -- Internal files
+      Unicode.Internal.Bits,
+      Unicode.Internal.Division,
+      Unicode.Internal.Unfold,
+
+      -- Generated files
+      -- This module structure is largely based on the UCD file names from which
+      -- the properties are generated.
+      Unicode.Internal.Char.Blocks,
+      Unicode.Internal.Char.CaseFolding,
+      Unicode.Internal.Char.DerivedCoreProperties,
+      Unicode.Internal.Char.DerivedNumericValues,
+      Unicode.Internal.Char.PropList,
+      Unicode.Internal.Char.Scripts,
+      Unicode.Internal.Char.ScriptExtensions,
+      Unicode.Internal.Char.Security.Confusables,
+      Unicode.Internal.Char.Security.IdentifierStatus,
+      Unicode.Internal.Char.Security.IdentifierType,
+      Unicode.Internal.Char.Security.IntentionalConfusables,
+      Unicode.Internal.Char.SpecialCasing.LowerCaseMapping,
+      Unicode.Internal.Char.SpecialCasing.TitleCaseMapping,
+      Unicode.Internal.Char.SpecialCasing.UpperCaseMapping,
+      Unicode.Internal.Char.UnicodeData.CombiningClass,
+      Unicode.Internal.Char.UnicodeData.Compositions,
+      Unicode.Internal.Char.UnicodeData.DerivedName,
+      Unicode.Internal.Char.UnicodeData.Decomposable,
+      Unicode.Internal.Char.UnicodeData.DecomposableK,
+      Unicode.Internal.Char.UnicodeData.Decompositions,
+      Unicode.Internal.Char.UnicodeData.DecompositionsK,
+      Unicode.Internal.Char.UnicodeData.DecompositionsK2,
+      Unicode.Internal.Char.UnicodeData.GeneralCategory,
+      Unicode.Internal.Char.UnicodeData.NameAliases,
+      Unicode.Internal.Char.UnicodeData.SimpleLowerCaseMapping,
+      Unicode.Internal.Char.UnicodeData.SimpleTitleCaseMapping,
+      Unicode.Internal.Char.UnicodeData.SimpleUpperCaseMapping
+
+  build-depends:
+      base                  >= 4.7   && < 4.18
+    , unicode-data-core     >= 0.4   && < 0.5
+    , unicode-data-names    >= 0.2   && < 0.3
+    , unicode-data-scripts  >= 0.2   && < 0.3
+    , unicode-data-security >= 0.2   && < 0.3

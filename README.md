@@ -5,6 +5,8 @@
 This repository provides packages to use the
 [Unicode character database](https://www.unicode.org/ucd/) (UCD):
 
+- [`unicode-data`](#unicode-data) is an all-in-one package re-exporting the
+  following ones.
 - [`unicode-data-core`](#unicode-data-core) for general character properties.
 - [`unicode-data-names`](#unicode-data-names) for characters names and aliases.
 - [`unicode-data-scripts`](#unicode-data-scripts) for characters scripts.
@@ -13,6 +15,15 @@ This repository provides packages to use the
 The Haskell data structures are generated programmatically from the UCD files.
 The latest Unicode version supported by these libraries is
 [`15.0.0`](https://www.unicode.org/versions/Unicode15.0.0/).
+
+### `unicode-data`
+
+[`unicode-data`](unicode-data#readme) is an _all-in-one_ package that re-exports
+all the `unicode-data-*` package familly.
+
+Please see the
+[Haddock documentation](https://hackage.haskell.org/package/unicode-data)
+for reference documentation.
 
 ### `unicode-data-core`
 
