@@ -71,6 +71,8 @@ common compile-options
 library
   import: default-extensions, compile-options
   default-language: Haskell2010
+  -- [NOTE] The following list must be maintained synced with the other packages.
+  -- [TODO] The list is built manually. Could we automatize it?
   reexported-modules:
       Unicode.Char,
 
@@ -124,6 +126,12 @@ library
       Unicode.Internal.Char.UnicodeData.SimpleLowerCaseMapping,
       Unicode.Internal.Char.UnicodeData.SimpleTitleCaseMapping,
       Unicode.Internal.Char.UnicodeData.SimpleUpperCaseMapping
+  -- [NOTE] Without the following 2 sections, we cannot build the documention.
+  -- [TODO] Remove these once haddock/cabal issues are solved.
+  other-modules:
+    Paths_unicode_data
+  autogen-modules:
+    Paths_unicode_data
 
   build-depends:
       base                  >= 4.7    && < 4.19
