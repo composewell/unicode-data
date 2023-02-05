@@ -36,17 +36,18 @@ def check_name(char: str, expected: str, verbosity: int):
         got = f"Just \"{name}\""
     else:
         got = "Nothing"
-    # [NOTE] Currently failling with Python 3.11.0b3.
-    # [TODO] Check if bug in Python’s implementation?
+    # [NOTE] Currently failling with Python 3.12.0a4.
+    #        This is a bug in Python’s implementation: https://github.com/python/cpython/issues/80667
+    # [TODO] Remove the following `if` clause once the issue is solved.
     if got != expected and expected.startswith("Just \"TANGUT IDEOGRAPH"):
         if verbosity:
             print(
                 f"[WARNING] Skipped U+{ord(char):0>4X}: "
                 f"expected “{expected}” but got “{got}”."
             )
-        return False
+        return True
     check(got == expected, {"char": char, "got": got, "expected": expected})
-    return True
+    return False
 
 if __name__ == "__main__":
 

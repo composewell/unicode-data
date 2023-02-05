@@ -91,6 +91,8 @@ data DetailedChar =
     DetailedChar
         { _char :: Char
         , _name :: String
+        -- ^ Only used to detect ranges.
+        -- The names we use are read from @DerivedName.txt@.
         , _generalCategory :: GeneralCategory
         , _combiningClass :: Int
         , _decompositionType :: Maybe DecompType
@@ -1918,9 +1920,12 @@ parseUnicodeDataLines
         SingleCode          dc      -> (dc, Nothing)
         FirstCode     _     dc      -> error $ "Incomplete range: " <> show dc
         CompleteRange range dc1 dc2 -> if _char dc1 < _char dc2
-            -- [TODO] Create the proper name
-            then (dc1{_name="TODO"}, Just (CompleteRange range dc1{_char=succ (_char dc1)} dc2))
-            else (dc2{_name="TODO"}, Nothing)
+            -- [NOTE] We do not need to create real names for ranges,
+            --        as the field `_name` is only used to detect ranges.
+            --        We use the file `DerivedName.txt` to get the proper names
+            --        (see `parseDerivedNameLine`).
+            then (dc1{_name="XXX"}, Just (CompleteRange range dc1{_char=succ (_char dc1)} dc2))
+            else (dc2{_name="XXX"}, Nothing)
 
 -- | Parse a single entry of @UnicodeData.txt@
 parseDetailedChar :: String -> DetailedChar
