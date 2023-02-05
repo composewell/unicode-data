@@ -1,10 +1,19 @@
 # Changelog
 
+## 15.0.0 (February 2023)
+
+- Rename package from `unicode-data` to `unicode-data-core`.
+  [`unicode-data`](https://hackage.haskell.org/package/unicode-data) is now
+  an all-in-one package with heavier dependencies.
+- New version scheme: `U.B.M`, where `U` is the Unicode standard major version
+  number, `B` marks a breaking change and `M` a non-breaking change per
+  [PVP](https://pvp.haskell.org/).
+
 ## 0.4.0.1 (December 2022)
 
 - Fix [Unicode blocks handling on big-endian architectures](https://github.com/composewell/unicode-data/issues/97).
 
-## 0.4.0 (September 2022)
+## 0.4.0 (October 2022)
 
 - Update to [Unicode 15.0.0](https://www.unicode.org/versions/Unicode15.0.0/).
 

@@ -10,6 +10,11 @@ description:
   The Haskell data structures are generated programmatically from the UCD files.
   The latest Unicode version supported by this library is
   @<https://www.unicode.org/versions/Unicode15.0.0/ 15.0.0>@.
+  .
+  __WARNING:__ from version @15.0.0@, @unicode-data@ is an all-in-one package
+  with heavier dependencies. You should use
+  <https://hackage.haskell.org/package/unicode-data-core unicode-data-core>
+  if you only need core modules.
 homepage:            http://github.com/composewell/unicode-data
 bug-reports:         https://github.com/composewell/unicode-data/issues
 license:             Apache-2.0

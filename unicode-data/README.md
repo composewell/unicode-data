@@ -4,8 +4,10 @@
 character database. [Performance](#performance) is the primary goal in the
 design of this package.
 
-`unicode-data` is an _all-in-one_ package that re-exports
-all the `unicode-data-*` package familly.
+From version `15.0.0` `unicode-data` is an _all-in-one_ package that re-exports
+all the `unicode-data-*` package familly. You should use
+[`unicode-data-core`](https://hackage.haskell.org/package/unicode-data-core)
+if you only need the core modules.
 
 The Haskell data structures are generated programmatically from the
 [Unicode character database](https://www.unicode.org/ucd/) (UCD) files.
