@@ -123,15 +123,14 @@ jobs:
             ghc_version: 9.6.0.20230128
             ghcup_release_channel: "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml"
             runner: ubuntu-latest
-            cabal_version: 3.8.1.0
+            cabal_version: 3.9
 
-          # [TODO] Use latest cabal (pre-)release
           - name: head
             ghc_version: head
-            # ghcup_release_channel: "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml"
+            ghcup_release_channel: "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml"
             runner: ubuntu-latest
-            # cabal_version: 3.9.0.0
-            cabal_version: latest
+            # [WARNING] Ensure to use latest cabal (pre-)release
+            cabal_version: 3.9
 
           - name: hlint
             pack_options: HLINT_OPTIONS="lint" HLINT_TARGETS="lib exe"
@@ -148,6 +147,7 @@ jobs:
         ghcup-release-channel: ${{ matrix.ghcup_release_channel }}
         cabal-version: ${{ matrix.cabal_version }}
 
+    # [TODO] Use haskell/actions/setup when it supports reliably GHC head.
     # Adapted from https://github.com/composewell/streamly/blob/master/.github/workflows/haskell.yml
     - name: Install GHC head environment
       if: ${{ matrix.ghc_version == 'head' }}
@@ -164,6 +164,8 @@ jobs:
         GHCUP_VER=0.1.19.0
         $CURL -sL -o ./ghcup https://downloads.haskell.org/~ghcup/$GHCUP_VER/${GHCUP_ARCH}-ghcup-$GHCUP_VER
         chmod +x ./ghcup
+        # Set ghcup pre-release
+        ./ghcup config add-release-channel ${{ matrix.ghcup_release_channel }}
         # Install GHC head
         # The URL may change, to find a working URL go to https://gitlab.haskell.org/ghc/ghc/-/jobs/
         # Find a debian10 job, click on a passed/failed job, at the
