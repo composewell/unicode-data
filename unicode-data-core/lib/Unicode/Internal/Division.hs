@@ -12,7 +12,7 @@
 -- Division by a constant can be replaced by a double-word multiplication.
 -- Roughly speaking, instead of dividing by x, multiply by 2^64/x,
 -- obtaining 128-bit-long product, and take upper 64 bits. The peculiar
--- details can be found in Hacker's Delight, Ch. 10.
+-- details can be found in Hacker’s Delight, Ch. 10.
 --
 -- Even GHC 8.10 does not provide a primitive for a signed double-word
 -- multiplication, but since our applications does not involve negative

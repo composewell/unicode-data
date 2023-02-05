@@ -111,7 +111,7 @@ executable export-all-chars
     buildable: True
     build-depends:
         base
-      , unicode-data
+      , unicode-data-core
       , unicode-data-names
   else
     buildable: False

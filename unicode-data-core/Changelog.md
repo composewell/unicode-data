@@ -9,6 +9,15 @@
   number, `B` marks a breaking change and `M` a non-breaking change per
   [PVP](https://pvp.haskell.org/).
 
+### Breaking changes
+
+- Removed deprecated predicates `isLower` and `isUpper` in `Unicode.Char.Case`.
+  To migrate, use `isLowerCase` and `isUpperCase` respectively.
+- Removed deprecated predicates `isLetter` and `isSpace` in `Unicode.Char.General`.
+  To migrate, use `isAlphabetic` and `isWhiteSpace` respectively.
+- Remove deprecated predicate `isNumber` in `Unicode.Char.Numeric`.
+  To migrate, use `isNumber` from `Unicode.Char.Numeric.Compat`.
+
 ## 0.4.0.1 (December 2022)
 
 - Fix [Unicode blocks handling on big-endian architectures](https://github.com/composewell/unicode-data/issues/97).
