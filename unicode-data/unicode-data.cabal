@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                unicode-data
-version:             0.4.0.1
+version:             0.4.1
 synopsis:            Access Unicode Character Database (UCD)
 description:
   @unicode-data@ provides Haskell APIs to efficiently access the
