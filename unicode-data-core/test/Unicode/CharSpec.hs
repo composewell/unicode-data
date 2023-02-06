@@ -10,12 +10,6 @@ import Data.Ix (Ix(..))
 import Data.Maybe (isJust)
 import qualified Unicode.Char as UChar
 import qualified Unicode.Char.General.Blocks as UBlocks
--- [TODO] Remove the following qualified imports once isLetter and isSpace
---        are removed from Unicode.Char.General
-import qualified Unicode.Char.General.Compat as UCharCompat
--- [TODO] Remove the following qualified imports once isUpper and isLower
---        are removed from Unicode.Char.Case
-import qualified Unicode.Char.Case.Compat as UCharCompat
 import qualified Unicode.Char.Numeric as UNumeric
 import qualified Unicode.Char.Numeric.Compat as UNumericCompat
 import Data.Foldable (traverse_)
@@ -89,7 +83,7 @@ spec = do
     it "isControl" do
       UChar.isControl `shouldBeEqualTo` Char.isControl
     it "isLetter" do
-      UCharCompat.isLetter `shouldBeEqualTo` Char.isLetter
+      UChar.isLetter `shouldBeEqualTo` Char.isLetter
     it "isMark" do
       UChar.isMark `shouldBeEqualTo` Char.isMark
     it "isPrint" do
@@ -99,18 +93,18 @@ spec = do
     it "isSeparator" do
       UChar.isSeparator `shouldBeEqualTo` Char.isSeparator
     it "isSpace" do
-      UCharCompat.isSpace `shouldBeEqualTo` Char.isSpace
+      UChar.isSpace `shouldBeEqualTo` Char.isSpace
     it "isSymbol" do
       UChar.isSymbol `shouldBeEqualTo` Char.isSymbol
   describe "Case" do
     it' "isLower" do
-      UCharCompat.isLower `shouldBeEqualTo` Char.isLower
+      UChar.isLower `shouldBeEqualTo` Char.isLower
 #if MIN_VERSION_base(4,18,0)
     it' "isLowerCase" do
       UChar.isLowerCase `shouldBeEqualTo` Char.isLowerCase
 #endif
     it' "isUpper" do
-      UCharCompat.isUpper `shouldBeEqualTo` Char.isUpper
+      UChar.isUpper `shouldBeEqualTo` Char.isUpper
 #if MIN_VERSION_base(4,18,0)
     it' "isUpperCase" do
       UChar.isUpperCase `shouldBeEqualTo` Char.isUpperCase

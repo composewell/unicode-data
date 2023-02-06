@@ -53,7 +53,7 @@ bump_packages_versions () {
 ###############################################################################
 
 bump_dependencies() {
-    version="$(find_package_version unicode-data/unicode-data.cabal)"
+    version="$(find_package_version unicode-data-core/unicode-data-core.cabal)"
 
     unicode_version="$(get_version_field 1 "$version")"
     unicode_data_major="$(get_version_field 2 "$version")"
@@ -62,7 +62,7 @@ bump_dependencies() {
     unicode_data_min_bound="$unicode_version.$unicode_data_major"
     unicode_data_max_bound="$unicode_version.$((unicode_data_major+1))"
 
-    regex="s/(unicode-data\\s+>= )$VERSION_PATTERN"
+    regex="s/(unicode-data-core\\s+>= )$VERSION_PATTERN"
     regex+="(\\s+&&\\s+< )$VERSION_PATTERN/"
     regex+="\\1$unicode_data_min_bound\\3$unicode_data_max_bound/"
 

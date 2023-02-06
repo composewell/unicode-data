@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                unicode-data-security
-version:             0.2.0
+version:             15.0.0
 synopsis:            Unicode security mechanisms database
 description:
   @unicode-data-security@ provides Haskell APIs to access the
@@ -26,9 +26,9 @@ tested-with:         GHC==8.0.2
                    , GHC==8.6.5
                    , GHC==8.8.4
                    , GHC==8.10.7
-                   , GHC==9.0.1
-                   , GHC==9.2.1
-                   , GHC==9.4.2
+                   , GHC==9.0.2
+                   , GHC==9.2.5
+                   , GHC==9.4.4
                    , GHC==9.6.0
 
 extra-source-files:
@@ -81,8 +81,8 @@ library
 
   hs-source-dirs: lib
   build-depends:
-      base             >= 4.7   && < 4.19
-    , unicode-data     >= 0.4   && < 0.5
+      base              >= 4.7  && < 4.19
+    , unicode-data-core >= 15.0 && < 15.1
 
 test-suite test
   import: default-extensions, compile-options

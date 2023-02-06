@@ -2,27 +2,25 @@
 
 ## 15.0.0 (February 2023)
 
-### New version scheme
+- Rename package from `unicode-data` to `unicode-data-core`.
+  [`unicode-data`](https://hackage.haskell.org/package/unicode-data) is now
+  an all-in-one package with heavier dependencies.
+- New version scheme: `U.B.M`, where `U` is the Unicode standard major version
+  number, `B` marks a breaking change and `M` a non-breaking change per
+  [PVP](https://pvp.haskell.org/).
 
-`U.B.M`, where `U` is the Unicode standard major version
-number, `B` marks a breaking change and `M` a non-breaking change per
-[PVP](https://pvp.haskell.org/).
+### Breaking changes
 
-### All-in-one package
+- Removed deprecated predicates `isLower` and `isUpper` in `Unicode.Char.Case`.
+  To migrate, use `isLowerCase` and `isUpperCase` respectively.
+- Removed deprecated predicates `isLetter` and `isSpace` in `Unicode.Char.General`.
+  To migrate, use `isAlphabetic` and `isWhiteSpace` respectively.
+- Remove deprecated predicate `isNumber` in `Unicode.Char.Numeric`.
+  To migrate, use `isNumber` from `Unicode.Char.Numeric.Compat`.
 
-__WARNING:__ `unicode-data` is now an all-in-one package with heavier
-dependencies. You should use
-[`unicode-data-core`](https://hackage.haskell.org/package/unicode-data-core)
-if you only need modules from previous version.
+## 0.4.0.1 (December 2022)
 
-- Previous modules are now re-exported from the package
-  [`unicode-data-core`](https://hackage.haskell.org/package/unicode-data-core).
-- Re-export
-  [`unicode-data-names`](https://hackage.haskell.org/package/unicode-data-names).
-- Re-export
-  [`unicode-data-scripts`](https://hackage.haskell.org/package/unicode-data-scripts).
-- Re-export
-  [`unicode-data-security`](https://hackage.haskell.org/package/unicode-data-security).
+- Fix [Unicode blocks handling on big-endian architectures](https://github.com/composewell/unicode-data/issues/97).
 
 ## 0.4.0 (October 2022)
 

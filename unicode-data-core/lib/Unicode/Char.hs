@@ -9,20 +9,23 @@
 -- corresponding to [Unicode Standard version
 -- 15.0.0](https://www.unicode.org/versions/Unicode15.0.0/).
 --
--- This module re-exports several sub-modules under it.  The sub-module
--- structure under `Unicode.Char` is largely based on the
--- ["Property Index by Scope of Use" in Unicode® Standard Annex #44](https://www.unicode.org/reports/tr44/#Property_Index_Table).
+-- It can be used as a __drop-in replacement of "Data.Char"__, except for
+-- string representations.
+--
+-- This module re-exports several sub-modules under it.
+-- The sub-module structure under `Unicode.Char` is largely based on the
+-- [“Property Index by Scope of Use” in Unicode Standard Annex #44](https://www.unicode.org/reports/tr44/#Property_Index_Table).
 --
 -- The @Unicode.Char.*@ modules in turn depend on @Unicode.Internal.Char.*@
--- modules which are programmatically generated from the Unicode standard's
+-- modules which are programmatically generated from the Unicode standard’s
 -- Unicode character database files. The module structure under
 -- @Unicode.Internal.Char@ is largely based on the UCD text file names from
 -- which the properties are generated.
 --
 -- For the original UCD files used in this code please refer to the @UCD@
--- section on the Unicode standard page.  See
--- https://www.unicode.org/reports/tr44/ to understand the contents and the
--- format of the unicode database files.
+-- section on the Unicode standard page.
+-- See the [Unicode Standard Annex #44](https://www.unicode.org/reports/tr44/)
+-- to understand the contents and the format of the Unicode database files.
 --
 
 module Unicode.Char
@@ -31,6 +34,7 @@ module Unicode.Char
     , module Unicode.Char.Case
     , module Unicode.Char.Case.Compat
     , module Unicode.Char.Numeric
+    , module Unicode.Char.Numeric.Compat
     , module Unicode.Char.Normalization
     , module Unicode.Char.Identifiers
     , unicodeVersion
@@ -44,14 +48,15 @@ where
 import Data.Char (chr, ord)
 import Data.Version (Version, makeVersion)
 import Unicode.Char.Case hiding (Unfold(..), Step(..))
-import Unicode.Char.Case.Compat hiding (isLower, isUpper)
+import Unicode.Char.Case.Compat
 import Unicode.Char.General
-import Unicode.Char.General.Compat hiding (isLetter, isSpace)
+import Unicode.Char.General.Compat
 import Unicode.Char.Identifiers
 import Unicode.Char.Numeric
+import Unicode.Char.Numeric.Compat
 import Unicode.Char.Normalization
 
--- | Version of Unicode standard used by @unicode-data@.
+-- | Version of Unicode standard used by @unicode-data-core@.
 --
 -- @since 0.3.0
 unicodeVersion :: Version

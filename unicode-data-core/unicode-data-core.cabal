@@ -1,11 +1,11 @@
 cabal-version:       2.2
-name:                unicode-data-names
+name:                unicode-data-core
 version:             15.0.0
-synopsis:            Unicode characters names and aliases
+synopsis:            Access Unicode Character Database (UCD)
 description:
-  @unicode-data-names@ provides Haskell APIs to access the Unicode
-  character /names and aliases/ from the
+  @unicode-data-core@ provides Haskell APIs to efficiently access the
   <https://www.unicode.org/ucd/ Unicode character database> (UCD).
+  Performance is the primary goal in the design of this package.
   .
   The Haskell data structures are generated programmatically from the UCD files.
   The latest Unicode version supported by this library is
@@ -15,8 +15,8 @@ bug-reports:         https://github.com/composewell/unicode-data/issues
 license:             Apache-2.0
 license-file:        LICENSE
 author:              Composewell Technologies and Contributors
-maintainer:          dev@wismill.eu
-copyright:           2022 Composewell Technologies and Contributors
+maintainer:          streamly@composewell.com
+copyright:           2020 Composewell Technologies and Contributors
 category:            Data,Text,Unicode
 stability:           Experimental
 build-type:          Simple
@@ -34,15 +34,11 @@ tested-with:         GHC==8.0.2
 extra-source-files:
     Changelog.md
     README.md
+    NOTICE
 
 source-repository head
   type: git
   location: https://github.com/composewell/unicode-data
-
-flag export-all-chars
-  description: Build the export-all-chars executable
-  manual: True
-  default: False
 
 common default-extensions
   default-extensions:
@@ -53,7 +49,6 @@ common default-extensions
       ScopedTypeVariables
       TupleSections
       FlexibleContexts
-      LambdaCase
 
       -- Experimental, may lead to issues
       DeriveAnyClass
@@ -72,19 +67,51 @@ library
   import: default-extensions, compile-options
   default-language: Haskell2010
   exposed-modules:
+      Unicode.Char
       -- The module structure is derived from
       -- https://www.unicode.org/reports/tr44/#Property_Index_Table
-      Unicode.Char.General.Names
+      Unicode.Char.Case
+      Unicode.Char.Case.Compat
+      Unicode.Char.General
+      Unicode.Char.General.Blocks
+      Unicode.Char.General.Compat
+      Unicode.Char.Identifiers
+      Unicode.Char.Normalization
+      Unicode.Char.Numeric
+      Unicode.Char.Numeric.Compat
+
+      -- Internal files
+      Unicode.Internal.Bits
+      Unicode.Internal.Division
+      Unicode.Internal.Unfold
 
       -- Generated files
       -- This module structure is largely based on the UCD file names from which
       -- the properties are generated.
-      Unicode.Internal.Char.UnicodeData.DerivedName
-      Unicode.Internal.Char.UnicodeData.NameAliases
+      Unicode.Internal.Char.Blocks
+      Unicode.Internal.Char.CaseFolding
+      Unicode.Internal.Char.DerivedCoreProperties
+      Unicode.Internal.Char.DerivedNumericValues
+      Unicode.Internal.Char.PropList
+      Unicode.Internal.Char.SpecialCasing.LowerCaseMapping
+      Unicode.Internal.Char.SpecialCasing.TitleCaseMapping
+      Unicode.Internal.Char.SpecialCasing.UpperCaseMapping
+      Unicode.Internal.Char.UnicodeData.CombiningClass
+      Unicode.Internal.Char.UnicodeData.Compositions
+      Unicode.Internal.Char.UnicodeData.Decomposable
+      Unicode.Internal.Char.UnicodeData.DecomposableK
+      Unicode.Internal.Char.UnicodeData.Decompositions
+      Unicode.Internal.Char.UnicodeData.DecompositionsK
+      Unicode.Internal.Char.UnicodeData.DecompositionsK2
+      Unicode.Internal.Char.UnicodeData.GeneralCategory
+      Unicode.Internal.Char.UnicodeData.SimpleLowerCaseMapping
+      Unicode.Internal.Char.UnicodeData.SimpleTitleCaseMapping
+      Unicode.Internal.Char.UnicodeData.SimpleUpperCaseMapping
 
   hs-source-dirs: lib
+  ghc-options: -O2
   build-depends:
-      base              >= 4.7   && < 4.19
+      base >=4.7 && <4.19
 
 test-suite test
   import: default-extensions, compile-options
@@ -93,28 +120,16 @@ test-suite test
   hs-source-dirs:
       test
   other-modules:
-      Unicode.Char.General.NamesSpec
+      Unicode.CharSpec
   build-depends:
-      base              >= 4.7  && < 4.19
-    , hspec             >= 2.0  && < 2.11
-    , unicode-data-core >= 15.0 && < 15.1
-    , unicode-data-names
+      base              >= 4.7   && < 4.19
+    , hspec             >= 2.0   && < 2.11
+    , unicode-data-core
+  -- We need to match a GHC version with the same Unicode version.
+  -- See: test/Unicode/CharSpec.hs for compatibility table.
+  if impl(ghc >= 9.6.0)
+    cpp-options: -DCOMPATIBLE_GHC_UNICODE
   default-language: Haskell2010
-
-executable export-all-chars
-  import: default-extensions, compile-options
-  default-language: Haskell2010
-  ghc-options: -O2
-  hs-source-dirs: test
-  main-is: export_all_chars.hs
-  if flag(export-all-chars)
-    buildable: True
-    build-depends:
-        base
-      , unicode-data-core
-      , unicode-data-names
-  else
-    buildable: False
 
 benchmark bench
   import: default-extensions, compile-options
@@ -126,5 +141,5 @@ benchmark bench
     deepseq           >= 1.1   && < 1.5,
     tasty-bench       >= 0.2.5 && < 0.4,
     tasty             >= 1.4.1,
-    unicode-data-names
+    unicode-data-core
   ghc-options: -O2 -fdicts-strict -rtsopts

@@ -18,9 +18,7 @@
 module Unicode.Char.Case
     ( -- * Predicates
       isLowerCase
-    , isLower
     , isUpperCase
-    , isUpper
       -- * Case mappings
       -- $case
 
@@ -64,17 +62,6 @@ import qualified Unicode.Internal.Char.SpecialCasing.UpperCaseMapping as C
 isLowerCase :: Char -> Bool
 isLowerCase = P.isLowercase
 
--- | Returns 'True' for lower-case characters.
---
--- It uses the character property
--- <https://www.unicode.org/reports/tr44/#Lowercase Lowercase>.
---
--- @since 0.1.0
-{-# INLINE isLower #-}
-{-# DEPRECATED isLower "Use isLowerCase instead. Note that the behavior of this function does not match base:Data.Char.isLower. See Unicode.Char.Case.Compat for behavior compatible with base:Data.Char." #-}
-isLower :: Char -> Bool
-isLower = P.isLowercase
-
 -- | Returns 'True' for upper-case characters.
 --
 -- It uses the character property
@@ -88,21 +75,6 @@ isLower = P.isLowercase
 {-# INLINE isUpperCase #-}
 isUpperCase :: Char -> Bool
 isUpperCase = P.isUppercase
-
--- | Returns 'True' for upper-case characters.
---
--- It uses the character property
--- <https://www.unicode.org/reports/tr44/#Uppercase Uppercase>.
---
--- Note: it does /not/ match title-cased letters. Those are matched using:
--- @'Unicode.Char.General.generalCategory' c ==
--- 'Unicode.Char.General.TitlecaseLetter'@.
---
--- @since 0.1.0
-{-# INLINE isUpper #-}
-{-# DEPRECATED isUpper "Use isUpperCase instead. Note that the behavior of this function does not match base:Data.Char.isUpper. See Unicode.Char.Case.Compat for behavior compatible with base:Data.Char." #-}
-isUpper :: Char -> Bool
-isUpper = P.isUppercase
 
 -- $case
 --

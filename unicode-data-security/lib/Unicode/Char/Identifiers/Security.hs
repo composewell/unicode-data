@@ -61,7 +61,7 @@ isIdentifierTypeAllowed = \case
     T.Recommended -> True
     _             -> False
 
--- | Returns the 'IdentifierType's corresponding to a character.
+-- | Returns the 'T.IdentifierType's corresponding to a character.
 --
 -- @since 0.1.0
 {-# INLINE identifierTypes #-}

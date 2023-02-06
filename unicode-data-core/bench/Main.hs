@@ -213,7 +213,6 @@ main = defaultMain
       ]
     ]
   , bgroup "Unicode.Char.Numeric"
-    -- [TODO] Replace with 'isNumber' once the migration is done.
     [ bgroup "isNumeric"
       [ benchChars "unicode-data"  Num.isNumeric
       ]
