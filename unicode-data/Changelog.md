@@ -2,7 +2,8 @@
 
 ## 0.6.0 (July 2024)
 
-- Update to [Unicode 15.1.0](https://www.unicode.org/versions/Unicode15.1.0/).
+- Updated to [Unicode 15.1.0](https://www.unicode.org/versions/Unicode15.1.0/).
+- Added `intToDigiT` to `Unicode.Char.Numeric`.
 
 ## 0.5.0 (July 2024)
 
