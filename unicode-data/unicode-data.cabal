@@ -82,6 +82,7 @@ library
 
       -- Internal files
       Unicode.Internal.Bits
+      Unicode.Internal.Char
       Unicode.Internal.Division
       Unicode.Internal.Unfold
 
