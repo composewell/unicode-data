@@ -79,5 +79,26 @@ spec = do
                             PrivateUse  -> True
                             NotAssigned -> True
                             _           -> False
-        traverse_ (`shouldSatisfy` checkName)
-            [minBound..maxBound]
+        traverse_ (`shouldSatisfy` checkName) [minBound..maxBound]
+    describe "label" do
+        it "Some characters" do
+            label '\x0000'   `shouldBe` "control-0000"
+            label '\x009F'   `shouldBe` "control-009F"
+            label 'a'        `shouldBe` "UNDEFINED"
+            label '1'        `shouldBe` "UNDEFINED"
+            label '\x1D0C5'  `shouldBe` "UNDEFINED"
+            label '\x2F89F'  `shouldBe` "UNDEFINED"
+            label '\xE000'   `shouldBe` "private-use-E000"
+            label '\x10FFFD' `shouldBe` "private-use-10FFFD"
+            label '\xD800'   `shouldBe` "surrogate-D800"
+            label '\xDFFF'   `shouldBe` "surrogate-DFFF"
+            label '\xFDD0'   `shouldBe` "noncharacter-FDD0"
+            label '\x10FFFF' `shouldBe` "noncharacter-10FFFF"
+            label '\x0378'   `shouldBe` "reserved-0378"
+            label '\x1FFFD'  `shouldBe` "reserved-1FFFD"
+            label '\xEFFFD'  `shouldBe` "reserved-EFFFD"
+    it "Every character has either a name or a label" do
+        let checkName c = case name c of
+                        Just _  -> True
+                        Nothing -> label c /= "UNDEFINED"
+        traverse_ (`shouldSatisfy` checkName) [minBound..maxBound]

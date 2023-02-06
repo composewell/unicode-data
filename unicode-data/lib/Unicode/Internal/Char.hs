@@ -15,8 +15,7 @@ import Data.Functor (($>))
 import Foreign.C.String (CStringLen)
 import Foreign.C.Types (CChar(..))
 import Foreign.Storable (Storable(..))
-import GHC.Exts (Int(..), Int#, intToInt8#, isTrue#, quotRemInt#, (<=#), (+#), (-#))
-import GHC.Int (Int8(..))
+import GHC.Exts (Int(..), Int#, isTrue#, quotRemInt#, (<=#), (+#), (-#))
 
 -- | Show the code point of a character using the Unicode Standard convention:
 -- hexadecimal codepoint padded with zeros if inferior to 4 characters.
@@ -50,5 +49,5 @@ addHexCodePoint (s, I# len) (I# i0) c
 -- Undefined for numbers outside the 0..15 range.
 intToDigiT :: Int# -> CChar
 intToDigiT i = if isTrue# (i <=#  9#)
-    then CChar (I8# (intToInt8# (0x30# +# i)))
-    else CChar (I8# (intToInt8# (0x37# +# i)))
+    then fromIntegral (I# (0x30# +# i))
+    else fromIntegral (I# (0x37# +# i))
