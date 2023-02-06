@@ -17,6 +17,9 @@ module Unicode.Char.Numeric
     , numericValue
     , integerValue
 
+      -- * Single digit characters
+    , intToDigiT
+
       -- * Re-export from @base@
     , isDigit
     , isOctDigit
@@ -29,6 +32,7 @@ import Data.Char (digitToInt, intToDigit, isDigit, isHexDigit, isOctDigit)
 import Data.Int (Int64)
 import Data.Maybe (isJust)
 import Data.Ratio (denominator, numerator)
+import GHC.Exts (Char (..), Int (..), chr#, isTrue#, (+#), (<=#), (>=#))
 
 import qualified Unicode.Char.Numeric.Compat as Compat
 import qualified Unicode.Internal.Char.DerivedNumericValues as V
@@ -118,3 +122,16 @@ integerValue c = do
     if denominator r == 1
         then Just (fromInteger (numerator r))
         else Nothing
+
+-- | Same a 'intToDigit', but with upper case.
+--
+-- >>> intToDigiT <$> [0..15]
+-- "0123456789ABCDEF"
+--
+-- @since 0.6.0
+intToDigiT :: Int -> Char
+intToDigiT (I# i)
+    | isTrue# (i >=# 0#)  && isTrue# (i <=#  9#) = C# (chr# (0x30# +# i))
+    | isTrue# (i >=# 10#) && isTrue# (i <=# 15#) = C# (chr# (0x37# +# i))
+    | otherwise =  errorWithoutStackTrace
+        ("Unicode.Char.Numeric.intToDigiT: not a digit " ++ show (I# i))
