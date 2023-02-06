@@ -14,17 +14,23 @@ module Unicode.Char.General.Names
     ( -- * Name
       name
     , nameOrAlias
+    , nameOrLabel
     , correctedName
+
       -- * Name Aliases
     , NameAliases.NameAliasType(..)
     , nameAliases
     , nameAliasesByType
     , nameAliasesWithTypes
+
+      -- * Label
+    , label
     ) where
 
 import Control.Applicative ((<|>))
+import Control.Monad ((>=>))
 import Data.Maybe (listToMaybe)
-import Foreign.C.String (CString, peekCAString)
+import Foreign.C.String (CString, peekCAString, peekCAStringLen)
 import System.IO.Unsafe (unsafePerformIO)
 
 import qualified Unicode.Internal.Char.UnicodeData.DerivedName as DerivedName
@@ -55,6 +61,15 @@ nameOrAlias c = name c <|> case NameAliases.nameAliasesWithTypes c of
     (_, n:_):_ -> Just (unpack n)
     _          -> Nothing
 
+-- | Returns a character’s 'name' if defined,
+-- otherwise returns its label between angle brackets.
+--
+-- @since 0.2.1
+nameOrLabel :: Char -> String
+nameOrLabel c = case name c of
+    Nothing -> '<' : label c ++ ">"
+    Just n  -> n
+
 -- | All name aliases of a character, if defined.
 -- The names are listed in the original order of the UCD.
 --
@@ -83,6 +98,17 @@ nameAliasesWithTypes :: Char -> [(NameAliases.NameAliasType, [String])]
 nameAliasesWithTypes
   = fmap (fmap (fmap unpack))
   . NameAliases.nameAliasesWithTypes
+
+-- | Returns the label of a code point if it has no character name, otherwise
+-- returns @\"UNDEFINED\"@.
+--
+-- See subsection
+-- [“Code Point Labels”](https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf#G135248)
+-- in section 4.8 “Name” of the Unicode Standard.
+--
+-- @since 0.2.1
+label :: Char -> String
+label = unsafePerformIO . (DerivedName.label >=> peekCAStringLen)
 
 -- Note: names are ASCII. See Unicode Standard 15.0.0, section 4.8.
 {-# INLINE unpack #-}

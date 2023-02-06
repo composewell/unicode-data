@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                unicode-data-names
-version:             0.2.0
+version:             0.2.1
 synopsis:            Unicode characters names and aliases
 description:
   @unicode-data-names@ provides Haskell APIs to access the Unicode
@@ -85,6 +85,7 @@ library
   hs-source-dirs: lib
   build-depends:
       base             >= 4.7   && < 4.19
+    , unicode-data     >= 0.4.1 && < 0.5
 
 test-suite test
   import: default-extensions, compile-options

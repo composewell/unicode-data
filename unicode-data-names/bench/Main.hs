@@ -7,6 +7,7 @@ import Test.Tasty.Bench (Benchmark, bgroup, bcompare, bench, nf, defaultMain)
 import qualified Unicode.Char.General.Names as Names
 import qualified Unicode.Internal.Char.UnicodeData.DerivedName as DerivedName
 import qualified Unicode.Internal.Char.UnicodeData.NameAliases as NameAliases
+import System.IO.Unsafe (unsafePerformIO)
 
 -- | A unit benchmark
 data Bench = forall a. (NFData a) => Bench
@@ -26,7 +27,10 @@ main = defaultMain
             [ Bench "String"  Names.correctedName
             ]
         , bgroup' "nameOrAlias"
-            [ Bench "String"  Names.name
+            [ Bench "String"  Names.nameOrAlias
+            ]
+        , bgroup' "nameOrLabel"
+            [ Bench "String"  Names.nameOrLabel
             ]
         , bgroup' "nameAliasesByType"
             [ Bench "CString"
@@ -37,6 +41,10 @@ main = defaultMain
         , bgroup' "nameAliasesWithTypes"
             [ Bench "CString" (show . NameAliases.nameAliasesWithTypes)
             , Bench "String"  (show . Names.nameAliasesWithTypes)
+            ]
+        , bgroup' "label"
+            [ Bench "CString" (unsafePerformIO . DerivedName.label)
+            , Bench "String"  Names.label
             ]
         ]
     ]
