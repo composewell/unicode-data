@@ -15,11 +15,15 @@ module Unicode.Char.General.Names
       name
     , nameOrAlias
     , correctedName
+
       -- * Name Aliases
     , NameAliases.NameAliasType(..)
     , nameAliases
     , nameAliasesByType
     , nameAliasesWithTypes
+
+      -- * Label
+    , label
     ) where
 
 import Control.Applicative ((<|>))
@@ -27,6 +31,8 @@ import Data.Maybe (listToMaybe)
 import Foreign.C.String (CString, peekCAString)
 import System.IO.Unsafe (unsafePerformIO)
 
+import Unicode.Char (showHexCodePoint)
+import Unicode.Char.General (CodePointType(..), codePointType)
 import qualified Unicode.Internal.Char.UnicodeData.DerivedName as DerivedName
 import qualified Unicode.Internal.Char.UnicodeData.NameAliases as NameAliases
 
@@ -83,6 +89,27 @@ nameAliasesWithTypes :: Char -> [(NameAliases.NameAliasType, [String])]
 nameAliasesWithTypes
   = fmap (fmap (fmap unpack))
   . NameAliases.nameAliasesWithTypes
+
+-- | Returns the label of a code point if it has no character name, otherwise
+-- returns @\"UNDEFINED\"@.
+--
+-- See subsection
+-- [“Code Point Labels”](https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf#G135248)
+-- in section 4.8 “Name” of the Unicode Standard.
+--
+-- @since 0.2.1
+label :: Char -> String
+label c = case codePointType c of
+    ControlType      -> "control-"      <> cpStr
+    PrivateUseType   -> "private-use-"  <> cpStr
+    SurrogateType    -> "surrogate-"    <> cpStr
+    NoncharacterType -> "noncharacter-" <> cpStr
+    ReservedType     -> "reserved-"     <> cpStr
+    _                -> "UNDEFINED"
+
+    where
+
+    cpStr = showHexCodePoint c ""
 
 -- Note: names are ASCII. See Unicode Standard 15.0.0, section 4.8.
 {-# INLINE unpack #-}
