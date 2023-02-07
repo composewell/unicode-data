@@ -79,6 +79,7 @@ library
       Unicode.Char.Normalization
       Unicode.Char.Numeric
       Unicode.Char.Numeric.Compat
+      Unicode.Char.Segmentation
 
       -- Internal files
       Unicode.Internal.Bits
@@ -92,6 +93,7 @@ library
       Unicode.Internal.Char.CaseFolding
       Unicode.Internal.Char.DerivedCoreProperties
       Unicode.Internal.Char.DerivedNumericValues
+      Unicode.Internal.Char.GraphemeBreak
       Unicode.Internal.Char.PropList
       Unicode.Internal.Char.SpecialCasing.LowerCaseMapping
       Unicode.Internal.Char.SpecialCasing.TitleCaseMapping

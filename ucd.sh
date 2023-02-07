@@ -25,6 +25,7 @@ UCD_FILES="\
   ScriptExtensions.txt:7e07313d9d0bee42220c476b64485995130ae30917bbcf7780b602d677d7e33f \
   SpecialCasing.txt:78b29c64b5840d25c11a9f31b665ee551b8a499eca6c70d770fcad7dd710f494 \
   UnicodeData.txt:806e9aed65037197f1ec85e12be6e8cd870fc5608b4de0fffd990f689f376a73 \
+  auxiliary/GraphemeBreakProperty.txt:5a0f8748575432f8ff95e1dd5bfaa27bda1a844809e17d6939ee912bba6568a1 \
   extracted/DerivedCombiningClass.txt:ca54f6360cd288ad92113415bf1f77749015abe11cbd6798d21f7fa81f04205d \
   extracted/DerivedName.txt:f76288153e20de185a40f7ee6e0e365f3c6c80e9e3019b5aa0afc8ac2c1b15f2 \
   extracted/DerivedNumericValues.txt:6bd30f385f3baf3ab5d5308c111a81de87bea5f494ba0ba69e8ab45263b8c34d"

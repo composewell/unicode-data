@@ -18,6 +18,7 @@ import qualified Unicode.Char.General.Compat as UCharCompat
 import qualified Unicode.Char.Case.Compat as UCharCompat
 import qualified Unicode.Char.Numeric as UNumeric
 import qualified Unicode.Char.Numeric.Compat as UNumericCompat
+import qualified Unicode.Char.Segmentation as USegmentation
 import Data.Foldable (traverse_)
 import Test.Hspec
 
@@ -197,6 +198,37 @@ spec = do
       -- let check c = (UNumeric.isNumber c `xor` isNothing (UNumeric.numericValue c))
       let check c = not (UNumericCompat.isNumber c) || isJust (UNumeric.numericValue c)
       traverse_ (`shouldSatisfy` check) [minBound..maxBound]
+  describe "Segmentation" do
+    describe "Grapheme Cluster Break" do
+        it "graphemeClusterBreak: Some values" do
+            let check c = shouldBe (USegmentation.graphemeClusterBreak c)
+            check '\x000D'  USegmentation.CR
+            check '\x000A'  USegmentation.LF
+            check '\x0000'  USegmentation.Control
+            check '\x0009'  USegmentation.Control
+            check '\xE0FFF' USegmentation.Control
+            check '\x0300'  USegmentation.Extend
+            check '\xE01EF' USegmentation.Extend
+            check '\x200D'  USegmentation.ZWJ
+            check '\x1F1E6' USegmentation.RegionalIndicator
+            check '\x1F1FF' USegmentation.RegionalIndicator
+            check '\x0600'  USegmentation.Prepend
+            check '\x0605'  USegmentation.Prepend
+            check '\x0903'  USegmentation.SpacingMark
+            check '\x16FF0' USegmentation.SpacingMark
+            check '\x1100'  USegmentation.L
+            check '\xA97C'  USegmentation.L
+            check '\x1160'  USegmentation.V
+            check '\xD7C6'  USegmentation.V
+            check '\x11A8'  USegmentation.T
+            check '\xD7FB'  USegmentation.T
+            check '\xAC00'  USegmentation.LV
+            check '\xD788'  USegmentation.LV
+            check '\xAC01'  USegmentation.LVT
+            check '\xD7A3'  USegmentation.LVT
+            check '1'       USegmentation.Other
+            check 'A'       USegmentation.Other
+            check 'á'       USegmentation.Other
   where
     shouldBeEqualTo
         :: forall a b. (Bounded a, Enum a, Show a, Eq b, Show b)

@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE GeneralisedNewtypeDeriving #-}
 
 -- |
 -- Module      : Parser.Text
@@ -55,6 +56,7 @@ import qualified GHC.IO.Encoding as Encoding
 import qualified Streamly.Prelude as Stream
 import qualified Streamly.Data.Fold as Fold
 import qualified Streamly.Internal.Data.Fold as Fold
+import qualified Streamly.Internal.Data.Stream.IsStream.Top as Stream
 import qualified Streamly.Data.Unfold as Unfold
 import qualified Streamly.FileSystem.Handle as Handle
 import qualified System.IO as Sys
@@ -104,10 +106,37 @@ data DetailedChar =
     deriving (Show)
 
 type CharRange = Either Char (Char, Char)
+
+-- Assume no overlapping ranges
+compareCharRange :: CharRange -> CharRange -> Ordering
+compareCharRange = \case
+    Left c1 -> \case
+        Left   c2     -> compare c1 c2
+        Right (c2, _) -> compare c1 c2
+    Right (_, c1) -> \case
+        Left   c2     -> compare c1 c2
+        Right (c2, _) -> compare c1 c2
+
 data CharRangeStream
     = SingleChar !Char
     | CharRange !Char !Char
     | Stop
+    deriving (Eq, Show)
+
+-- -- Assume no overlapping ranges
+-- compareCharRangeStream :: CharRangeStream -> CharRangeStream -> Ordering
+-- compareCharRangeStream = \case
+--     SingleChar c1 -> \case
+--         SingleChar c2   -> compare c1 c2
+--         CharRange  c2 _ -> compare c1 c2
+--         Stop            -> LT
+--     CharRange _ c1 -> \case
+--         SingleChar c2   -> compare c1 c2
+--         CharRange  c2 _ -> compare c1 c2
+--         Stop            -> LT
+--     Stop -> \case
+--         Stop -> EQ
+--         _    -> GT
 
 -------------------------------------------------------------------------------
 -- Helpers
@@ -136,7 +165,7 @@ readCodePointM :: String -> Maybe Char
 readCodePointM "" = Nothing
 readCodePointM u  = Just (readCodePoint u)
 
-parseCodePointRange :: String -> Either Char (Char, Char)
+parseCodePointRange :: String -> CharRange
 parseCodePointRange
     = (\(c1, c2) -> maybe (Left c1) (Right . (c1,)) c2)
     . bimap readCodePoint (readCodePointM . drop 2)
@@ -1413,6 +1442,58 @@ genNumericValuesModule moduleName =
         , "  _ -> Nothing"
         ]
 
+genGraphemeBreakModule
+    :: Monad m
+    => String
+    -> Fold m GraphemeBreakLine String
+genGraphemeBreakModule moduleName =
+    done . finalize <$> Fold.foldl' addGraphemeBreak (mempty, Nothing)
+
+    where
+    finalize (acc, expected) = case expected of
+        Nothing -> acc
+        Just c  -> error ( "genGraphemeBreakModule: unexpected next char "
+                         <> show c )
+    addGraphemeBreak
+        :: ([GraphemeBreak], Maybe Char)
+        -> GraphemeBreakLine
+        -> ([GraphemeBreak], Maybe Char)
+    addGraphemeBreak (acc, expected) (range, graphemeBreak) = case range of
+        -- One char
+        Left c ->
+            ( mk1 $ if c == expected'
+                then acc
+                else addGraphemeBreakRange mk2 (succ c) expected' acc
+            , if c > minBound then Just (pred c) else Nothing )
+            where expected' = fromMaybe c expected
+        -- Range
+        Right (c1, c2) ->
+            ( addGraphemeBreakRange mk1 c1 c2 $ if c2 == expected'
+                then acc
+                else addGraphemeBreakRange mk2 (succ c2) expected' acc
+            , if c1 > minBound then Just (pred c1) else Nothing )
+            where expected' = fromMaybe c2 expected
+        where mk1 = (:) graphemeBreak
+              mk2 = (:) defaultGraphemeBreak
+
+    addGraphemeBreakRange mk l c acc = if l < c && minBound < c
+        then addGraphemeBreakRange mk l (pred c) (mk acc)
+        else mk acc
+
+    done values = unlines
+        [ apacheLicense 2023 moduleName
+        , "{-# OPTIONS_HADDOCK hide #-}"
+        , ""
+        , "module " <> moduleName
+        , "(graphemeClusterBreak)"
+        , "where"
+        , ""
+        , "import Data.Char (ord)"
+        , "import Unicode.Internal.Bits (lookupIntN)"
+        , ""
+        , genEnumBitmap "graphemeClusterBreak" defaultGraphemeBreak values
+        ]
+
 genIdentifierStatusModule
     :: Monad m
     => String
@@ -1697,7 +1778,7 @@ parseBlockLines = Stream.mapMaybe parseBlockLine
 -- Parsing script file
 -------------------------------------------------------------------------------
 
-type ScriptLine = (String, Either Char (Char, Char))
+type ScriptLine = (String, CharRange)
 
 parseScriptLine :: String -> Maybe ScriptLine
 parseScriptLine ln
@@ -1713,7 +1794,7 @@ parseScriptLine ln
 
         in (trim script, parseRange (trim rangeLn))
 
-    parseRange :: String -> Either Char (Char, Char)
+    parseRange :: String -> CharRange
     parseRange
         = (\(c1, c2) -> maybe (Left c1) (Right . (c1,)) c2)
         . bimap readCodePoint (readCodePointM . drop 2)
@@ -2125,6 +2206,58 @@ parseDerivedNumericValuesLines
         Right (c1, c2, value) -> if c1 <= c2
             then Just ((c1, value), Right (succ c1, c2, value))
             else Nothing
+
+-------------------------------------------------------------------------------
+-- Parsing GraphemeBreakProperty.txt
+-------------------------------------------------------------------------------
+
+newtype GraphemeBreak = GraphemeBreak { unGraphemeBreak :: Word8 }
+    deriving (Bounded, Enum, Show)
+
+type GraphemeBreakLine = (CharRange, GraphemeBreak)
+
+defaultGraphemeBreak :: GraphemeBreak
+defaultGraphemeBreak = GraphemeBreak 13
+
+parseGraphemeBreakPropertyLines
+    :: forall t m. (IsStream t, Monad m)
+    => t m String
+    -> t m GraphemeBreakLine
+parseGraphemeBreakPropertyLines
+    = Stream.sortBy (flip compareCharRange `on` fst)
+    . Stream.mapMaybe parseGraphemeBreakPropertyLine
+
+parseGraphemeBreakPropertyLine :: String -> Maybe GraphemeBreakLine
+parseGraphemeBreakPropertyLine = \case
+    ""    -> Nothing -- empty line
+    '#':_ -> Nothing -- comment
+    line  -> Just (parseLine line)
+
+    where
+
+    parseLine line =
+        let (rangeLn, line1) = span (/= ';') line
+            range = parseCodePointRange rangeLn
+            graphemeBreak = parseGraphemeBreak
+                (trim (takeWhile (/= '#') (tail line1)))
+        in (range, graphemeBreak)
+
+    parseGraphemeBreak = GraphemeBreak . \case
+        "CR"                 -> 0
+        "LF"                 -> 1
+        "Control"            -> 2
+        "Extend"             -> 3
+        "ZWJ"                -> 4
+        "Regional_Indicator" -> 5
+        "Prepend"            -> 6
+        "SpacingMark"        -> 7
+        "L"                  -> 8
+        "V"                  -> 9
+        "T"                  -> 10
+        "LV"                 -> 11
+        "LVT"                -> 12
+        -- [FIXME] Other 13
+        s                    -> error ("Unsupported GraphemeBreak: " <> s)
 
 -------------------------------------------------------------------------------
 -- Parsing Aliases
@@ -2543,6 +2676,13 @@ genCoreModules indir outdir props = do
         outdir
         [ caseFolding ]
 
+    runGenerator
+        indir
+        "auxiliary/GraphemeBreakProperty.txt"
+        parseGraphemeBreakPropertyLines
+        outdir
+        [ graphemeBreakProperty ]
+
     where
 
     blocks =
@@ -2636,6 +2776,10 @@ genCoreModules indir outdir props = do
     derivedNumericValues =
          ( "Unicode.Internal.Char.DerivedNumericValues"
          , genNumericValuesModule )
+
+    graphemeBreakProperty =
+         ( "Unicode.Internal.Char.GraphemeBreak"
+         , genGraphemeBreakModule )
 
 genNamesModules :: String -> String -> IO ()
 genNamesModules indir outdir = do
