@@ -20,8 +20,8 @@ import Unicode.Internal.Bits (lookupBit64)
 {-# INLINE isDecomposable #-}
 isDecomposable :: Char -> Bool
 isDecomposable = \c -> let cp = ord c in cp >= 0x00A0 && cp <= 0x2FA1D && lookupBit64 bitmap# cp
-   where
-   !(Ptr bitmap#) = isDecomposableBitmap
+    where
+    !(Ptr bitmap#) = isDecomposableBitmap
 
 isDecomposableBitmap :: Ptr Word8
 isDecomposableBitmap = Ptr

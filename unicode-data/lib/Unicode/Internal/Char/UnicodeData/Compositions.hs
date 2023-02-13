@@ -1013,8 +1013,8 @@ composeStarters _ _ = Nothing
 {-# INLINE isSecondStarter #-}
 isSecondStarter :: Char -> Bool
 isSecondStarter = \c -> let cp = ord c in cp >= 0x09BE && cp <= 0x11930 && lookupBit64 bitmap# cp
-   where
-   !(Ptr bitmap#) = isSecondStarterBitmap
+    where
+    !(Ptr bitmap#) = isSecondStarterBitmap
 
 isSecondStarterBitmap :: Ptr Word8
 isSecondStarterBitmap = Ptr

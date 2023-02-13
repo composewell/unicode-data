@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 -- |
 -- Module      : Unicode.Char.General.Compat
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors
@@ -17,7 +19,8 @@ module Unicode.Char.General.Compat
     , isSpace
     ) where
 
-import Unicode.Char.General (GeneralCategory(..), generalCategory)
+import Data.Char (ord)
+import qualified Unicode.Internal.Char.UnicodeData.GeneralCategory as UC
 
 -- | Same as 'isLetter'.
 --
@@ -47,13 +50,15 @@ prop> isLetter c == Data.Char.isLetter c
 -}
 {-# INLINE isLetter #-}
 isLetter :: Char -> Bool
-isLetter c = case generalCategory c of
-    UppercaseLetter -> True
-    LowercaseLetter -> True
-    TitlecaseLetter -> True
-    ModifierLetter  -> True
-    OtherLetter     -> True
-    _               -> False
+isLetter c =
+    let !cp = ord c
+    -- NOTE: The guard constant is updated at each Unicode revision.
+    --       It must be < 0x40000 to be accepted by generalCategoryPlanes0To3.
+    in cp <= UC.MaxIsLetter &&
+        let !gc = UC.generalCategoryPlanes0To3 cp
+        in gc <= UC.OtherLetter
+    -- Use the following in case the previous code is not valid anymore:
+    -- UC.generalCategory c <= UC.OtherLetter
 
 {-| Selects Unicode space characters (general category 'Space'),
 and the control characters @\\t@, @\\n@, @\\r@, @\\f@, @\\v@.
@@ -71,11 +76,13 @@ prop> isSpace c == Data.Char.isSpace c
 @since 0.3.0
 -}
 isSpace :: Char -> Bool
-isSpace '\t' = True
-isSpace '\n' = True
-isSpace '\v' = True
-isSpace '\f' = True
-isSpace '\r' = True
-isSpace c = case generalCategory c of
-    Space -> True
-    _     -> False
+-- NOTE: The guard constant is updated at each Unicode revision.
+--       It must be < 0x40000 to be accepted by generalCategoryPlanes0To3.
+isSpace c = cp <= UC.MaxIsSpace && case c of
+    '\t' -> True
+    '\n' -> True
+    '\v' -> True
+    '\f' -> True
+    '\r' -> True
+    _    -> UC.generalCategoryPlanes0To3 cp == UC.Space
+    where cp = ord c

@@ -36,8 +36,8 @@ isXID_ContinueBitmap = Ptr
 {-# INLINE isXID_Start #-}
 isXID_Start :: Char -> Bool
 isXID_Start = \c -> let cp = ord c in cp >= 0x0041 && cp <= 0x323AF && lookupBit64 bitmap# cp
-   where
-   !(Ptr bitmap#) = isXID_StartBitmap
+    where
+    !(Ptr bitmap#) = isXID_StartBitmap
 
 isXID_StartBitmap :: Ptr Word8
 isXID_StartBitmap = Ptr
@@ -62,8 +62,8 @@ isID_ContinueBitmap = Ptr
 {-# INLINE isID_Start #-}
 isID_Start :: Char -> Bool
 isID_Start = \c -> let cp = ord c in cp >= 0x0041 && cp <= 0x323AF && lookupBit64 bitmap# cp
-   where
-   !(Ptr bitmap#) = isID_StartBitmap
+    where
+    !(Ptr bitmap#) = isID_StartBitmap
 
 isID_StartBitmap :: Ptr Word8
 isID_StartBitmap = Ptr
@@ -72,8 +72,8 @@ isID_StartBitmap = Ptr
 {-# INLINE isUppercase #-}
 isUppercase :: Char -> Bool
 isUppercase = \c -> let cp = ord c in cp >= 0x0041 && cp <= 0x1F189 && lookupBit64 bitmap# cp
-   where
-   !(Ptr bitmap#) = isUppercaseBitmap
+    where
+    !(Ptr bitmap#) = isUppercaseBitmap
 
 isUppercaseBitmap :: Ptr Word8
 isUppercaseBitmap = Ptr
@@ -82,8 +82,8 @@ isUppercaseBitmap = Ptr
 {-# INLINE isLowercase #-}
 isLowercase :: Char -> Bool
 isLowercase = \c -> let cp = ord c in cp >= 0x0061 && cp <= 0x1E943 && lookupBit64 bitmap# cp
-   where
-   !(Ptr bitmap#) = isLowercaseBitmap
+    where
+    !(Ptr bitmap#) = isLowercaseBitmap
 
 isLowercaseBitmap :: Ptr Word8
 isLowercaseBitmap = Ptr
@@ -92,8 +92,8 @@ isLowercaseBitmap = Ptr
 {-# INLINE isAlphabetic #-}
 isAlphabetic :: Char -> Bool
 isAlphabetic = \c -> let cp = ord c in cp >= 0x0041 && cp <= 0x323AF && lookupBit64 bitmap# cp
-   where
-   !(Ptr bitmap#) = isAlphabeticBitmap
+    where
+    !(Ptr bitmap#) = isAlphabeticBitmap
 
 isAlphabeticBitmap :: Ptr Word8
 isAlphabeticBitmap = Ptr

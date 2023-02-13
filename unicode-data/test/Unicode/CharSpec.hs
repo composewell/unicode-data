@@ -1,5 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Unicode.CharSpec
   ( spec
@@ -18,6 +19,7 @@ import qualified Unicode.Char.General.Compat as UCharCompat
 import qualified Unicode.Char.Case.Compat as UCharCompat
 import qualified Unicode.Char.Numeric as UNumeric
 import qualified Unicode.Char.Numeric.Compat as UNumericCompat
+import qualified Unicode.Internal.Char.UnicodeData.GeneralCategory as UC
 import Data.Foldable (traverse_)
 import Test.Hspec
 
@@ -84,33 +86,85 @@ spec = do
   describe' "Character classification" do
     it "isAlpha" do
       UChar.isAlpha `shouldBeEqualTo` Char.isAlpha
-    it "isAlphaNum" do
-      UChar.isAlphaNum `shouldBeEqualTo` Char.isAlphaNum
+    describe "isAlphaNum" do
+      let isAlphaNumRef = \case
+                        UChar.UppercaseLetter -> True
+                        UChar.LowercaseLetter -> True
+                        UChar.TitlecaseLetter -> True
+                        UChar.ModifierLetter  -> True
+                        UChar.OtherLetter     -> True
+                        UChar.DecimalNumber   -> True
+                        UChar.LetterNumber    -> True
+                        UChar.OtherNumber     -> True
+                        _                     -> False
+      it "Check max codepoint for isAlphaNum" do
+        Char.chr UC.MaxIsAlphaNum `shouldBe` maxCodePointBy isAlphaNumRef
+        UC.MaxIsAlphaNum `shouldSatisfy` isPlane0To3
+      it "Compare to base" do
+        UChar.isAlphaNum `shouldBeEqualTo` Char.isAlphaNum
     it "isControl" do
       UChar.isControl `shouldBeEqualTo` Char.isControl
-    it "isLetter" do
-      UCharCompat.isLetter `shouldBeEqualTo` Char.isLetter
+    describe "isLetter" do
+      let isLetterRef = \case
+                        UChar.UppercaseLetter -> True
+                        UChar.LowercaseLetter -> True
+                        UChar.TitlecaseLetter -> True
+                        UChar.ModifierLetter  -> True
+                        UChar.OtherLetter     -> True
+                        _                     -> False
+      it "Check max codepoint for isLetterRef" do
+        Char.chr UC.MaxIsLetter `shouldBe` maxCodePointBy isLetterRef
+        UC.MaxIsLetter `shouldSatisfy` isPlane0To3
+      it "Compare to base" do
+        UCharCompat.isLetter `shouldBeEqualTo` Char.isLetter
     it "isMark" do
       UChar.isMark `shouldBeEqualTo` Char.isMark
     it "isPrint" do
       UChar.isPrint `shouldBeEqualTo` Char.isPrint
     it "isPunctuation" do
       UChar.isPunctuation `shouldBeEqualTo` Char.isPunctuation
-    it "isSeparator" do
-      UChar.isSeparator `shouldBeEqualTo` Char.isSeparator
-    it "isSpace" do
-      UCharCompat.isSpace `shouldBeEqualTo` Char.isSpace
+    describe "isSeparator" do
+      it "Check max codepoint for isSeparator" do
+        let isSeparatorRef = \case
+                            UChar.Space              -> True
+                            UChar.LineSeparator      -> True
+                            UChar.ParagraphSeparator -> True
+                            _                        -> False
+        Char.chr UC.MaxIsSeparator `shouldBe` maxCodePointBy isSeparatorRef
+        UC.MaxIsSeparator `shouldSatisfy` isPlane0To3
+      it "Compare to base" do
+        UChar.isSeparator `shouldBeEqualTo` Char.isSeparator
+    describe "isSpace" do
+      it "Check max codepoint for Space" do
+        let isSpaceRef = (== UChar.Space)
+        Char.chr UC.MaxIsSpace `shouldBe` maxCodePointBy isSpaceRef
+        UC.MaxIsSpace `shouldSatisfy` isPlane0To3
+      it "Compare to base" do
+        UCharCompat.isSpace `shouldBeEqualTo` Char.isSpace
     it "isSymbol" do
       UChar.isSymbol `shouldBeEqualTo` Char.isSymbol
   describe "Case" do
-    it' "isLower" do
-      UCharCompat.isLower `shouldBeEqualTo` Char.isLower
+    describe "isLower" do
+      it "Check max codepoint for lower" do
+        let isLowerRef = (== UChar.LowercaseLetter)
+        Char.chr UC.MaxIsLower `shouldBe` maxCodePointBy isLowerRef
+        UC.MaxIsLower `shouldSatisfy` isPlane0To3
+      it' "Compare to base" do
+          UCharCompat.isLower `shouldBeEqualTo` Char.isLower
 #if MIN_VERSION_base(4,18,0)
     it' "isLowerCase" do
       UChar.isLowerCase `shouldBeEqualTo` Char.isLowerCase
 #endif
-    it' "isUpper" do
-      UCharCompat.isUpper `shouldBeEqualTo` Char.isUpper
+    describe "isUpper" do
+      it "Check max codepoint for upper" do
+        let isUpperRef = \case
+                            UChar.UppercaseLetter -> True
+                            UChar.TitlecaseLetter -> True
+                            _                     -> False
+        Char.chr UC.MaxIsUpper `shouldBe` maxCodePointBy isUpperRef
+        UC.MaxIsUpper `shouldSatisfy` isPlane0To3
+      it' "Compare to base" do
+        UCharCompat.isUpper `shouldBeEqualTo` Char.isUpper
 #if MIN_VERSION_base(4,18,0)
     it' "isUpperCase" do
       UChar.isUpperCase `shouldBeEqualTo` Char.isUpperCase
@@ -189,8 +243,17 @@ spec = do
                     in cf == foldMap UChar.toCaseFoldString cf
             traverse_ check [minBound..maxBound]
   describe "Numeric" do
-    it' "isNumber" do
-      UNumericCompat.isNumber `shouldBeEqualTo` Char.isNumber
+    describe "isNumber" do
+      it "Check max codepoint for numbers" do
+        let isNumber = \case
+                            UChar.DecimalNumber -> True
+                            UChar.LetterNumber  -> True
+                            UChar.OtherNumber   -> True
+                            _                   -> False
+        Char.chr UC.MaxIsNumber `shouldBe` maxCodePointBy isNumber
+        UC.MaxIsNumber `shouldSatisfy` isPlane0To3
+      it' "Compare to base" do
+        UNumericCompat.isNumber `shouldBeEqualTo` Char.isNumber
     it "isNumber implies a numeric value" do
       -- [NOTE] the following does not hold with the current predicate `isNumber`.
       --        As of Unicode 15.0.0, there are 81 such characters (all CJK).
@@ -206,3 +269,8 @@ spec = do
     shouldBeEqualTo f g =
         let same x = f x == g x
         in traverse_ (`shouldSatisfy` same) [minBound..maxBound]
+    isPlane0To3 = (< 0x40000)
+    maxCodePointBy p = foldr
+        (\c -> if p (UChar.generalCategory c) then max c else id)
+        minBound
+        [minBound..maxBound]

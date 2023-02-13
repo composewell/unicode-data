@@ -74,7 +74,7 @@ data GeneralCategory =
     Sm|Sc|Sk|So|          --S
     Zs|Zl|Zp|             --Z
     Cc|Cf|Cs|Co|Cn        --C
-    deriving (Show, Bounded, Enum, Read)
+    deriving (Bounded, Enum, Eq, Read, Show)
 
 data DecompType =
        DTCanonical | DTCompat  | DTFont
@@ -153,17 +153,47 @@ showPaddedHeX :: Int -> String
 showPaddedHeX = fmap toUpper . showPaddedHex
 
 showHexCodepoint :: Char -> String
-showHexCodepoint = showPaddedHex . ord
+showHexCodepoint = showPaddedHeX . ord
 
-genSignature :: String -> String
-genSignature = (<> " :: Char -> Bool")
+generalCategoryConstructor :: GeneralCategory -> String
+generalCategoryConstructor = \case
+    Lu -> "UppercaseLetter"
+    Ll -> "LowercaseLetter"
+    Lt -> "TitlecaseLetter"
+    Lm -> "ModifierLetter"
+    Lo -> "OtherLetter"
+    Mn -> "NonSpacingMark"
+    Mc -> "SpacingCombiningMark"
+    Me -> "EnclosingMark"
+    Nd -> "DecimalNumber"
+    Nl -> "LetterNumber"
+    No -> "OtherNumber"
+    Pc -> "ConnectorPunctuation"
+    Pd -> "DashPunctuation"
+    Ps -> "OpenPunctuation"
+    Pe -> "ClosePunctuation"
+    Pi -> "InitialQuote"
+    Pf -> "FinalQuote"
+    Po -> "OtherPunctuation"
+    Sm -> "MathSymbol"
+    Sc -> "CurrencySymbol"
+    Sk -> "ModifierSymbol"
+    So -> "OtherSymbol"
+    Zs -> "Space"
+    Zl -> "LineSeparator"
+    Zp -> "ParagraphSeparator"
+    Cc -> "Control"
+    Cf -> "Format"
+    Cs -> "Surrogate"
+    Co -> "PrivateUse"
+    Cn -> "NotAssigned"
 
 genBitmap :: HasCallStack => String -> [Int] -> String
 genBitmap funcName ordList = mconcat
     [ "{-# INLINE " <> funcName <> " #-}\n"
-    , genSignature funcName, "\n"
-    , func, "\n"
-    -- , "{-# NOINLINE ", bitmapLookup, " #-}\n"
+    , funcName, " :: Char -> Bool\n"
+    , funcName, func
+    , "    !(Ptr bitmap#) = ", bitmapLookup, "\n\n"
     , bitmapLookup, " :: Ptr Word8\n"
     , bitmapLookup, " = Ptr\n"
     , "    \"", bitMapToAddrLiteral bitmap "\"#\n" ]
@@ -174,23 +204,21 @@ genBitmap funcName ordList = mconcat
         -- Only planes 0-3
         then
             ( mconcat
-                [ funcName
-                , " = \\c -> let cp = ord c in cp >= 0x"
+                [ " = \\c -> let cp = ord c in cp >= 0x"
                 , showPaddedHeX (minimum ordList)
                 , " && cp <= 0x"
                 , showPaddedHeX (maximum ordList)
                 , " && lookupBit64 bitmap# cp\n"
-                , "   where\n"
-                , "   !(Ptr bitmap#) = ", bitmapLookup, "\n" ]
+                , "    where\n" ]
             , rawBitmap )
         -- Planes 0-3 and 14
         else
-            let (planes0To3, plane14) = splitPlanes rawBitmap
+            let (planes0To3, plane14) = splitPlanes "genBitmap: cannot build" not rawBitmap
                 bound0 = pred (minimum ordList)
                 bound1 = length planes0To3
                 bound2 = 0xE0000 + length plane14
             in ( mconcat
-                    [ funcName, " c\n"
+                    [ " c\n"
                     , if bound0 > 0
                         then mconcat
                             [ "    | cp < 0x"
@@ -206,20 +234,8 @@ genBitmap funcName ordList = mconcat
                     , ")\n"
                     , "    | otherwise = False\n"
                     , "    where\n"
-                    , "    cp = ord c\n"
-                    , "    !(Ptr bitmap#) = ", bitmapLookup, "\n" ]
+                    , "    cp = ord c\n" ]
                 , planes0To3 <> plane14 )
-    splitPlanes xs =
-        let planes0To3 = dropWhileEnd not (take 0x40000 xs);
-            planes4To16 = drop 0x40000 xs
-            planes4To13 = take (0xE0000 - 0x40000) planes4To16
-            planes14To16 = drop (0xE0000 - 0x40000) planes4To16
-            plane14 = dropWhileEnd not (take (0xF0000 - 0xE0000) planes14To16)
-            planes15To16 = drop (0xF0000 - 0xE0000) planes14To16
-        in if all not planes4To13 && all not planes15To16
-            then (planes0To3, plane14)
-            else error "genBitmap: cannot build"
-
 
 positionsToBitMap :: [Int] -> [Bool]
 positionsToBitMap = go 0
@@ -257,25 +273,89 @@ bitMapToAddrLiteral bs cs = foldr encode cs (unfoldr mkChunks bs)
     toByte xs = sum $ map (\i -> if xs !! i then 1 `shiftL` i else 0) [0..7]
 
 genEnumBitmap
-  :: forall a. (Bounded a, Enum a, Show a)
+  :: forall a. (HasCallStack, Bounded a, Enum a, Eq a, Show a)
   => String
   -- ^ Function name
-  -> a
+  -> (a, String)
+  -- ^ Value for planes 15-16
+  -> (a, String)
   -- ^ Default value
   -> [a]
-  -- ^ List of values to encode
+  -- ^ List of values to encode for planes 0 to 3
+  -> [a]
+  -- ^ List of values to encode for plane 14
   -> String
-genEnumBitmap funcName def as = unlines
-    [ "{-# INLINE " <> funcName <> " #-}"
-    , funcName <> " :: Char -> Int"
-    , funcName <> " c = let n = ord c in if n >= "
-               <> show (length as)
-               <> " then "
-               <> show (fromEnum def)
-               <> " else lookupIntN bitmap# n"
-    , "  where"
-    , "    bitmap# = \"" <> enumMapToAddrLiteral as "\"#"
+genEnumBitmap funcName (defPUA, pPUA) (def, pDef) planes0To3 plane14 = mconcat
+    [ "{-# INLINE ", funcName, " #-}\n"
+    , funcName, " :: Char -> Int\n"
+    , funcName, func
+    , "    !(Ptr bitmap#) = ", bitmapLookup, "\n\n"
+    , bitmapLookup, " :: Ptr Word8\n"
+    , bitmapLookup, " = Ptr\n"
+    , "    \"", enumMapToAddrLiteral 4 0xff bitmap "\"#"
     ]
+    where
+    bitmapLookup = funcName <> "Bitmap"
+    planes0To3' = dropWhileEnd (== def) planes0To3
+    check = if length planes0To3 <= 0x40000
+        then ()
+        else error "genEnumBitmap: Cannot build"
+    (func, bitmap) = check `seq` if null plane14 && defPUA == def
+        -- Only planes 0-3
+        then
+            ( mconcat
+                [ " = \\c -> let cp = ord c in if cp >= 0x"
+                , showPaddedHeX (length planes0To3')
+                , " then "
+                , pDef
+                , " else lookupIntN bitmap# cp\n"
+                , "    where\n" ]
+            , planes0To3' )
+        -- All the planes
+        else
+            let plane14' = dropWhileEnd (== def) plane14
+                bound1 = length planes0To3'
+                bound2 = 0xE0000 + length plane14'
+            in ( mconcat
+                    [ " c\n"
+                    , "    -- Planes 0-3\n"
+                    , "    | cp < 0x", showPaddedHeX bound1
+                                     , " = lookupIntN bitmap# cp\n"
+                    , "    -- Planes 4-13: ", show def, "\n"
+                    , "    | cp < 0xE0000 = " <> pDef, "\n"
+                    , "    -- Plane 14\n"
+                    , "    | cp < 0x", showPaddedHeX bound2
+                                     , " = lookupIntN bitmap# (cp - 0x"
+                                     , showPaddedHeX (0xE0000 - bound1)
+                                     , ")\n"
+                    , if defPUA == def
+                        then ""
+                        else mconcat
+                            [ "    -- Plane 14: ", show def, "\n"
+                            , "    | cp < 0xF0000 = ", pDef, "\n"
+                            , "    -- Plane 15: ", show defPUA, "\n"
+                            , "    | cp < 0xFFFFE = ", pPUA, "\n"
+                            , "    -- Plane 15: ", show def, "\n"
+                            , "    | cp < 0x100000 = " <> pDef, "\n"
+                            , "    -- Plane 16: ", show defPUA, "\n"
+                            , "    | cp < 0x10FFFE = " <> pPUA, "\n" ]
+                    , "    -- Default: ", show def, "\n"
+                    , "    | otherwise = " <> pDef, "\n"
+                    , "    where\n"
+                    , "    cp = ord c\n" ]
+                , planes0To3' <> plane14' )
+
+splitPlanes :: (HasCallStack) => String -> (a -> Bool) -> [a] -> ([a], [a])
+splitPlanes msg isDef xs = if all isDef planes4To13 && null planes15To16
+    then (planes0To3, plane14)
+    else error msg
+    where
+    planes0To3 = dropWhileEnd isDef (take 0x40000 xs)
+    planes4To16 = drop 0x40000 xs
+    planes4To13 = take (0xE0000 - 0x40000) planes4To16
+    planes14To16 = drop (0xE0000 - 0x40000) planes4To16
+    plane14 = dropWhileEnd isDef (take 0x10000 planes14To16)
+    planes15To16 = drop 0x10000 planes14To16
 
 {-| Encode a list of values as a byte map, using their 'Enum' instance.
 
@@ -286,22 +366,63 @@ __Note:__ 'Enum' instance must respect the following:
 -}
 enumMapToAddrLiteral
   :: forall a. (Bounded a, Enum a, Show a)
-  => [a]
+  => Word8
+  -- ^ Indentation
+  -> Int
+  -- ^ Chunk size
+  -> [a]
   -- ^ Values to encode
   -> String
   -- ^ String to append
   -> String
-enumMapToAddrLiteral xs cs = foldr go cs xs
+enumMapToAddrLiteral indentation chunkSize =
+    chunkAddrLiteral indentation chunkSize addWord
 
     where
 
-    go :: a -> String -> String
-    go x acc = '\\' : shows (toWord8 x) acc
+    addWord :: a -> String -> String
+    addWord x acc = '\\' : shows (toWord8 x) acc
 
     toWord8 :: a -> Word8
     toWord8 a = let w = fromEnum a in if 0 <= w && w <= 0xff
         then fromIntegral w
         else error $ "Cannot convert to Word8: " <> show a
+
+chunkAddrLiteral
+  :: forall a. (Bounded a, Enum a, Show a)
+  => Word8
+  -- ^ Indentation
+  -> Int
+  -- ^ Chunk size
+  -> (a -> String -> String)
+  -- ^ Function to convert to 'Word8' and prepend to the accumulator
+  -> [a]
+  -- ^ Values to encode
+  -> String
+  -- ^ String to append
+  -> String
+chunkAddrLiteral indentation chunkSize addWord xs cs
+    = fst
+    . foldr go (cs, id : repeat indent)
+    $ chunksOf chunkSize xs
+
+    where
+
+    indent = indent' indentation . ('\\' :)
+    indent' = \case
+        0 -> \s -> '\\' : '\n' : s
+        i -> indent' (pred i) . (' ' :)
+
+    go :: [a] -> (String, [String -> String]) -> (String, [String -> String])
+    go as (acc, seps) = (foldr addWord (head seps acc) as, tail seps)
+
+chunksOf :: Int -> [a] -> [[a]]
+chunksOf i = go
+    where
+    go = \case
+        [] -> []
+        as -> b : go as'
+            where (b, as') = splitAt i as
 
 -- Encode Word32 to [Word8] little endian
 word32ToWord8s :: Word32 -> [Word8]
@@ -358,17 +479,15 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
 
     done (blocks, defs, ranges) = let ranges' = reverse ranges in unlines
         [ apacheLicense 2022 moduleName
-        , "{-# LANGUAGE CPP, MultiWayIf #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
         , "(Block(..), BlockDefinition(..), block, blockDefinition)"
         , "where"
         , ""
-        , "#include \"MachDeps.h\""
-        , ""
         , "import Data.Ix (Ix)"
         , "import GHC.Exts"
+        , "import Unicode.Internal.Bits (lookupWord32#)"
         , ""
         , "-- | Unicode [block](https://www.unicode.org/glossary/#block)."
         , "--"
@@ -427,21 +546,11 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , "                    else let block# = cpL0# `uncheckedShiftRL#` 21#"
         , "                         in Just (I# (word2Int# block#))"
         , ""
-        , "    getRawCodePoint# k# ="
-        , "#ifdef WORDS_BIGENDIAN"
-        , "#if MIN_VERSION_base(4,16,0)"
-        , "        narrow32Word# (byteSwap32# (word32ToWord# (indexWord32OffAddr# ranges# k#)))"
-        , "#else"
-        , "        narrow32Word# (byteSwap32# (indexWord32OffAddr# ranges# k#))"
-        , "#endif"
-        , "#elif MIN_VERSION_base(4,16,0)"
-        , "        word32ToWord# (indexWord32OffAddr# ranges# k#)"
-        , "#else"
-        , "        indexWord32OffAddr# ranges# k#"
-        , "#endif"
+        , "    getRawCodePoint# = lookupWord32# ranges#"
         , ""
         , "    -- Encoded ranges"
-        , "    ranges# = \"" <> enumMapToAddrLiteral (mkRanges ranges') "\"#"
+        , "    ranges# ="
+        , "        \"" <> enumMapToAddrLiteral 8 0xff (mkRanges ranges') "\"#"
         ]
 
     initial :: ([String], [String], [(Int, Int)])
@@ -514,6 +623,7 @@ genScriptsModule moduleName aliases =
             , "import Data.Char (ord)"
             , "import Data.Int (Int32)"
             , "import Data.Ix (Ix)"
+            , "import Data.Word (Word8)"
             , "import GHC.Exts (Ptr(..))"
             , "import Unicode.Internal.Bits (lookupIntN)"
             , ""
@@ -655,13 +765,20 @@ genScriptsModule moduleName aliases =
     mkCharScripts :: [String] -> [ScriptLine] -> String
     mkCharScripts scripts scriptsRanges =
         let charScripts = sort (foldMap (rangeToCharScripts getScript) scriptsRanges)
-            charScripts' = fst (foldl' addMissing (mempty, '\0') charScripts)
+            charScripts' = reverse (fst (foldl' addMissing (mempty, '\0') charScripts))
             addMissing (acc, expected) x@(c, script) = if expected < c
                 then addMissing (def:acc, succ expected) x
                 else (script:acc, succ c)
             def = getScript defaultScript
             getScript s = fromMaybe (error "script not found") (elemIndex s scripts)
-        in genEnumBitmap "script" def (reverse charScripts')
+            -- [TODO] simplify
+            (planes0To3, plane14) = splitPlanes "Cannot generate: genScriptsModule" (== def) charScripts'
+        in genEnumBitmap
+            "script"
+            (def, show (fromEnum def))
+            (def, show (fromEnum def))
+            planes0To3
+            plane14
 
     rangeToCharScripts :: (String -> b) -> ScriptLine -> [(Char, b)]
     rangeToCharScripts f (script, r) = case r of
@@ -742,6 +859,8 @@ genScriptExtensionsModule moduleName aliases extensions =
         , ""
         , "import Data.Char (ord)"
         , "import Data.List.NonEmpty (NonEmpty)"
+        , "import Data.Word (Word8)"
+        , "import GHC.Exts (Ptr(..))"
         , "import Unicode.Internal.Char.Scripts (Script(..))"
         , "import Unicode.Internal.Bits (lookupIntN)"
         , ""
@@ -753,8 +872,20 @@ genScriptExtensionsModule moduleName aliases extensions =
         , "-- | Script extensions of a character."
         , "--"
         , "-- @since 0.1.0"
-        , genEnumBitmap "scriptExtensions" def (mkScriptExtensions exts)
+        , genEnumBitmap
+            "scriptExtensions"
+            (def, show (fromEnum def))
+            (def, show (fromEnum def))
+            planes0To3
+            plane14
         ]
+        where
+        scriptExtensions = mkScriptExtensions exts
+        -- [TODO] simplify
+        (planes0To3, plane14) = splitPlanes
+            "Cannot generate: genScriptExtensionsModule"
+            (== def)
+            scriptExtensions
 
     mkDecodeScriptExtensions :: Set.Set [String] -> String
     mkDecodeScriptExtensions
@@ -785,6 +916,36 @@ genScriptExtensionsModule moduleName aliases extensions =
 -- Parsing UnicodeData.txt
 -------------------------------------------------------------------------------
 
+data CharBounds = CharBounds
+    { maxIsLetter    :: !Char
+    , maxIsAlphaNum  :: !Char
+    , maxIsLower     :: !Char
+    , maxIsUpper     :: !Char
+    , maxIsNumber    :: !Char
+    , maxIsSpace     :: !Char
+    , maxIsSeparator :: !Char }
+
+updateCharBounds :: CharBounds -> Char -> GeneralCategory -> CharBounds
+updateCharBounds acc@CharBounds{..} c = \case
+    Lu -> acc{ maxIsAlphaNum = max maxIsAlphaNum c
+             , maxIsLetter = max maxIsLetter c
+             , maxIsUpper = max maxIsUpper c }
+    Ll -> acc{ maxIsAlphaNum = max maxIsAlphaNum c
+             , maxIsLetter = max maxIsLetter c
+             , maxIsLower = max maxIsLower c }
+    Lt -> acc{ maxIsAlphaNum = max maxIsAlphaNum c
+             , maxIsLetter = max maxIsLetter c
+             , maxIsUpper = max maxIsUpper c }
+    Lm -> acc{maxIsAlphaNum=max maxIsAlphaNum c, maxIsLetter=max maxIsLetter c}
+    Lo -> acc{maxIsAlphaNum=max maxIsAlphaNum c, maxIsLetter=max maxIsLetter c}
+    Nd -> acc{maxIsAlphaNum=max maxIsAlphaNum c, maxIsNumber=max maxIsNumber c}
+    Nl -> acc{maxIsAlphaNum=max maxIsAlphaNum c, maxIsNumber=max maxIsNumber c}
+    No -> acc{maxIsAlphaNum=max maxIsAlphaNum c, maxIsNumber=max maxIsNumber c}
+    Zs -> acc{maxIsSeparator=max maxIsAlphaNum c, maxIsSpace=max maxIsSpace c}
+    Zl -> acc{maxIsSeparator=max maxIsAlphaNum c}
+    Zp -> acc{maxIsSeparator=max maxIsAlphaNum c}
+    _  -> acc
+
 genGeneralCategoryModule
     :: Monad m
     => String
@@ -795,83 +956,110 @@ genGeneralCategoryModule moduleName =
     where
 
     -- (categories planes 0-3, categories plane 14, expected char)
-    initial = ([], [], '\0')
+    initial =
+        ( []
+        , []
+        , minBound
+        , CharBounds minBound minBound minBound minBound minBound minBound minBound)
 
-    step :: ([GeneralCategory], [GeneralCategory], Char)
+    step :: ([GeneralCategory], [GeneralCategory], Char, CharBounds)
          -> DetailedChar
-         -> ([GeneralCategory], [GeneralCategory], Char)
-    step acc@(acc1, acc2, p) a
+         -> ([GeneralCategory], [GeneralCategory], Char, CharBounds)
+    step acc@(acc1, acc2, p, bounds) a
         -- Plane 0 to 3, missing char
         -- Fill missing char entry with default category Cn
         -- See: https://www.unicode.org/reports/tr44/#Default_Values_Table
-        | plane0To3 && p < c = step (Cn : acc1, acc2, succ p) a
+        | plane0To3 && p < c = step (Cn : acc1, acc2, succ p, bounds)
+            a
         -- Plane 0 to 3, Regular entry
-        | plane0To3 = (_generalCategory a : acc1, acc2, succ (_char a))
+        | plane0To3 =
+            ( generalCategory : acc1
+            , acc2
+            , succ c
+            , updateCharBounds bounds c generalCategory )
         -- Plane 4 to 13: no entry expected
         | plane4To13 = error ("Unexpected char in plane 4-13: " <> show a)
         -- Plane 15 to 16: skip if PUA
-        | plane15To16 = case _generalCategory a of
+        | plane15To16 = case generalCategory of
             Co -> acc -- skip
             _  -> error ("Unexpected char in plane 15-16: " <> show a)
         -- Leap to plane 14
-        | p < '\xE0000' = step (acc1, acc2, '\xE0000') a
+        | p < '\xE0000' = step (acc1, acc2, '\xE0000', bounds) a
         -- Plane 14, missing char
-        | p < c = step (acc1, Cn : acc2, succ p) a
+        | p < c = step (acc1, Cn : acc2, succ p, bounds) a
         -- Plane 14, regular entry
-        | otherwise = (acc1, _generalCategory a : acc2, succ (_char a))
+        | otherwise =
+            ( acc1
+            , generalCategory : acc2
+            , succ c
+            , updateCharBounds bounds c generalCategory )
         where
         c = _char a
+        generalCategory = _generalCategory a
         plane0To3 = c <= '\x3FFFF'
         plane4To13 = c <= '\xDFFFF'
         plane15To16 = c >= '\xF0000'
 
-    done (acc1, acc2, _) = unlines
+    done (acc1, acc2, _, CharBounds{..}) = unlines
         [ apacheLicense 2020 moduleName
         , "{-# OPTIONS_HADDOCK hide #-}"
+        , "{-# LANGUAGE PatternSynonyms #-}"
         , ""
         , "module " <> moduleName
-        , "(generalCategory)"
+        , "( -- * Lookup functions"
+        , "  generalCategory"
+        , ", generalCategoryPlanes0To3"
+        , ""
+        , "  -- * General categories"
+        , foldMap mkGeneralCategoryExport [minBound..maxBound]
+        , "  -- * Characters bounds for predicates"
+        , ", pattern MaxIsLetter"
+        , ", pattern MaxIsAlphaNum"
+        , ", pattern MaxIsLower"
+        , ", pattern MaxIsUpper"
+        , ", pattern MaxIsNumber"
+        , ", pattern MaxIsSpace"
+        , ", pattern MaxIsSeparator )"
         , "where"
         , ""
         , "import Data.Char (ord)"
         , "import Data.Word (Word8)"
         , "import GHC.Exts (Ptr(..))"
         , "import Unicode.Internal.Bits (lookupIntN)"
+        , foldMap mkGeneralCategoryPattern [minBound..maxBound]
+        , mkCharBoundPattern maxIsLetter    "MaxIsLetter"    "isLetter"
+        , mkCharBoundPattern maxIsAlphaNum  "MaxIsAlphaNum"  "isAlphaNum"
+        , mkCharBoundPattern maxIsLower     "MaxIsLower"     "isLower"
+        , mkCharBoundPattern maxIsUpper     "MaxIsUpper"     "isUpper"
+        , mkCharBoundPattern maxIsNumber    "MaxIsNumber"    "isNumber"
+        , mkCharBoundPattern maxIsSpace     "MaxIsSpace"     "isSpace"
+        , mkCharBoundPattern maxIsSeparator "MaxIsSeparator" "isSeparator"
+        , "{-# INLINE generalCategoryPlanes0To3 #-}"
+        , "generalCategoryPlanes0To3 :: Int -> Int"
+        , "generalCategoryPlanes0To3 = lookupIntN bitmap#"
+        , "    where"
+        , "    !(Ptr bitmap#) = generalCategoryBitmap"
         , ""
-        , "{-# INLINE generalCategory #-}"
-        , "generalCategory :: Char -> Int"
-        , "generalCategory c"
-        , "    -- Planes 0-3"
-        , "    | cp < 0x"
-                    <> showPaddedHeX lengthAcc1
-                    <> " = lookupIntN bitmap# cp"
-        , "    -- Planes 4-13: Cn"
-        , "    | cp < 0xE0000 = " <> show (fromEnum Cn)
-        , "    -- Plane 14"
-        , "    | cp < 0x"
-                    <> showPaddedHeX (0xE0000 + length acc2)
-                    <> " = lookupIntN bitmap# (cp - 0x"
-                    <> showPaddedHeX (0xE0000 - lengthAcc1)
-                    <> ")"
-        , "    -- Plane 14: Cn"
-        , "    | cp < 0xF0000 = " <> show (fromEnum Cn)
-        , "    -- Plane 15: Co"
-        , "    | cp < 0xFFFFE = " <> show (fromEnum Co)
-        , "    -- Plane 15: Cn"
-        , "    | cp < 0x100000 = " <> show (fromEnum Cn)
-        , "    -- Plane 16: Co"
-        , "    | cp < 0x10FFFE = " <> show (fromEnum Co)
-        , "    -- Default: Cn"
-        , "    | otherwise = " <> show (fromEnum Cn)
-        , "    where cp = ord c"
-        , "          !(Ptr bitmap#) = generalCategoryBitmap"
-        , ""
-        -- , "{-# NOINLINE generalCategoryBitmap #-}"
-        , "generalCategoryBitmap :: Ptr Word8"
-        , "generalCategoryBitmap = Ptr"
-        , "    \"" <> enumMapToAddrLiteral (reverse (acc2 <> acc1)) "\"#"
+        , genEnumBitmap
+            "generalCategory"
+            (Co, generalCategoryConstructor Co)
+            (Cn, generalCategoryConstructor Cn)
+            (reverse acc1)
+            (reverse acc2)
         ]
-        where lengthAcc1 = length acc1
+        where
+        mkGeneralCategoryExport gc = mconcat
+            [", pattern ", generalCategoryConstructor gc, "\n"]
+        mkGeneralCategoryPattern gc = mconcat
+            [ "\n-- | General category ", show gc, "\n"
+            , "pattern ", generalCategoryConstructor gc, " :: Int\n"
+            , "pattern ", generalCategoryConstructor gc
+            , " = "
+            , show (fromEnum gc), "\n"]
+        mkCharBoundPattern c p f = mconcat
+            [ "-- | Maximum codepoint satisfying @", f, "@\n"
+            , "pattern ", p, " :: Int\n"
+            , "pattern ", p, " = 0x", showHexCodepoint c, "\n"]
 
 readDecomp :: String -> (Maybe DecompType, Decomp)
 readDecomp s =
@@ -1347,7 +1535,6 @@ genNamesModule moduleName =
 
     done (names, offsets, _) = unlines
         [ apacheLicense 2022 moduleName
-        , "{-# LANGUAGE CPP #-}"
         , "{-# LANGUAGE OverloadedStrings #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
@@ -1355,10 +1542,10 @@ genNamesModule moduleName =
         , "(name)"
         , "where"
         , ""
-        , "#include \"MachDeps.h\""
-        , ""
-        , "import Foreign.C.String (CString)"
+        , "import Data.Int (Int32)"
+        , "import Foreign.C (CChar, CString)"
         , "import GHC.Exts"
+        , "import Unicode.Internal.Bits.Names (lookupInt32#)"
         , ""
         , "-- | Name of a character, if defined."
         , "--"
@@ -1381,33 +1568,34 @@ genNamesModule moduleName =
         , "        else"
         , "            let k# = l# +# uncheckedIShiftRL# (u# -# l#) 1#"
         , "                j# = k# `uncheckedIShiftL#` 1#"
-        , "                cp'# = indexInt32OffAddr'# j#"
+        , "                cp'# = getRawCodePoint# j#"
         , "            in if isTrue# (cp'# <# cp#)"
         , "                then getName (k# +# 1#) u#"
         , "                else if isTrue# (cp'# ==# cp#)"
-        , "                    then let offset# = indexInt32OffAddr'# (j# +# 1#)"
+        , "                    then let offset# = getRawCodePoint# (j# +# 1#)"
         , "                         in Just (Ptr (names# `plusAddr#` offset#))"
         , "                    else getName l# (k# -# 1#)"
-        , "    indexInt32OffAddr'# :: Int# -> Int#"
-        , "    indexInt32OffAddr'# k# ="
-        , "#ifdef WORDS_BIGENDIAN"
-        , "#if MIN_VERSION_base(4,16,0)"
-        , "        word2Int# (narrow32Word# (byteSwap32# (word32ToWord# (indexWord32OffAddr# offsets# k#))))"
-        , "#else"
-        , "        word2Int# (narrow32Word# (byteSwap32# (indexWord32OffAddr# offsets# k#)))"
-        , "#endif"
-        , "#elif MIN_VERSION_base(4,16,0)"
-        , "        int32ToInt# (indexInt32OffAddr# offsets# k#)"
-        , "#else"
-        , "        indexInt32OffAddr# offsets# k#"
-        , "#endif"
         , ""
-        , "    names# = "
-        -- Note: names are ASCII
-            <> shows (mconcat (reverse names)) "#"
-        , "    offsets# = \""
-            <> enumMapToAddrLiteral (mconcat (reverse offsets)) "\"#"
+        , "    getRawCodePoint# = lookupInt32# offsets#"
+        , ""
+        , "    !(Ptr names#) = namesBitmap"
+        , "    !(Ptr offsets#) = offsetsBitmap"
+        , ""
+        , "namesBitmap :: Ptr CChar"
+        , "namesBitmap = Ptr"
+        , "    \""
+            <> chunkAddrLiteral 4 0xff shows' (mconcat (reverse names)) "\"#"
+        , ""
+        , "offsetsBitmap :: Ptr Int32"
+        , "offsetsBitmap = Ptr"
+        , "    \""
+            <> enumMapToAddrLiteral 4 0xff (mconcat (reverse offsets)) "\"#"
         ]
+        where
+        shows' = \case
+            '\0' -> \s -> '\\' : '0' : s
+            -- Note: names are ASCII
+            c    -> (c :)
 
 genAliasesModule
     :: Monad m
@@ -1617,6 +1805,8 @@ genIdentifierTypeModule moduleName =
         , ""
         , "import Data.Char (ord)"
         , "import Data.List.NonEmpty (NonEmpty)"
+        , "import Data.Word (Word8)"
+        , "import GHC.Exts (Ptr(..))"
         , "import Unicode.Internal.Bits (lookupIntN)"
         , ""
         , "-- | Identifier type"
@@ -1662,8 +1852,19 @@ genIdentifierTypeModule moduleName =
         , "    _ -> " <> hackHaskellConstructor def
         , ""
         , "-- | Returns the 'IdentifierType's corresponding to a character."
-        , genEnumBitmap "identifierTypes" 0 (reverse identifiersTypes)
+        , genEnumBitmap
+            "identifierTypes"
+            (def', show (fromEnum def'))
+            (def', show (fromEnum def'))
+            planes0To3
+            plane14
         ]
+        where
+        def' = 0
+        (planes0To3, plane14) = splitPlanes
+            "Cannot generate: genIdentifierTypeModule"
+            (== def')
+            (reverse identifiersTypes)
 
 genConfusablesModule
     :: Monad m
@@ -2343,7 +2544,7 @@ parseDerivedNameLines
     mkName :: String -> Char -> CharName
     mkName template char = CharName
         { _nChar = char
-        , _nName = template <> fmap toUpper (showHexCodepoint char) }
+        , _nName = template <> showHexCodepoint char }
 
 -------------------------------------------------------------------------------
 -- Parsing Identifier_Status
