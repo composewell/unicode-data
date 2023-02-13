@@ -2,9 +2,15 @@
 
 import Control.DeepSeq (NFData, deepseq, force)
 import Control.Exception (evaluate)
+import Data.Bifunctor (Bifunctor(..))
 import Data.Ix (Ix(..))
+import Data.Proxy
+import Test.Tasty (askOption)
 import Test.Tasty.Bench
-    (Benchmark, bgroup, bench, bcompare, defaultMain, env, nf)
+    (Benchmark, bgroup, bench, bcompare, env, nf, benchIngredients)
+import Test.Tasty.Ingredients.Basic
+import Test.Tasty.Options
+import Test.Tasty.Runners
 
 import qualified Data.Char as Char
 import qualified Unicode.Char.Case as C
@@ -23,8 +29,37 @@ data Bench a = Bench
   , _func :: Char -> a -- ^ Function to benchmark
   }
 
+data CharRange = CharRange !Char !Char
+
+instance IsOption CharRange where
+    defaultValue = CharRange minBound maxBound
+    parseValue = \case
+        "ascii"      -> Just (CharRange minBound '\x7f')
+        "bmp"        -> Just (CharRange minBound '\xffff')
+        "planes0To3" -> Just (CharRange minBound '\x3FFFF')
+        -- [TODO] handle errors
+        s -> Just (CharRange l u)
+          where
+            (l, u) = bimap (parseCodePoint minBound)
+                           (parseCodePoint maxBound . drop 1)
+                           (break (== '-') s)
+            parseCodePoint def = \case
+                "" -> def
+                cp -> read ("0x" ++ cp)
+    optionName = pure "chars"
+    optionHelp = pure "Range of chars to test"
+
 main :: IO ()
-main = defaultMain
+main = do
+  let customOpts  = [Option (Proxy :: Proxy CharRange)]
+      ingredients = includingOptions customOpts : benchIngredients
+--   opts <- parseOptions ingredients (benchmarks charRange)
+--   let charRange = lookupOption opts :: CharRange
+--   defaultMainWithIngredients ingredients (benchmarks charRange)
+  defaultMainWithIngredients ingredients (askOption benchmarks)
+
+benchmarks :: CharRange -> TestTree
+benchmarks charRange = bgroup "All"
   [ bgroup "Unicode.Char.Case"
     [
 #if MIN_VERSION_base(4,18,0)
@@ -273,10 +308,14 @@ main = defaultMain
     benchCharsNF t isValid f =
         -- Avoid side-effects with garbage collection (see tasty-bench doc)
         env
-            (evaluate (force (mconcat (replicate 6 chars)))) -- initialize
+            (evaluate (force chars')) -- initialize
             (bench t . nf (foldString f)) -- benchmark
         where
-        chars = filter isValid [minBound..maxBound]
+        CharRange l u = charRange
+        chars = filter isValid [l..u]
+        -- Ensure to have sufficiently chars
+        n = 0x10FFFF `div` length chars
+        chars' = mconcat (replicate n chars)
 
     foldString :: forall a. (NFData a) => (Char -> a) -> String -> ()
     foldString f = foldr (deepseq . f) ()
