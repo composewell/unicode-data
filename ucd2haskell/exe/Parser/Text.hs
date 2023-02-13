@@ -40,6 +40,7 @@ import Data.List
 import Data.Maybe (fromMaybe)
 import Data.Ratio ((%))
 import Data.Word (Word8, Word32)
+import GHC.Stack (HasCallStack)
 import Numeric (showHex)
 import Streamly.Data.Fold (Fold)
 import Streamly.Prelude (IsStream, SerialT)
@@ -157,24 +158,68 @@ showHexCodepoint = showPaddedHex . ord
 genSignature :: String -> String
 genSignature = (<> " :: Char -> Bool")
 
--- | Check that var is between minimum and maximum of orderList
-genRangeCheck :: String -> [Int] -> String
-genRangeCheck var ordList =
-    var
-        <> " >= "
-        <> show (minimum ordList)
-        <> " && " <> var <> " <= " <> show (maximum ordList)
+genBitmap :: HasCallStack => String -> [Int] -> String
+genBitmap funcName ordList = mconcat
+    [ "{-# INLINE " <> funcName <> " #-}\n"
+    , genSignature funcName, "\n"
+    , func, "\n"
+    -- , "{-# NOINLINE ", bitmapLookup, " #-}\n"
+    , bitmapLookup, " :: Ptr Word8\n"
+    , bitmapLookup, " = Ptr\n"
+    , "    \"", bitMapToAddrLiteral bitmap "\"#\n" ]
+    where
+    rawBitmap = positionsToBitMap ordList
+    bitmapLookup = funcName <> "Bitmap"
+    (func, bitmap) = if length rawBitmap <= 0x40000
+        -- Only planes 0-3
+        then
+            ( mconcat
+                [ funcName
+                , " = \\c -> let cp = ord c in cp >= 0x"
+                , showPaddedHeX (minimum ordList)
+                , " && cp <= 0x"
+                , showPaddedHeX (maximum ordList)
+                , " && lookupBit64 bitmap# cp\n"
+                , "   where\n"
+                , "   !(Ptr bitmap#) = ", bitmapLookup, "\n" ]
+            , rawBitmap )
+        -- Planes 0-3 and 14
+        else
+            let (planes0To3, plane14) = splitPlanes rawBitmap
+                bound0 = pred (minimum ordList)
+                bound1 = length planes0To3
+                bound2 = 0xE0000 + length plane14
+            in ( mconcat
+                    [ funcName, " c\n"
+                    , if bound0 > 0
+                        then mconcat
+                            [ "    | cp < 0x"
+                            , showPaddedHeX bound0
+                            , " = False\n" ]
+                        else ""
+                    , "    | cp < 0x", showPaddedHeX bound1
+                    , " = lookupBit64 bitmap# cp\n"
+                    , "    | cp < 0xE0000 = False\n"
+                    , "    | cp < 0x", showPaddedHeX bound2
+                    , " = lookupBit64 bitmap# (cp - 0x"
+                    , showPaddedHeX (0xE0000 - bound1)
+                    , ")\n"
+                    , "    | otherwise = False\n"
+                    , "    where\n"
+                    , "    cp = ord c\n"
+                    , "    !(Ptr bitmap#) = ", bitmapLookup, "\n" ]
+                , planes0To3 <> plane14 )
+    splitPlanes xs =
+        let planes0To3 = dropWhileEnd not (take 0x40000 xs);
+            planes4To16 = drop 0x40000 xs
+            planes4To13 = take (0xE0000 - 0x40000) planes4To16
+            planes14To16 = drop (0xE0000 - 0x40000) planes4To16
+            plane14 = dropWhileEnd not (take (0xF0000 - 0xE0000) planes14To16)
+            planes15To16 = drop (0xF0000 - 0xE0000) planes14To16
+        in if all not planes4To13 && all not planes15To16
+            then (planes0To3, plane14)
+            else error "genBitmap: cannot build"
 
-genBitmap :: String -> [Int] -> String
-genBitmap funcName ordList =
-    unlines
-        [ "{-# INLINE " <> funcName <> " #-}"
-        , genSignature funcName
-        , funcName <> " = \\c -> let n = ord c in "
-              <> genRangeCheck "n" ordList <> " && lookupBit64 bitmap# n"
-        , "  where"
-        , "    bitmap# = \"" <> bitMapToAddrLiteral (positionsToBitMap ordList) "\"#"
-        ]
 
 positionsToBitMap :: [Int] -> [Bool]
 positionsToBitMap = go 0
@@ -749,17 +794,38 @@ genGeneralCategoryModule moduleName =
 
     where
 
-    -- (categories, expected char)
-    initial = ([], '\0')
+    -- (categories planes 0-3, categories plane 14, expected char)
+    initial = ([], [], '\0')
 
-    step (acc, p) a = if p < _char a
+    step :: ([GeneralCategory], [GeneralCategory], Char)
+         -> DetailedChar
+         -> ([GeneralCategory], [GeneralCategory], Char)
+    step acc@(acc1, acc2, p) a
+        -- Plane 0 to 3, missing char
         -- Fill missing char entry with default category Cn
         -- See: https://www.unicode.org/reports/tr44/#Default_Values_Table
-        then step (Cn : acc, succ p) a
-        -- Regular entry
-        else (_generalCategory a : acc, succ (_char a))
+        | plane0To3 && p < c = step (Cn : acc1, acc2, succ p) a
+        -- Plane 0 to 3, Regular entry
+        | plane0To3 = (_generalCategory a : acc1, acc2, succ (_char a))
+        -- Plane 4 to 13: no entry expected
+        | plane4To13 = error ("Unexpected char in plane 4-13: " <> show a)
+        -- Plane 15 to 16: skip if PUA
+        | plane15To16 = case _generalCategory a of
+            Co -> acc -- skip
+            _  -> error ("Unexpected char in plane 15-16: " <> show a)
+        -- Leap to plane 14
+        | p < '\xE0000' = step (acc1, acc2, '\xE0000') a
+        -- Plane 14, missing char
+        | p < c = step (acc1, Cn : acc2, succ p) a
+        -- Plane 14, regular entry
+        | otherwise = (acc1, _generalCategory a : acc2, succ (_char a))
+        where
+        c = _char a
+        plane0To3 = c <= '\x3FFFF'
+        plane4To13 = c <= '\xDFFFF'
+        plane15To16 = c >= '\xF0000'
 
-    done (acc, _) = unlines
+    done (acc1, acc2, _) = unlines
         [ apacheLicense 2020 moduleName
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
@@ -768,10 +834,44 @@ genGeneralCategoryModule moduleName =
         , "where"
         , ""
         , "import Data.Char (ord)"
+        , "import Data.Word (Word8)"
+        , "import GHC.Exts (Ptr(..))"
         , "import Unicode.Internal.Bits (lookupIntN)"
         , ""
-        , genEnumBitmap "generalCategory" Cn (reverse acc)
+        , "{-# INLINE generalCategory #-}"
+        , "generalCategory :: Char -> Int"
+        , "generalCategory c"
+        , "    -- Planes 0-3"
+        , "    | cp < 0x"
+                    <> showPaddedHeX lengthAcc1
+                    <> " = lookupIntN bitmap# cp"
+        , "    -- Planes 4-13: Cn"
+        , "    | cp < 0xE0000 = " <> show (fromEnum Cn)
+        , "    -- Plane 14"
+        , "    | cp < 0x"
+                    <> showPaddedHeX (0xE0000 + length acc2)
+                    <> " = lookupIntN bitmap# (cp - 0x"
+                    <> showPaddedHeX (0xE0000 - lengthAcc1)
+                    <> ")"
+        , "    -- Plane 14: Cn"
+        , "    | cp < 0xF0000 = " <> show (fromEnum Cn)
+        , "    -- Plane 15: Co"
+        , "    | cp < 0xFFFFE = " <> show (fromEnum Co)
+        , "    -- Plane 15: Cn"
+        , "    | cp < 0x100000 = " <> show (fromEnum Cn)
+        , "    -- Plane 16: Co"
+        , "    | cp < 0x10FFFE = " <> show (fromEnum Co)
+        , "    -- Default: Cn"
+        , "    | otherwise = " <> show (fromEnum Cn)
+        , "    where cp = ord c"
+        , "          !(Ptr bitmap#) = generalCategoryBitmap"
+        , ""
+        -- , "{-# NOINLINE generalCategoryBitmap #-}"
+        , "generalCategoryBitmap :: Ptr Word8"
+        , "generalCategoryBitmap = Ptr"
+        , "    \"" <> enumMapToAddrLiteral (reverse (acc2 <> acc1)) "\"#"
         ]
+        where lengthAcc1 = length acc1
 
 readDecomp :: String -> (Maybe DecompType, Decomp)
 readDecomp s =
@@ -847,6 +947,8 @@ genDecomposableModule moduleName dtype =
             , "where"
             , ""
             , "import Data.Char (ord)"
+            , "import Data.Word (Word8)"
+            , "import GHC.Exts (Ptr(..))"
             , "import Unicode.Internal.Bits (lookupBit64)"
             , ""
             , genBitmap "isDecomposable" (reverse st)
@@ -873,6 +975,8 @@ genCombiningClassModule moduleName =
             , "where"
             , ""
             , "import Data.Char (ord)"
+            , "import Data.Word (Word8)"
+            , "import GHC.Exts (Ptr(..))"
             , "import Unicode.Internal.Bits (lookupBit64)"
             , ""
             , "combiningClass :: Char -> Int"
@@ -1000,6 +1104,8 @@ genCompositionsModule moduleName compExclu non0CC =
         , "where"
         , ""
         , "import Data.Char (ord)"
+        , "import Data.Word (Word8)"
+        , "import GHC.Exts (Ptr(..))"
         , "import Unicode.Internal.Bits (lookupBit64)"
         , ""
         ]
@@ -1210,7 +1316,10 @@ genCorePropertiesModule moduleName isProp =
         , "where"
         , ""
         , "import Data.Char (ord)"
+        , "import Data.Word (Word8)"
+        , "import GHC.Exts (Ptr(..))"
         , "import Unicode.Internal.Bits (lookupBit64)"
+        , ""
         ]
 
 genNamesModule
@@ -1436,6 +1545,8 @@ genIdentifierStatusModule moduleName =
         , "where"
         , ""
         , "import Data.Char (ord)"
+        , "import Data.Word (Word8)"
+        , "import GHC.Exts (Ptr(..))"
         , "import Unicode.Internal.Bits (lookupBit64)"
         , ""
         , genBitmap "isAllowedInIdentifier" values

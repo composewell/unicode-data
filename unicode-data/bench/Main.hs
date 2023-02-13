@@ -82,8 +82,8 @@ main = defaultMain
   , bgroup "Unicode.Char.General"
     -- Character classification
     [ bgroup' "generalCategory"
-      [ Bench "base"          (show . Char.generalCategory)
-      , Bench "unicode-data"  (show . G.generalCategory)
+      [ Bench "base"          (fromEnum . Char.generalCategory)
+      , Bench "unicode-data"  (fromEnum . G.generalCategory)
       ]
     , bgroup "isAlphabetic"
       [ benchChars "unicode-data"  G.isAlphabetic
@@ -273,7 +273,7 @@ main = defaultMain
     benchCharsNF t isValid f =
         -- Avoid side-effects with garbage collection (see tasty-bench doc)
         env
-            (evaluate (force chars)) -- initialize
+            (evaluate (force (mconcat (replicate 6 chars)))) -- initialize
             (bench t . nf (foldString f)) -- benchmark
         where
         chars = filter isValid [minBound..maxBound]
