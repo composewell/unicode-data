@@ -50,7 +50,7 @@ jobs:
           - 8.8.4+macOS+exe
           - 8.10.7+exe
           - 9.0.2
-          - 9.2.5+exe
+          - 9.2.6+exe
           - 9.4.4
           - 9.6.0
           - head
@@ -103,9 +103,9 @@ jobs:
             runner: ubuntu-latest
             cabal_version: 3.2
 
-            # [NOTE] GHC > 9.2 cannot build ucd2haskell
-          - name: 9.2.5+exe
-            ghc_version: 9.2.5
+            # [NOTE] Last GHC version that can build ucd2haskell
+          - name: 9.2.6+exe
+            ghc_version: 9.2.6
             pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
             runner: ubuntu-latest
             cabal_version: 3.6
