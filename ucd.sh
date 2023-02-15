@@ -80,7 +80,7 @@ download_files() {
 # Generate the Haskell files.
 run_generator() {
     # Compile and run ucd2haskell
-    cabal run --flag ucd2haskell ucd2haskell -- \
+    cabal run --flag ucd2haskell ucd2haskell:ucd2haskell -- \
           --input "./data/$VERSION" \
           --output-core ./unicode-data/lib/ \
           --output-names ./unicode-data-names/lib/ \
