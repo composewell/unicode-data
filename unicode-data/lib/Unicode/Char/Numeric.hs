@@ -26,6 +26,7 @@ module Unicode.Char.Numeric
     ) where
 
 import Data.Char (digitToInt, intToDigit, isDigit, isHexDigit, isOctDigit)
+import Data.Int (Int64)
 import Data.Maybe (isJust)
 import Data.Ratio (numerator, denominator)
 import qualified Unicode.Char.Numeric.Compat as Compat
@@ -82,20 +83,37 @@ isNumeric = isJust . V.numericValue
 numericValue :: Char -> Maybe Rational
 numericValue = V.numericValue
 
+-- $setup
+-- >>> import Data.Int (Int32, Int64)
+
 -- | Integer value of a character, if relevant.
 --
 -- This is a special case of 'numericValue'.
 --
--- __Note:__ a character may have a numeric value but return 'False' with
+-- __Warning:__ There is a risk of /integer overflow/ depending of the chosen
+-- concrete return type. As of Unicode 15.0 the results range from 0 to 1e12.
+--
+-- >>> integerValue '\x5146' :: Maybe Int64 -- OK
+-- Just 1000000000000
+-- >>> integerValue '\x5146' :: Maybe Int32 -- Will overflow!
+-- Just (-727379968)
+--
+-- Therefore it is advised to use: @'integerValue' \@'Int64'@.
+--
+-- __Note:__ A character may have a numeric value but return 'False' with
 -- the predicate 'Unicode.Char.Numeric.Compat.isNumber', because
 -- 'Unicode.Char.Numeric.Compat.isNumber' only tests
 -- 'Unicode.Char.General.GeneralCategory': some CJK characters are
 -- 'Unicode.Char.General.OtherLetter' and do have a numeric value.
 --
 -- @since 0.3.1
-integerValue :: Char -> Maybe Int
+{-# INLINE integerValue #-}
+{-# SPECIALIZE integerValue :: Char -> Maybe Integer #-}
+{-# SPECIALIZE integerValue :: Char -> Maybe Int64   #-}
+{-# SPECIALIZE integerValue :: Char -> Maybe Int     #-}
+integerValue :: (Integral a) => Char -> Maybe a
 integerValue c = do
     r <- V.numericValue c
     if denominator r == 1
-        then Just (fromIntegral (numerator r))
+        then Just (fromInteger (numerator r))
         else Nothing

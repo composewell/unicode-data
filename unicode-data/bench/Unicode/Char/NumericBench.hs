@@ -2,6 +2,7 @@ module Unicode.Char.NumericBench
     ( benchmarks
     ) where
 
+import Data.Int (Int64)
 import Test.Tasty.Bench ( bgroup, Benchmark )
 
 import Unicode.Char.Bench (benchChars, CharRange)
@@ -18,6 +19,17 @@ benchmarks charRange = bgroup "Unicode.Char.Numeric"
     [ benchChars "unicode-data" charRange Num.numericValue
     ]
   , bgroup "integerValue"
-    [ benchChars "unicode-data" charRange Num.integerValue
+    [ bgroup "Integer"
+        [ benchChars "unicode-data" charRange
+            (Num.integerValue :: Char -> Maybe Integer)
+        ]
+    , bgroup "Int64"
+        [ benchChars "unicode-data" charRange
+            (Num.integerValue :: Char -> Maybe Int64)
+        ]
+    , bgroup "Int"
+        [ benchChars "unicode-data" charRange
+            (Num.integerValue :: Char -> Maybe Int)
+        ]
     ]
   ]
