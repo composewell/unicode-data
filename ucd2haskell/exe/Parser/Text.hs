@@ -152,29 +152,26 @@ showPaddedHeX :: Int -> String
 showPaddedHeX = fmap toUpper . showPaddedHex
 
 showHexCodepoint :: Char -> String
-showHexCodepoint = showPaddedHex . ord
-
-genSignature :: String -> String
-genSignature = (<> " :: Char -> Bool")
-
--- | Check that var is between minimum and maximum of orderList
-genRangeCheck :: String -> [Int] -> String
-genRangeCheck var ordList =
-    var
-        <> " >= "
-        <> show (minimum ordList)
-        <> " && " <> var <> " <= " <> show (maximum ordList)
+showHexCodepoint = showPaddedHeX . ord
 
 genBitmap :: String -> [Int] -> String
-genBitmap funcName ordList =
-    unlines
-        [ "{-# INLINE " <> funcName <> " #-}"
-        , genSignature funcName
-        , funcName <> " = \\c -> let n = ord c in "
-              <> genRangeCheck "n" ordList <> " && lookupBit64 bitmap# n"
-        , "  where"
-        , "    bitmap# = \"" <> bitMapToAddrLiteral (positionsToBitMap ordList) "\"#"
-        ]
+genBitmap funcName ordList = mconcat
+    [ "{-# INLINE " <> funcName <> " #-}\n"
+    , funcName, " :: Char -> Bool\n"
+    , funcName
+    , " = \\c -> let cp = ord c in cp >= 0x"
+    , showPaddedHeX (minimum ordList)
+    , " && cp <= 0x"
+    , showPaddedHeX (maximum ordList)
+    , " && lookupBit64 bitmap# cp\n"
+    , "    where\n"
+    , "    !(Ptr bitmap#) = ", bitmapLookup, "\n\n"
+    , bitmapLookup, " :: Ptr Word8\n"
+    , bitmapLookup, " = Ptr\n"
+    , "    \"", bitMapToAddrLiteral rawBitmap "\"#\n" ]
+    where
+    rawBitmap = positionsToBitMap ordList
+    bitmapLookup = funcName <> "Bitmap"
 
 positionsToBitMap :: [Int] -> [Bool]
 positionsToBitMap = go 0
@@ -220,17 +217,23 @@ genEnumBitmap
   -> [a]
   -- ^ List of values to encode
   -> String
-genEnumBitmap funcName def as = unlines
-    [ "{-# INLINE " <> funcName <> " #-}"
-    , funcName <> " :: Char -> Int"
-    , funcName <> " c = let n = ord c in if n >= "
-               <> show (length as)
-               <> " then "
-               <> show (fromEnum def)
-               <> " else lookupIntN bitmap# n"
-    , "  where"
-    , "    bitmap# = \"" <> enumMapToAddrLiteral as "\"#"
+genEnumBitmap funcName def as = mconcat
+    [ "{-# INLINE ", funcName, " #-}\n"
+    , funcName, " :: Char -> Int\n"
+    , funcName
+    , " = \\c -> let cp = ord c in if cp >= 0x"
+    , showPaddedHeX (length as)
+    , " then "
+    , show (fromEnum def)
+    , " else lookupIntN bitmap# cp\n"
+    , "    where\n"
+    , "    !(Ptr bitmap#) = ", bitmapLookup, "\n\n"
+    , bitmapLookup, " :: Ptr Word8\n"
+    , bitmapLookup, " = Ptr\n"
+    , "    \"", enumMapToAddrLiteral as "\"#"
     ]
+    where
+    bitmapLookup = funcName <> "Bitmap"
 
 {-| Encode a list of values as a byte map, using their 'Enum' instance.
 
@@ -313,7 +316,7 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
 
     done (blocks, defs, ranges) = let ranges' = reverse ranges in unlines
         [ apacheLicense 2022 moduleName
-        , "{-# LANGUAGE CPP, MultiWayIf #-}"
+        , "{-# LANGUAGE CPP #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
@@ -323,6 +326,7 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , "#include \"MachDeps.h\""
         , ""
         , "import Data.Ix (Ix)"
+        , "import Data.Word (Word32)"
         , "import GHC.Exts"
         , ""
         , "-- | Unicode [block](https://www.unicode.org/glossary/#block)."
@@ -396,7 +400,11 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , "#endif"
         , ""
         , "    -- Encoded ranges"
-        , "    ranges# = \"" <> enumMapToAddrLiteral (mkRanges ranges') "\"#"
+        , "    !(Ptr ranges#) = rangesBitmap"
+        , ""
+        , "rangesBitmap :: Ptr Word32"
+        , "rangesBitmap = Ptr"
+        , "    \"" <> enumMapToAddrLiteral (mkRanges ranges') "\"#"
         ]
 
     initial :: ([String], [String], [(Int, Int)])
@@ -469,6 +477,7 @@ genScriptsModule moduleName aliases =
             , "import Data.Char (ord)"
             , "import Data.Int (Int32)"
             , "import Data.Ix (Ix)"
+            , "import Data.Word (Word8)"
             , "import GHC.Exts (Ptr(..))"
             , "import Unicode.Internal.Bits (lookupIntN)"
             , ""
@@ -697,6 +706,8 @@ genScriptExtensionsModule moduleName aliases extensions =
         , ""
         , "import Data.Char (ord)"
         , "import Data.List.NonEmpty (NonEmpty)"
+        , "import Data.Word (Word8)"
+        , "import GHC.Exts (Ptr(..))"
         , "import Unicode.Internal.Char.Scripts (Script(..))"
         , "import Unicode.Internal.Bits (lookupIntN)"
         , ""
@@ -768,6 +779,8 @@ genGeneralCategoryModule moduleName =
         , "where"
         , ""
         , "import Data.Char (ord)"
+        , "import Data.Word (Word8)"
+        , "import GHC.Exts (Ptr(..))"
         , "import Unicode.Internal.Bits (lookupIntN)"
         , ""
         , genEnumBitmap "generalCategory" Cn (reverse acc)
@@ -847,6 +860,8 @@ genDecomposableModule moduleName dtype =
             , "where"
             , ""
             , "import Data.Char (ord)"
+            , "import Data.Word (Word8)"
+            , "import GHC.Exts (Ptr(..))"
             , "import Unicode.Internal.Bits (lookupBit64)"
             , ""
             , genBitmap "isDecomposable" (reverse st)
@@ -873,6 +888,8 @@ genCombiningClassModule moduleName =
             , "where"
             , ""
             , "import Data.Char (ord)"
+            , "import Data.Word (Word8)"
+            , "import GHC.Exts (Ptr(..))"
             , "import Unicode.Internal.Bits (lookupBit64)"
             , ""
             , "combiningClass :: Char -> Int"
@@ -1000,6 +1017,8 @@ genCompositionsModule moduleName compExclu non0CC =
         , "where"
         , ""
         , "import Data.Char (ord)"
+        , "import Data.Word (Word8)"
+        , "import GHC.Exts (Ptr(..))"
         , "import Unicode.Internal.Bits (lookupBit64)"
         , ""
         ]
@@ -1210,7 +1229,10 @@ genCorePropertiesModule moduleName isProp =
         , "where"
         , ""
         , "import Data.Char (ord)"
+        , "import Data.Word (Word8)"
+        , "import GHC.Exts (Ptr(..))"
         , "import Unicode.Internal.Bits (lookupBit64)"
+        , ""
         ]
 
 genNamesModule
@@ -1248,7 +1270,8 @@ genNamesModule moduleName =
         , ""
         , "#include \"MachDeps.h\""
         , ""
-        , "import Foreign.C.String (CString)"
+        , "import Data.Int (Int32)"
+        , "import Foreign.C (CChar, CString)"
         , "import GHC.Exts"
         , ""
         , "-- | Name of a character, if defined."
@@ -1272,15 +1295,16 @@ genNamesModule moduleName =
         , "        else"
         , "            let k# = l# +# uncheckedIShiftRL# (u# -# l#) 1#"
         , "                j# = k# `uncheckedIShiftL#` 1#"
-        , "                cp'# = indexInt32OffAddr'# j#"
+        , "                cp'# = getRawCodePoint# j#"
         , "            in if isTrue# (cp'# <# cp#)"
         , "                then getName (k# +# 1#) u#"
         , "                else if isTrue# (cp'# ==# cp#)"
-        , "                    then let offset# = indexInt32OffAddr'# (j# +# 1#)"
+        , "                    then let offset# = getRawCodePoint# (j# +# 1#)"
         , "                         in Just (Ptr (names# `plusAddr#` offset#))"
         , "                    else getName l# (k# -# 1#)"
-        , "    indexInt32OffAddr'# :: Int# -> Int#"
-        , "    indexInt32OffAddr'# k# ="
+        , ""
+        , "    getRawCodePoint# :: Int# -> Int#"
+        , "    getRawCodePoint# k# ="
         , "#ifdef WORDS_BIGENDIAN"
         , "#if MIN_VERSION_base(4,16,0)"
         , "        word2Int# (narrow32Word# (byteSwap32# (word32ToWord# (indexWord32OffAddr# offsets# k#))))"
@@ -1293,10 +1317,18 @@ genNamesModule moduleName =
         , "        indexInt32OffAddr# offsets# k#"
         , "#endif"
         , ""
-        , "    names# = "
-        -- Note: names are ASCII
+        , "    !(Ptr names#) = namesBitmap"
+        , "    !(Ptr offsets#) = offsetsBitmap"
+        , ""
+        , "namesBitmap :: Ptr CChar"
+        , "namesBitmap = Ptr"
+        , "    "
+            -- Note: names are ASCII
             <> shows (mconcat (reverse names)) "#"
-        , "    offsets# = \""
+        , ""
+        , "offsetsBitmap :: Ptr Int32"
+        , "offsetsBitmap = Ptr"
+        , "    \""
             <> enumMapToAddrLiteral (mconcat (reverse offsets)) "\"#"
         ]
 
@@ -1436,6 +1468,8 @@ genIdentifierStatusModule moduleName =
         , "where"
         , ""
         , "import Data.Char (ord)"
+        , "import Data.Word (Word8)"
+        , "import GHC.Exts (Ptr(..))"
         , "import Unicode.Internal.Bits (lookupBit64)"
         , ""
         , genBitmap "isAllowedInIdentifier" values
@@ -1506,6 +1540,8 @@ genIdentifierTypeModule moduleName =
         , ""
         , "import Data.Char (ord)"
         , "import Data.List.NonEmpty (NonEmpty)"
+        , "import Data.Word (Word8)"
+        , "import GHC.Exts (Ptr(..))"
         , "import Unicode.Internal.Bits (lookupIntN)"
         , ""
         , "-- | Identifier type"
@@ -2232,7 +2268,7 @@ parseDerivedNameLines
     mkName :: String -> Char -> CharName
     mkName template char = CharName
         { _nChar = char
-        , _nName = template <> fmap toUpper (showHexCodepoint char) }
+        , _nName = template <> showHexCodepoint char }
 
 -------------------------------------------------------------------------------
 -- Parsing Identifier_Status
