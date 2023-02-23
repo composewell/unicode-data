@@ -136,6 +136,17 @@ benchmark bench
   type: exitcode-stdio-1.0
   hs-source-dirs: bench
   main-is: Main.hs
+  other-modules:
+    Unicode.Char.Bench
+    Unicode.Char.CaseBench
+    Unicode.Char.Case.CompatBench
+    Unicode.Char.GeneralBench
+    Unicode.Char.General.BlocksBench
+    Unicode.Char.General.CompatBench
+    Unicode.Char.IdentifiersBench
+    Unicode.Char.NormalizationBench
+    Unicode.Char.NumericBench
+    Unicode.Char.Numeric.CompatBench
   build-depends:
     base        >= 4.7   && < 4.19,
     deepseq     >= 1.1   && < 1.5,
