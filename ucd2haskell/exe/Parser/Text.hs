@@ -40,6 +40,7 @@ import Data.List
 import Data.Maybe (fromMaybe)
 import Data.Ratio ((%))
 import Data.Word (Word8, Word32)
+import GHC.Stack (HasCallStack)
 import Numeric (showHex)
 import Streamly.Data.Fold (Fold)
 import Streamly.Prelude (IsStream, SerialT)
@@ -73,7 +74,7 @@ data GeneralCategory =
     Sm|Sc|Sk|So|          --S
     Zs|Zl|Zp|             --Z
     Cc|Cf|Cs|Co|Cn        --C
-    deriving (Bounded, Enum, Show, Read)
+    deriving (Bounded, Enum, Eq, Show, Read)
 
 data DecompType =
        DTCanonical | DTCompat  | DTFont
@@ -154,24 +155,87 @@ showPaddedHeX = fmap toUpper . showPaddedHex
 showHexCodepoint :: Char -> String
 showHexCodepoint = showPaddedHeX . ord
 
-genBitmap :: String -> [Int] -> String
+generalCategoryConstructor :: GeneralCategory -> String
+generalCategoryConstructor = \case
+    Lu -> "UppercaseLetter"
+    Ll -> "LowercaseLetter"
+    Lt -> "TitlecaseLetter"
+    Lm -> "ModifierLetter"
+    Lo -> "OtherLetter"
+    Mn -> "NonSpacingMark"
+    Mc -> "SpacingCombiningMark"
+    Me -> "EnclosingMark"
+    Nd -> "DecimalNumber"
+    Nl -> "LetterNumber"
+    No -> "OtherNumber"
+    Pc -> "ConnectorPunctuation"
+    Pd -> "DashPunctuation"
+    Ps -> "OpenPunctuation"
+    Pe -> "ClosePunctuation"
+    Pi -> "InitialQuote"
+    Pf -> "FinalQuote"
+    Po -> "OtherPunctuation"
+    Sm -> "MathSymbol"
+    Sc -> "CurrencySymbol"
+    Sk -> "ModifierSymbol"
+    So -> "OtherSymbol"
+    Zs -> "Space"
+    Zl -> "LineSeparator"
+    Zp -> "ParagraphSeparator"
+    Cc -> "Control"
+    Cf -> "Format"
+    Cs -> "Surrogate"
+    Co -> "PrivateUse"
+    Cn -> "NotAssigned"
+
+genBitmap :: HasCallStack => String -> [Int] -> String
 genBitmap funcName ordList = mconcat
     [ "{-# INLINE " <> funcName <> " #-}\n"
     , funcName, " :: Char -> Bool\n"
-    , funcName
-    , " = \\c -> let cp = ord c in cp >= 0x"
-    , showPaddedHeX (minimum ordList)
-    , " && cp <= 0x"
-    , showPaddedHeX (maximum ordList)
-    , " && lookupBit64 bitmap# cp\n"
-    , "    where\n"
+    , funcName, func
     , "    !(Ptr bitmap#) = ", bitmapLookup, "\n\n"
     , bitmapLookup, " :: Ptr Word8\n"
     , bitmapLookup, " = Ptr\n"
-    , "    \"", bitMapToAddrLiteral rawBitmap "\"#\n" ]
+    , "    \"", bitMapToAddrLiteral bitmap "\"#\n" ]
     where
     rawBitmap = positionsToBitMap ordList
     bitmapLookup = funcName <> "Bitmap"
+    (func, bitmap) = if length rawBitmap <= 0x40000
+        -- Only planes 0-3
+        then
+            ( mconcat
+                [ " = \\c -> let cp = ord c in cp >= 0x"
+                , showPaddedHeX (minimum ordList)
+                , " && cp <= 0x"
+                , showPaddedHeX (maximum ordList)
+                , " && lookupBit64 bitmap# cp\n"
+                , "    where\n" ]
+            , rawBitmap )
+        -- Planes 0-3 and 14
+        else
+            let (planes0To3, plane14) = splitPlanes "genBitmap: cannot build" not rawBitmap
+                bound0 = pred (minimum ordList)
+                bound1 = length planes0To3
+                bound2 = 0xE0000 + length plane14
+            in ( mconcat
+                    [ " c\n"
+                    , if bound0 > 0
+                        then mconcat
+                            [ "    | cp < 0x"
+                            , showPaddedHeX bound0
+                            , " = False\n" ]
+                        else ""
+                    , "    | cp < 0x", showPaddedHeX bound1
+                    , " = lookupBit64 bitmap# cp\n"
+                    , "    | cp < 0xE0000 = False\n"
+                    , "    | cp < 0x", showPaddedHeX bound2
+                    , " = lookupBit64 bitmap# (cp - 0x"
+                    , showPaddedHeX (0xE0000 - bound1)
+                    , ")\n"
+                    , "    | otherwise = False\n"
+                    , "    where\n"
+                    , "    cp = ord c\n" ]
+                , planes0To3 <> plane14 )
 
 positionsToBitMap :: [Int] -> [Bool]
 positionsToBitMap = go 0
@@ -211,31 +275,89 @@ bitMapToAddrLiteral bs cs =
     toByte xs = sum $ map (\i -> if xs !! i then 1 `shiftL` i else 0) [0..7]
 
 genEnumBitmap
-  :: forall a. (Bounded a, Enum a, Show a)
+  :: forall a. (HasCallStack, Bounded a, Enum a, Eq a, Show a)
   => String
   -- ^ Function name
-  -> a
+  -> (a, String)
+  -- ^ Value for planes 15-16
+  -> (a, String)
   -- ^ Default value
   -> [a]
-  -- ^ List of values to encode
+  -- ^ List of values to encode for planes 0 to 3
+  -> [a]
+  -- ^ List of values to encode for plane 14
   -> String
-genEnumBitmap funcName def as = mconcat
+genEnumBitmap funcName (defPUA, pPUA) (def, pDef) planes0To3 plane14 = mconcat
     [ "{-# INLINE ", funcName, " #-}\n"
     , funcName, " :: Char -> Int\n"
-    , funcName
-    , " = \\c -> let cp = ord c in if cp >= 0x"
-    , showPaddedHeX (length as)
-    , " then "
-    , show (fromEnum def)
-    , " else lookupIntN bitmap# cp\n"
-    , "    where\n"
+    , funcName, func
     , "    !(Ptr bitmap#) = ", bitmapLookup, "\n\n"
     , bitmapLookup, " :: Ptr Word8\n"
     , bitmapLookup, " = Ptr\n"
-    , "    \"", enumMapToAddrLiteral 4 0xff as "\"#"
+    , "    \"", enumMapToAddrLiteral 4 0xff bitmap "\"#"
     ]
     where
     bitmapLookup = funcName <> "Bitmap"
+    planes0To3' = dropWhileEnd (== def) planes0To3
+    check = if length planes0To3 <= 0x40000
+        then ()
+        else error "genEnumBitmap: Cannot build"
+    (func, bitmap) = check `seq` if null plane14 && defPUA == def
+        -- Only planes 0-3
+        then
+            ( mconcat
+                [ " = \\c -> let cp = ord c in if cp >= 0x"
+                , showPaddedHeX (length planes0To3')
+                , " then "
+                , pDef
+                , " else lookupIntN bitmap# cp\n"
+                , "    where\n" ]
+            , planes0To3' )
+        -- All the planes
+        else
+            let plane14' = dropWhileEnd (== def) plane14
+                bound1 = length planes0To3'
+                bound2 = 0xE0000 + length plane14'
+            in ( mconcat
+                    [ " c\n"
+                    , "    -- Planes 0-3\n"
+                    , "    | cp < 0x", showPaddedHeX bound1
+                                     , " = lookupIntN bitmap# cp\n"
+                    , "    -- Planes 4-13: ", show def, "\n"
+                    , "    | cp < 0xE0000 = " <> pDef, "\n"
+                    , "    -- Plane 14\n"
+                    , "    | cp < 0x", showPaddedHeX bound2
+                                     , " = lookupIntN bitmap# (cp - 0x"
+                                     , showPaddedHeX (0xE0000 - bound1)
+                                     , ")\n"
+                    , if defPUA == def
+                        then ""
+                        else mconcat
+                            [ "    -- Plane 14: ", show def, "\n"
+                            , "    | cp < 0xF0000 = ", pDef, "\n"
+                            , "    -- Plane 15: ", show defPUA, "\n"
+                            , "    | cp < 0xFFFFE = ", pPUA, "\n"
+                            , "    -- Plane 15: ", show def, "\n"
+                            , "    | cp < 0x100000 = " <> pDef, "\n"
+                            , "    -- Plane 16: ", show defPUA, "\n"
+                            , "    | cp < 0x10FFFE = " <> pPUA, "\n" ]
+                    , "    -- Default: ", show def, "\n"
+                    , "    | otherwise = " <> pDef, "\n"
+                    , "    where\n"
+                    , "    cp = ord c\n" ]
+                , planes0To3' <> plane14' )
+
+splitPlanes :: (HasCallStack) => String -> (a -> Bool) -> [a] -> ([a], [a])
+splitPlanes msg isDef xs = if all isDef planes4To13 && null planes15To16
+    then (planes0To3, plane14)
+    else error msg
+    where
+    planes0To3 = dropWhileEnd isDef (take 0x40000 xs)
+    planes4To16 = drop 0x40000 xs
+    planes4To13 = take (0xE0000 - 0x40000) planes4To16
+    planes14To16 = drop (0xE0000 - 0x40000) planes4To16
+    plane14 = dropWhileEnd isDef (take 0x10000 planes14To16)
+    planes15To16 = drop 0x10000 planes14To16
 
 {-| Encode a list of values as a byte map, using their 'Enum' instance.
 
@@ -648,13 +770,20 @@ genScriptsModule moduleName aliases =
     mkCharScripts :: [String] -> [ScriptLine] -> String
     mkCharScripts scripts scriptsRanges =
         let charScripts = sort (foldMap (rangeToCharScripts getScript) scriptsRanges)
-            charScripts' = fst (foldl' addMissing (mempty, '\0') charScripts)
+            charScripts' = reverse (fst (foldl' addMissing (mempty, '\0') charScripts))
             addMissing (acc, expected) x@(c, script) = if expected < c
                 then addMissing (def:acc, succ expected) x
                 else (script:acc, succ c)
             def = getScript defaultScript
             getScript s = fromMaybe (error "script not found") (elemIndex s scripts)
-        in genEnumBitmap "script" def (reverse charScripts')
+            -- [TODO] simplify
+            (planes0To3, plane14) = splitPlanes "Cannot generate: genScriptsModule" (== def) charScripts'
+        in genEnumBitmap
+            "script"
+            (def, show (fromEnum def))
+            (def, show (fromEnum def))
+            planes0To3
+            plane14
 
     rangeToCharScripts :: (String -> b) -> ScriptLine -> [(Char, b)]
     rangeToCharScripts f (script, r) = case r of
@@ -748,8 +877,20 @@ genScriptExtensionsModule moduleName aliases extensions =
         , "-- | Script extensions of a character."
         , "--"
         , "-- @since 0.1.0"
-        , genEnumBitmap "scriptExtensions" def (mkScriptExtensions exts)
+        , genEnumBitmap
+            "scriptExtensions"
+            (def, show (fromEnum def))
+            (def, show (fromEnum def))
+            planes0To3
+            plane14
         ]
+        where
+        scriptExtensions = mkScriptExtensions exts
+        -- [TODO] simplify
+        (planes0To3, plane14) = splitPlanes
+            "Cannot generate: genScriptExtensionsModule"
+            (== def)
+            scriptExtensions
 
     mkDecodeScriptExtensions :: Set.Set [String] -> String
     mkDecodeScriptExtensions
@@ -789,31 +930,79 @@ genGeneralCategoryModule moduleName =
 
     where
 
-    -- (categories, expected char)
-    initial = ([], '\0')
+    -- (categories planes 0-3, categories plane 14, expected char)
+    initial = ([], [], minBound)
 
-    step (acc, p) a = if p < _char a
+    step :: ([GeneralCategory], [GeneralCategory], Char)
+         -> DetailedChar
+         -> ([GeneralCategory], [GeneralCategory], Char)
+    step acc@(acc1, acc2, p) a
+        -- Plane 0 to 3, missing char
         -- Fill missing char entry with default category Cn
         -- See: https://www.unicode.org/reports/tr44/#Default_Values_Table
-        then step (Cn : acc, succ p) a
-        -- Regular entry
-        else (_generalCategory a : acc, succ (_char a))
+        | plane0To3 && p < c = step (Cn : acc1, acc2, succ p)
+            a
+        -- Plane 0 to 3, Regular entry
+        | plane0To3 =
+            ( generalCategory : acc1
+            , acc2
+            , succ c )
+        -- Plane 4 to 13: no entry expected
+        | plane4To13 = error ("Unexpected char in plane 4-13: " <> show a)
+        -- Plane 15 to 16: skip if PUA
+        | plane15To16 = case generalCategory of
+            Co -> acc -- skip
+            _  -> error ("Unexpected char in plane 15-16: " <> show a)
+        -- Leap to plane 14
+        | p < '\xE0000' = step (acc1, acc2, '\xE0000') a
+        -- Plane 14, missing char
+        | p < c = step (acc1, Cn : acc2, succ p) a
+        -- Plane 14, regular entry
+        | otherwise =
+            ( acc1
+            , generalCategory : acc2
+            , succ c )
+        where
+        c = _char a
+        generalCategory = _generalCategory a
+        plane0To3 = c <= '\x3FFFF'
+        plane4To13 = c <= '\xDFFFF'
+        plane15To16 = c >= '\xF0000'
 
-    done (acc, _) = unlines
+    done (acc1, acc2, _) = unlines
         [ apacheLicense 2020 moduleName
         , "{-# OPTIONS_HADDOCK hide #-}"
+        , "{-# LANGUAGE PatternSynonyms #-}"
         , ""
         , "module " <> moduleName
-        , "(generalCategory)"
-        , "where"
+        , "( -- * Lookup functions"
+        , "  generalCategory"
+        , ""
+        , "  -- * General categories"
+        , foldMap mkGeneralCategoryExport [minBound..maxBound]
+        , ") where"
         , ""
         , "import Data.Char (ord)"
         , "import Data.Word (Word8)"
         , "import GHC.Exts (Ptr(..))"
         , "import Unicode.Internal.Bits (lookupIntN)"
-        , ""
-        , genEnumBitmap "generalCategory" Cn (reverse acc)
+        , foldMap mkGeneralCategoryPattern [minBound..maxBound]
+        , genEnumBitmap
+            "generalCategory"
+            (Co, generalCategoryConstructor Co)
+            (Cn, generalCategoryConstructor Cn)
+            (reverse acc1)
+            (reverse acc2)
         ]
+        where
+        mkGeneralCategoryExport gc = mconcat
+            [", pattern ", generalCategoryConstructor gc, "\n"]
+        mkGeneralCategoryPattern gc = mconcat
+            [ "\n-- | General category ", show gc, "\n"
+            , "pattern ", generalCategoryConstructor gc, " :: Int\n"
+            , "pattern ", generalCategoryConstructor gc
+            , " = "
+            , show (fromEnum gc), "\n"]
 
 readDecomp :: String -> (Maybe DecompType, Decomp)
 readDecomp s =
@@ -1606,8 +1795,19 @@ genIdentifierTypeModule moduleName =
         , "    _ -> " <> hackHaskellConstructor def
         , ""
         , "-- | Returns the 'IdentifierType's corresponding to a character."
-        , genEnumBitmap "identifierTypes" 0 (reverse identifiersTypes)
+        , genEnumBitmap
+            "identifierTypes"
+            (def', show (fromEnum def'))
+            (def', show (fromEnum def'))
+            planes0To3
+            plane14
         ]
+        where
+        def' = 0
+        (planes0To3, plane14) = splitPlanes
+            "Cannot generate: genIdentifierTypeModule"
+            (== def')
+            (reverse identifiersTypes)
 
 genConfusablesModule
     :: Monad m
