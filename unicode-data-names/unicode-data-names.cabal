@@ -81,6 +81,9 @@ library
       -- the properties are generated.
       Unicode.Internal.Char.UnicodeData.DerivedName
       Unicode.Internal.Char.UnicodeData.NameAliases
+  other-modules:
+      -- Internal files
+      Unicode.Internal.Bits.Names
 
   hs-source-dirs: lib
   build-depends:
