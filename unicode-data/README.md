@@ -19,100 +19,101 @@ for reference documentation.
 [partial integration to `base`](#partial-integration-of-unicode-data-into-base)).
 
 The following benchmark compares the time taken in milliseconds to process all
-the Unicode code points for `base-4.16` (GHC 9.2.1) and this package (v0.3).
+the Unicode code points (except surrogates, private use areas and unassigned),
+for `base-4.16` (GHC 9.2.6) and this package (v0.4).
 Machine: 8 × AMD Ryzen 5 2500U on Linux.
 
 ```
 All
   Unicode.Char.Case.Compat
     isLower
-      base:           OK (1.53s)
-         24 ms ± 3.8 ms
-      unicode-data:   OK (2.25s)
-        4.4 ms ±  88 μs, 0.19x
+      base:           OK (1.19s)
+        17.1 ms ± 241 μs
+      unicode-data:   OK (0.52s)
+        3.58 ms ± 125 μs, 0.21x
     isUpper
-      base:           OK (1.50s)
-         24 ms ± 450 μs
-      unicode-data:   OK (2.37s)
-        4.7 ms ± 200 μs, 0.19x
+      base:           OK (0.63s)
+        17.5 ms ± 359 μs
+      unicode-data:   OK (1.02s)
+        3.58 ms ±  48 μs, 0.21x
     toLower
-      base:           OK (1.40s)
-         22 ms ± 1.8 ms
-      unicode-data:   OK (1.89s)
-        7.2 ms ± 297 μs, 0.32x
+      base:           OK (0.59s)
+        16.3 ms ± 524 μs
+      unicode-data:   OK (0.80s)
+        5.63 ms ± 129 μs, 0.35x
     toTitle
-      base:           OK (1.25s)
-         20 ms ± 2.0 ms
-      unicode-data:   OK (1.65s)
-        6.4 ms ± 509 μs, 0.32x
+      base:           OK (3.91s)
+        14.9 ms ± 427 μs
+      unicode-data:   OK (2.84s)
+        5.31 ms ±  37 μs, 0.36x
     toUpper
-      base:           OK (1.26s)
-         20 ms ± 2.5 ms
-      unicode-data:   OK (1.72s)
-        6.8 ms ± 335 μs, 0.34x
+      base:           OK (2.12s)
+        15.4 ms ± 234 μs
+      unicode-data:   OK (0.86s)
+        5.80 ms ± 159 μs, 0.38x
   Unicode.Char.General
     generalCategory
-      base:           OK (2.02s)
-        134 ms ± 1.6 ms
-      unicode-data:   OK (1.75s)
-        116 ms ± 1.6 ms, 0.87x
+      base:           OK (1.16s)
+        16.6 ms ± 534 μs
+      unicode-data:   OK (0.62s)
+        4.14 ms ± 103 μs, 0.25x
     isAlphaNum
-      base:           OK (1.53s)
-         24 ms ± 1.7 ms
-      unicode-data:   OK (2.16s)
-        4.2 ms ±  29 μs, 0.18x
+      base:           OK (0.62s)
+        17.1 ms ± 655 μs
+      unicode-data:   OK (0.97s)
+        3.59 ms ±  51 μs, 0.21x
     isControl
-      base:           OK (1.47s)
-         23 ms ± 2.6 ms
-      unicode-data:   OK (2.23s)
-        4.4 ms ±  22 μs, 0.19x
+      base:           OK (0.63s)
+        17.6 ms ± 494 μs
+      unicode-data:   OK (0.57s)
+        3.59 ms ±  90 μs, 0.20x
     isMark
-      base:           OK (1.47s)
-         23 ms ± 624 μs
-      unicode-data:   OK (2.28s)
-        4.5 ms ±  48 μs, 0.19x
+      base:           OK (0.34s)
+        17.6 ms ± 695 μs
+      unicode-data:   OK (1.00s)
+        3.59 ms ±  67 μs, 0.20x
     isPrint
-      base:           OK (1.53s)
-         25 ms ± 2.4 ms
-      unicode-data:   OK (2.27s)
-        4.4 ms ±  50 μs, 0.18x
+      base:           OK (1.22s)
+        17.7 ms ± 492 μs
+      unicode-data:   OK (1.92s)
+        3.56 ms ±  27 μs, 0.20x
     isPunctuation
-      base:           OK (1.51s)
-         24 ms ± 459 μs
-      unicode-data:   OK (2.24s)
-        4.4 ms ±  25 μs, 0.18x
+      base:           OK (2.23s)
+        16.6 ms ± 619 μs
+      unicode-data:   OK (1.05s)
+        3.60 ms ±  52 μs, 0.22x
     isSeparator
-      base:           OK (1.52s)
-         24 ms ± 407 μs
-      unicode-data:   OK (2.43s)
-        4.8 ms ±  94 μs, 0.20x
+      base:           OK (1.15s)
+        16.6 ms ± 439 μs
+      unicode-data:   OK (0.49s)
+        3.60 ms ±  85 μs, 0.22x
     isSymbol
-      base:           OK (1.49s)
-         24 ms ± 863 μs
-      unicode-data:   OK (1.34s)
-        5.2 ms ±  92 μs, 0.22x
+      base:           OK (2.11s)
+        16.1 ms ± 553 μs
+      unicode-data:   OK (1.05s)
+        3.58 ms ±  62 μs, 0.22x
   Unicode.Char.General.Compat
     isAlpha
-      base:           OK (1.46s)
-         23 ms ± 322 μs
-      unicode-data:   OK (2.14s)
-        4.1 ms ±  36 μs, 0.18x
+      base:           OK (0.58s)
+        17.2 ms ± 502 μs
+      unicode-data:   OK (1.02s)
+        3.58 ms ±  50 μs, 0.21x
     isLetter
-      base:           OK (1.44s)
-         22 ms ± 640 μs
-      unicode-data:   OK (2.17s)
-        4.3 ms ±  58 μs, 0.19x
+      base:           OK (8.57s)
+        16.4 ms ± 553 μs
+      unicode-data:   OK (1.05s)
+        3.58 ms ±  79 μs, 0.22x
     isSpace
-      base:           OK (1.44s)
-         11 ms ± 1.2 ms
-      unicode-data:   OK (1.36s)
-        5.3 ms ± 243 μs, 0.49x
-  Unicode.Char.Numeric
+      base:           OK (1.09s)
+        7.56 ms ± 159 μs
+      unicode-data:   OK (0.97s)
+        3.58 ms ±  46 μs, 0.47x
+  Unicode.Char.Numeric.Compat
     isNumber
-      base:           OK (1.52s)
-         24 ms ± 368 μs
-      unicode-data:   OK (2.41s)
-        4.7 ms ±  41 μs, 0.19x
+      base:           OK (0.58s)
+        15.7 ms ± 462 μs
+      unicode-data:   OK (0.58s)
+        3.58 ms ± 107 μs, 0.23x
 ```
 
 ### Partial integration of `unicode-data` into `base`

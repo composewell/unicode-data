@@ -14,7 +14,8 @@ module Unicode.Char.Numeric.Compat
       isNumber
     ) where
 
-import Unicode.Char.General (GeneralCategory(..), generalCategory)
+import Data.Char (ord)
+import qualified Unicode.Internal.Char.UnicodeData.GeneralCategory as UC
 
 -- | Selects Unicode numeric characters, including digits from various
 -- scripts, Roman numerals, et cetera.
@@ -38,8 +39,13 @@ import Unicode.Char.General (GeneralCategory(..), generalCategory)
 --
 -- @since 0.3.0
 isNumber :: Char -> Bool
-isNumber c = case generalCategory c of
-    DecimalNumber -> True
-    LetterNumber  -> True
-    OtherNumber   -> True
-    _             -> False
+isNumber c =
+    -- NOTE: The guard constant is updated at each Unicode revision.
+    --       It must be < 0x40000 to be accepted by generalCategoryPlanes0To3.
+    cp <= UC.MaxIsNumber &&
+    case UC.generalCategoryPlanes0To3 cp of
+        UC.DecimalNumber -> True
+        UC.LetterNumber  -> True
+        UC.OtherNumber   -> True
+        _                -> False
+    where cp = ord c
