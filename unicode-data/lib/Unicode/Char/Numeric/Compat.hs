@@ -21,16 +21,16 @@ import qualified Unicode.Internal.Char.UnicodeData.GeneralCategory as UC
 -- scripts, Roman numerals, et cetera.
 --
 -- This function returns 'True' if its argument has one of the
--- following 'GeneralCategory's, or 'False' otherwise:
+-- following 'Unicode.Char.General.GeneralCategory's, or 'False' otherwise:
 --
--- * 'DecimalNumber'
--- * 'LetterNumber'
--- * 'OtherNumber'
+-- * 'Unicode.Char.General.DecimalNumber'
+-- * 'Unicode.Char.General.LetterNumber'
+-- * 'Unicode.Char.General.OtherNumber'
 --
 -- __Note:__ a character may have a numeric value (see
--- 'Unicode.Char.Numeric.numericValue') but return
--- 'False', because 'isNumber' only tests 'GeneralCategory':
--- some CJK characters are 'OtherLetter' and do have a numeric value.
+-- 'Unicode.Char.Numeric.numericValue') but return 'False', because 'isNumber'
+-- only tests 'Unicode.Char.General.GeneralCategory': some CJK characters are
+-- 'Unicode.Char.General.OtherLetter' and do have a numeric value.
 -- Use 'Unicode.Char.Numeric.isNumeric' to cover those cases as well.
 --
 -- prop> isNumber c == Data.Char.isNumber c

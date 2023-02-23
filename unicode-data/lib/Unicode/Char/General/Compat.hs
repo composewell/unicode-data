@@ -33,13 +33,13 @@ isAlpha = isLetter
 letters, plus letters of caseless scripts and modifiers letters).
 
 This function returns 'True' if its argument has one of the
-following 'GeneralCategory's, or 'False' otherwise:
+following 'Unicode.Char.General.GeneralCategory's, or 'False' otherwise:
 
-* 'UppercaseLetter'
-* 'LowercaseLetter'
-* 'TitlecaseLetter'
-* 'ModifierLetter'
-* 'OtherLetter'
+* 'Unicode.Char.General.UppercaseLetter'
+* 'Unicode.Char.General.LowercaseLetter'
+* 'Unicode.Char.General.TitlecaseLetter'
+* 'Unicode.Char.General.ModifierLetter'
+* 'Unicode.Char.General.OtherLetter'
 
 __Note:__ this function is /not/ equivalent to 'Unicode.Char.General.isAlphabetic'.
 See the description of 'Unicode.Char.General.isAlphabetic' for further details.
@@ -60,8 +60,9 @@ isLetter c =
     -- Use the following in case the previous code is not valid anymore:
     -- UC.generalCategory c <= UC.OtherLetter
 
-{-| Selects Unicode space characters (general category 'Space'),
-and the control characters @\\t@, @\\n@, @\\r@, @\\f@, @\\v@.
+{-| Selects Unicode space characters (general category
+'Unicode.Char.General.Space'), and the control characters
+@\\t@, @\\n@, @\\r@, @\\f@, @\\v@.
 
 __Note:__ 'isSpace' is /not/ equivalent to 'Unicode.Char.General.isWhiteSpace'.
 'Unicode.Char.General.isWhiteSpace' selects the same characters from 'isSpace'

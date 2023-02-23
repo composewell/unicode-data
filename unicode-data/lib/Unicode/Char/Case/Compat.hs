@@ -31,8 +31,9 @@ import qualified Unicode.Internal.Char.UnicodeData.SimpleUpperCaseMapping as C
 -- Title case is used by a small number of letter ligatures like the
 -- single-character form of /Lj/.
 --
--- It matches characters with general category 'UppercaseLetter' and
--- 'TitlecaseLetter'.
+-- It matches characters with general category
+-- 'Unicode.Char.General.UppercaseLetter' and
+-- 'Unicode.Char.General.TitlecaseLetter'.
 --
 -- See: 'Unicode.Char.Case.isUpperCase' for the /full upper/ case predicate.
 --
@@ -52,7 +53,8 @@ isUpper c =
 
 -- | Selects lower-case alphabetic Unicode characters (letters).
 --
--- It matches characters with general category 'LowercaseLetter'.
+-- It matches characters with general category
+-- 'Unicode.Char.General.LowercaseLetter'.
 --
 -- See: 'Unicode.Char.Case.isLowerCase' for the /full/ lower case predicate.
 --
