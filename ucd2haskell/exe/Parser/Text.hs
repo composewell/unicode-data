@@ -478,12 +478,13 @@ genBlocksModule
 genBlocksModule moduleName = done <$> Fold.foldl' step initial
     where
 
-    done (blocks, defs, ranges) = let ranges' = reverse ranges in unlines
+    done (count, blocks, defs, ranges) = let ranges' = reverse ranges in unlines
         [ apacheLicense 2022 moduleName
+        , "{-# LANGUAGE LambdaCase #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
-        , "(Block(..), BlockDefinition(..), block, blockDefinition)"
+        , "(Block(..), block, blockDefinition)"
         , "where"
         , ""
         , "import Data.Ix (Ix)"
@@ -500,25 +501,25 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , "    = " <> mconcat (intersperse "\n    | " (reverse blocks))
         , "    deriving (Enum, Bounded, Eq, Ord, Ix, Show)"
         , ""
-        , "-- | Block definition: range and name."
-        , "--"
-        , "-- @since 0.3.1"
-        , "data BlockDefinition = BlockDefinition"
-        , "    { blockRange :: !(Int, Int) -- ^ Range"
-        , "    , blockName :: !String -- ^ Name"
-        , "    } deriving (Eq, Ord, Show)"
-        , ""
         , "-- | Block definition"
         , "--"
-        , "-- @since 0.3.1"
-        , "blockDefinition :: Block -> BlockDefinition"
-        , "blockDefinition b = case b of"
-        , mconcat (reverse defs)
-        , "-- | Character block, if defined."
+        , "-- Undefined for values greater than " <> show (pred count) <> "."
+        , "--"
+        , "-- Returned value:"
+        , "--"
+        , "-- * Lower bound"
+        , "-- * Upper bound"
+        , "-- * Name (null terminated ASCII string)"
         , "--"
         , "-- @since 0.3.1"
-        , "block :: Char -> Maybe Int"
-        , "block (C# c#) = getBlock 0# " <> shows (length ranges - 1) "#"
+        , "blockDefinition :: Int# -> (# Int#, Int#, Addr# #)"
+        , "blockDefinition = \\case"
+        , mconcat (reverse defs)
+        , "-- | Character block, if defined, else -1."
+        , "--"
+        , "-- @since 0.3.1"
+        , "block :: Char# -> Int#"
+        , "block c# = getBlock 0# " <> shows (length ranges - 1) "#"
         , "    where"
         , "    -- [NOTE] Encoding"
         , "    -- A range is encoded as two LE Word32:"
@@ -530,7 +531,7 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , ""
         , "    -- Binary search"
         , "    getBlock l# u# = if isTrue# (l# ># u#)"
-        , "        then Nothing"
+        , "        then -1#"
         , "        else"
         , "            let k# = l# +# uncheckedIShiftRL# (u# -# l#) 1#"
         , "                j# = k# `uncheckedIShiftL#` 1#"
@@ -546,7 +547,7 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , "                    then getBlock l# (k# -# 1#)"
         , "                    -- cp in block: get block index"
         , "                    else let block# = cpL0# `uncheckedShiftRL#` 21#"
-        , "                         in Just (I# (word2Int# block#))"
+        , "                         in word2Int# block#"
         , ""
         , "    getRawCodePoint# = lookupWord32# ranges#"
         , ""
@@ -558,13 +559,14 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , "    \"" <> enumMapToAddrLiteral 4 0xff (mkRanges ranges') "\"#"
         ]
 
-    initial :: ([String], [String], [(Int, Int)])
-    initial = (mempty, mempty, mempty)
+    initial :: (Int, [String], [String], [(Int, Int)])
+    initial = (0, mempty, mempty, mempty)
 
-    step (blocks, defs, ranges) (blockName, blockRange) =
+    step (count, blocks, defs, ranges) (blockName, blockRange) =
         let blockID = mkHaskellConstructor blockName
-        in ( mkBlockConstructor blockID blockName blockRange : blocks
-           , mkBlockDef   blockID blockName blockRange : defs
+        in ( succ count
+           , mkBlockConstructor blockID blockName blockRange : blocks
+           , mkBlockDef   count         blockName blockRange : defs
            , blockRange : ranges )
 
     mkBlockConstructor blockID blockName (l, u) = mconcat
@@ -578,16 +580,12 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , "."
         ]
 
-    mkBlockDef blockID blockName (l, u) = mconcat
+    mkBlockDef blockIndex blockName (l, u) = mconcat
         [ "    "
-        , blockID
-        , " -> BlockDefinition (0x"
-        , showPaddedHex l
-        , ", 0x"
-        , showPaddedHex u
-        , ") "
-        , show blockName
-        , "\n"
+        , if u == ord maxBound then "_   " else shows blockIndex "#"
+        , " -> (# 0x", showPaddedHeX l, "#, 0x", showPaddedHeX u, "#, \""
+        , blockName -- NOTE: name is ASCII
+        , "\\0\"# #)\n"
         ]
 
     -- [NOTE] Encoding: a range is encoded as two LE Word32:

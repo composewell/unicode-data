@@ -79,6 +79,10 @@ spec = do
                     [ "Block is different for “", show c, "”. Expected: “Just "
                     , show b, "” but got: “", show b', "”." ]
         } in traverse_ check [minBound..maxBound]
+    it "Examples" do
+        let blockDef = UBlocks.blockDefinition UBlocks.Latin1Supplement
+        UBlocks.blockRange blockDef `shouldBe` (0x0080, 0x00ff)
+        UBlocks.blockName  blockDef `shouldBe` "Latin-1 Supplement"
   describe' "Unicode general categories" do
     it "generalCategory" do
       -- [NOTE] We cannot compare the categories directly, so use 'show'.
