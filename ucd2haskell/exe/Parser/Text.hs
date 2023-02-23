@@ -931,22 +931,27 @@ genGeneralCategoryModule moduleName =
     where
 
     -- (categories planes 0-3, categories plane 14, expected char)
-    initial = ([], [], minBound)
+    initial =
+        ( []
+        , []
+        , minBound
+        , CharBounds minBound minBound minBound minBound minBound minBound minBound)
 
-    step :: ([GeneralCategory], [GeneralCategory], Char)
+    step :: ([GeneralCategory], [GeneralCategory], Char, CharBounds)
          -> DetailedChar
-         -> ([GeneralCategory], [GeneralCategory], Char)
-    step acc@(acc1, acc2, p) a
+         -> ([GeneralCategory], [GeneralCategory], Char, CharBounds)
+    step acc@(acc1, acc2, p, bounds) a
         -- Plane 0 to 3, missing char
         -- Fill missing char entry with default category Cn
         -- See: https://www.unicode.org/reports/tr44/#Default_Values_Table
-        | plane0To3 && p < c = step (Cn : acc1, acc2, succ p)
+        | plane0To3 && p < c = step (Cn : acc1, acc2, succ p, bounds)
             a
         -- Plane 0 to 3, Regular entry
         | plane0To3 =
             ( generalCategory : acc1
             , acc2
-            , succ c )
+            , succ c
+            , updateCharBounds bounds c generalCategory )
         -- Plane 4 to 13: no entry expected
         | plane4To13 = error ("Unexpected char in plane 4-13: " <> show a)
         -- Plane 15 to 16: skip if PUA
@@ -954,14 +959,15 @@ genGeneralCategoryModule moduleName =
             Co -> acc -- skip
             _  -> error ("Unexpected char in plane 15-16: " <> show a)
         -- Leap to plane 14
-        | p < '\xE0000' = step (acc1, acc2, '\xE0000') a
+        | p < '\xE0000' = step (acc1, acc2, '\xE0000', bounds) a
         -- Plane 14, missing char
-        | p < c = step (acc1, Cn : acc2, succ p) a
+        | p < c = step (acc1, Cn : acc2, succ p, bounds) a
         -- Plane 14, regular entry
         | otherwise =
             ( acc1
             , generalCategory : acc2
-            , succ c )
+            , succ c
+            , updateCharBounds bounds c generalCategory )
         where
         c = _char a
         generalCategory = _generalCategory a
@@ -969,7 +975,7 @@ genGeneralCategoryModule moduleName =
         plane4To13 = c <= '\xDFFFF'
         plane15To16 = c >= '\xF0000'
 
-    done (acc1, acc2, _) = unlines
+    done (acc1, acc2, _, CharBounds{..}) = unlines
         [ apacheLicense 2020 moduleName
         , "{-# OPTIONS_HADDOCK hide #-}"
         , "{-# LANGUAGE PatternSynonyms #-}"
@@ -977,16 +983,41 @@ genGeneralCategoryModule moduleName =
         , "module " <> moduleName
         , "( -- * Lookup functions"
         , "  generalCategory"
+        , ", generalCategoryPlanes0To3"
         , ""
         , "  -- * General categories"
-        , foldMap mkGeneralCategoryExport [minBound..maxBound]
+        , foldMap mkGeneralCategoryPatternExport [minBound..maxBound]
+        , "  -- * Characters bounds for predicates"
+        , init $ foldMap mkCharBoundPatternExport charBoundPatterns
         , ") where"
         , ""
         , "import Data.Char (ord)"
         , "import Data.Word (Word8)"
         , "import GHC.Exts (Ptr(..))"
         , "import Unicode.Internal.Bits (lookupIntN)"
+        , ""
+        , "--------------------------------------------------------------------------------"
+        , "-- General category patterns"
+        , "--------------------------------------------------------------------------------"
         , foldMap mkGeneralCategoryPattern [minBound..maxBound]
+        , "--------------------------------------------------------------------------------"
+        , "-- Characters bounds for predicates"
+        , "--------------------------------------------------------------------------------"
+        , foldMap mkCharBoundPattern charBoundPatterns
+        , "--------------------------------------------------------------------------------"
+        , "-- Lookup functions"
+        , "--------------------------------------------------------------------------------"
+        , ""
+        , "-- | Return the general category of a code point in planes 0 to 3"
+        , "--"
+        , "-- The caller of this function must ensure its parameter is \\< @0x40000@."
+        , "{-# INLINE generalCategoryPlanes0To3 #-}"
+        , "generalCategoryPlanes0To3 :: Int -> Int"
+        , "generalCategoryPlanes0To3 = lookupIntN bitmap#"
+        , "    where"
+        , "    !(Ptr bitmap#) = generalCategoryBitmap"
+        , ""
+        , "-- | Return the general category of a character"
         , genEnumBitmap
             "generalCategory"
             (Co, generalCategoryConstructor Co)
@@ -995,14 +1026,57 @@ genGeneralCategoryModule moduleName =
             (reverse acc2)
         ]
         where
-        mkGeneralCategoryExport gc = mconcat
-            [", pattern ", generalCategoryConstructor gc, "\n"]
+        mkExport p = mconcat [", pattern ", p, "\n"]
+        mkGeneralCategoryPatternExport = mkExport . generalCategoryConstructor
         mkGeneralCategoryPattern gc = mconcat
             [ "\n-- | General category ", show gc, "\n"
             , "pattern ", generalCategoryConstructor gc, " :: Int\n"
             , "pattern ", generalCategoryConstructor gc
             , " = "
             , show (fromEnum gc), "\n"]
+        mkCharBoundPatternExport = mkExport . fst
+        mkCharBoundPattern (p, c) = mconcat
+            [ "\n-- | Maximum codepoint satisfying @", 'i' : drop 4 p, "@\n"
+            , "pattern ", p, " :: Int\n"
+            , "pattern ", p, " = 0x", showHexCodepoint c, "\n"]
+        charBoundPatterns =
+            [ ("MaxIsLetter"   , maxIsLetter   )
+            , ("MaxIsAlphaNum" , maxIsAlphaNum )
+            , ("MaxIsLower"    , maxIsLower    )
+            , ("MaxIsUpper"    , maxIsUpper    )
+            , ("MaxIsNumber"   , maxIsNumber   )
+            , ("MaxIsSpace"    , maxIsSpace    )
+            , ("MaxIsSeparator", maxIsSeparator) ]
+
+data CharBounds = CharBounds
+    { maxIsLetter    :: !Char
+    , maxIsAlphaNum  :: !Char
+    , maxIsLower     :: !Char
+    , maxIsUpper     :: !Char
+    , maxIsNumber    :: !Char
+    , maxIsSpace     :: !Char
+    , maxIsSeparator :: !Char }
+
+updateCharBounds :: CharBounds -> Char -> GeneralCategory -> CharBounds
+updateCharBounds acc@CharBounds{..} c = \case
+    Lu -> acc{ maxIsAlphaNum = max maxIsAlphaNum c
+             , maxIsLetter = max maxIsLetter c
+             , maxIsUpper = max maxIsUpper c }
+    Ll -> acc{ maxIsAlphaNum = max maxIsAlphaNum c
+             , maxIsLetter = max maxIsLetter c
+             , maxIsLower = max maxIsLower c }
+    Lt -> acc{ maxIsAlphaNum = max maxIsAlphaNum c
+             , maxIsLetter = max maxIsLetter c
+             , maxIsUpper = max maxIsUpper c }
+    Lm -> acc{maxIsAlphaNum=max maxIsAlphaNum c, maxIsLetter=max maxIsLetter c}
+    Lo -> acc{maxIsAlphaNum=max maxIsAlphaNum c, maxIsLetter=max maxIsLetter c}
+    Nd -> acc{maxIsAlphaNum=max maxIsAlphaNum c, maxIsNumber=max maxIsNumber c}
+    Nl -> acc{maxIsAlphaNum=max maxIsAlphaNum c, maxIsNumber=max maxIsNumber c}
+    No -> acc{maxIsAlphaNum=max maxIsAlphaNum c, maxIsNumber=max maxIsNumber c}
+    Zs -> acc{maxIsSeparator=max maxIsAlphaNum c, maxIsSpace=max maxIsSpace c}
+    Zl -> acc{maxIsSeparator=max maxIsAlphaNum c}
+    Zp -> acc{maxIsSeparator=max maxIsAlphaNum c}
+    _  -> acc
 
 readDecomp :: String -> (Maybe DecompType, Decomp)
 readDecomp s =

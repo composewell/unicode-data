@@ -21,7 +21,8 @@ module Unicode.Char.Case.Compat
     , toTitle
     ) where
 
-import Unicode.Char.General (GeneralCategory(..), generalCategory)
+import Data.Char (ord)
+import qualified Unicode.Internal.Char.UnicodeData.GeneralCategory as UC
 import qualified Unicode.Internal.Char.UnicodeData.SimpleLowerCaseMapping as C
 import qualified Unicode.Internal.Char.UnicodeData.SimpleTitleCaseMapping as C
 import qualified Unicode.Internal.Char.UnicodeData.SimpleUpperCaseMapping as C
@@ -39,10 +40,15 @@ import qualified Unicode.Internal.Char.UnicodeData.SimpleUpperCaseMapping as C
 --
 -- @since 0.3.0
 isUpper :: Char -> Bool
-isUpper c = case generalCategory c of
-    UppercaseLetter -> True
-    TitlecaseLetter -> True
-    _               -> False
+isUpper c =
+    -- NOTE: The guard constant is updated at each Unicode revision.
+    --       It must be < 0x40000 to be accepted by generalCategoryPlanes0To3.
+    cp <= UC.MaxIsUpper &&
+    case UC.generalCategoryPlanes0To3 cp of
+        UC.UppercaseLetter -> True
+        UC.TitlecaseLetter -> True
+        _                  -> False
+    where cp = ord c
 
 -- | Selects lower-case alphabetic Unicode characters (letters).
 --
@@ -54,9 +60,14 @@ isUpper c = case generalCategory c of
 --
 -- @since 0.3.0
 isLower :: Char -> Bool
-isLower c = case generalCategory c of
-    LowercaseLetter -> True
-    _               -> False
+isLower c =
+    -- NOTE: The guard constant is updated at each Unicode revision.
+    --       It must be < 0x40000 to be accepted by generalCategoryPlanes0To3.
+    cp <= UC.MaxIsLower &&
+    case UC.generalCategoryPlanes0To3 cp of
+        UC.LowercaseLetter -> True
+        _                  -> False
+    where cp = ord c
 
 -- | Convert a letter to the corresponding upper-case letter, if any.
 -- Any other character is returned unchanged.

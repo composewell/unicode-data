@@ -12,6 +12,7 @@
 module Unicode.Internal.Char.UnicodeData.GeneralCategory
 ( -- * Lookup functions
   generalCategory
+, generalCategoryPlanes0To3
 
   -- * General categories
 , pattern UppercaseLetter
@@ -45,6 +46,14 @@ module Unicode.Internal.Char.UnicodeData.GeneralCategory
 , pattern PrivateUse
 , pattern NotAssigned
 
+  -- * Characters bounds for predicates
+, pattern MaxIsLetter
+, pattern MaxIsAlphaNum
+, pattern MaxIsLower
+, pattern MaxIsUpper
+, pattern MaxIsNumber
+, pattern MaxIsSpace
+, pattern MaxIsSeparator
 ) where
 
 import Data.Char (ord)
@@ -52,6 +61,9 @@ import Data.Word (Word8)
 import GHC.Exts (Ptr(..))
 import Unicode.Internal.Bits (lookupIntN)
 
+--------------------------------------------------------------------------------
+-- General category patterns
+--------------------------------------------------------------------------------
 
 -- | General category Lu
 pattern UppercaseLetter :: Int
@@ -173,6 +185,52 @@ pattern PrivateUse = 28
 pattern NotAssigned :: Int
 pattern NotAssigned = 29
 
+--------------------------------------------------------------------------------
+-- Characters bounds for predicates
+--------------------------------------------------------------------------------
+
+-- | Maximum codepoint satisfying @isLetter@
+pattern MaxIsLetter :: Int
+pattern MaxIsLetter = 0x323AF
+
+-- | Maximum codepoint satisfying @isAlphaNum@
+pattern MaxIsAlphaNum :: Int
+pattern MaxIsAlphaNum = 0x323AF
+
+-- | Maximum codepoint satisfying @isLower@
+pattern MaxIsLower :: Int
+pattern MaxIsLower = 0x1E943
+
+-- | Maximum codepoint satisfying @isUpper@
+pattern MaxIsUpper :: Int
+pattern MaxIsUpper = 0x1E921
+
+-- | Maximum codepoint satisfying @isNumber@
+pattern MaxIsNumber :: Int
+pattern MaxIsNumber = 0x1FBF9
+
+-- | Maximum codepoint satisfying @isSpace@
+pattern MaxIsSpace :: Int
+pattern MaxIsSpace = 0x3000
+
+-- | Maximum codepoint satisfying @isSeparator@
+pattern MaxIsSeparator :: Int
+pattern MaxIsSeparator = 0x3000
+
+--------------------------------------------------------------------------------
+-- Lookup functions
+--------------------------------------------------------------------------------
+
+-- | Return the general category of a code point in planes 0 to 3
+--
+-- The caller of this function must ensure its parameter is \< @0x40000@.
+{-# INLINE generalCategoryPlanes0To3 #-}
+generalCategoryPlanes0To3 :: Int -> Int
+generalCategoryPlanes0To3 = lookupIntN bitmap#
+    where
+    !(Ptr bitmap#) = generalCategoryBitmap
+
+-- | Return the general category of a character
 {-# INLINE generalCategory #-}
 generalCategory :: Char -> Int
 generalCategory c
