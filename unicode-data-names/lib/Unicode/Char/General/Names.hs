@@ -24,9 +24,10 @@ module Unicode.Char.General.Names
 
 import Control.Applicative ((<|>))
 import Data.Maybe (listToMaybe)
-import Foreign.C.String (CString, peekCAString)
-import System.IO.Unsafe (unsafePerformIO)
+import Foreign.C.String (CString)
+import GHC.Exts (Ptr(..))
 
+import Unicode.Internal.Bits.Names (unpackCString#)
 import qualified Unicode.Internal.Char.UnicodeData.DerivedName as DerivedName
 import qualified Unicode.Internal.Char.UnicodeData.NameAliases as NameAliases
 
@@ -87,4 +88,4 @@ nameAliasesWithTypes
 -- Note: names are ASCII. See Unicode Standard 15.0.0, section 4.8.
 {-# INLINE unpack #-}
 unpack :: CString -> String
-unpack = unsafePerformIO . peekCAString
+unpack (Ptr addr#) = unpackCString# addr#

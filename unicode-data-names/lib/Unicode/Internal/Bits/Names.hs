@@ -12,7 +12,10 @@
 -- Fast, static bitmap lookup utilities
 
 module Unicode.Internal.Bits.Names
-    ( lookupInt32#
+    ( -- * Bitmap lookup
+      lookupInt32#
+      -- * CString
+    , unpackCString#
     ) where
 
 #include "MachDeps.h"
@@ -33,6 +36,12 @@ import GHC.Exts (indexInt32OffAddr#)
 import GHC.Exts (int32ToInt#)
 #endif
 
+#endif
+
+#if MIN_VERSION_base(4,15,0)
+import GHC.Exts (unpackCString#)
+#else
+import GHC.CString (unpackCString#)
 #endif
 
 {-| @lookupInt32# addr index@ looks up for the @index@-th 32-bits word in

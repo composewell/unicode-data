@@ -27,12 +27,12 @@ module Unicode.Char.Identifiers.Security
     )
 where
 
-import           Data.List.NonEmpty (NonEmpty)
-import           Data.Maybe (isJust)
-import qualified GHC.Foreign as Foreign
-import qualified GHC.IO.Encoding as Encoding
-import           System.IO.Unsafe (unsafePerformIO)
+import Data.List.NonEmpty (NonEmpty)
+import Data.Maybe (isJust)
+import Foreign.C.String (CString)
+import GHC.Exts (Ptr(..))
 
+import Unicode.Internal.Bits.Security (unpackCStringUtf8#)
 import qualified Unicode.Internal.Char.Security.Confusables as C
 import qualified Unicode.Internal.Char.Security.IdentifierStatus as S
 import qualified Unicode.Internal.Char.Security.IdentifierType as T
@@ -75,8 +75,6 @@ identifierTypes = T.decodeIdentifierTypes . T.identifierTypes
 {-# INLINE confusablePrototype #-}
 confusablePrototype :: Char -> Maybe String
 confusablePrototype = fmap decode . C.confusablePrototype
-    where
-    decode = unsafePerformIO . Foreign.peekCString Encoding.utf8
 
 -- [TODO] Assess the need for this function
 -- -- | Returns the /prototype/ of a character.
@@ -94,8 +92,6 @@ confusablePrototype = fmap decode . C.confusablePrototype
 {-# INLINE intentionalConfusables #-}
 intentionalConfusables :: Char -> String
 intentionalConfusables = maybe mempty decode . IC.intentionalConfusables
-    where
-    decode = unsafePerformIO . Foreign.peekCString Encoding.utf8
 
 -- | Returns 'True' if the character is /intentionally/ confusable.
 --
@@ -103,3 +99,7 @@ intentionalConfusables = maybe mempty decode . IC.intentionalConfusables
 {-# INLINE isIntentionallyConfusable #-}
 isIntentionallyConfusable :: Char -> Bool
 isIntentionallyConfusable = isJust . IC.intentionalConfusables
+
+{-# INLINE decode #-}
+decode :: CString -> String
+decode (Ptr addr#) = unpackCStringUtf8# addr#
