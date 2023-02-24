@@ -16,6 +16,8 @@ module Unicode.Internal.Bits.Names
       lookupInt32#
       -- * CString
     , unpackCString#
+      -- * Miscellaneous
+    , SPEC(..)
     ) where
 
 #include "MachDeps.h"
@@ -39,9 +41,10 @@ import GHC.Exts (int32ToInt#)
 #endif
 
 #if MIN_VERSION_base(4,15,0)
-import GHC.Exts (unpackCString#)
+import GHC.Exts (unpackCString#, SPEC(..))
 #else
 import GHC.CString (unpackCString#)
+import GHC.Types (SPEC(..))
 #endif
 
 {-| @lookupInt32# addr index@ looks up for the @index@-th 32-bits word in
