@@ -48,4 +48,4 @@ isNumber c =
         UC.LetterNumber  -> True
         UC.OtherNumber   -> True
         _                -> False
-    where cp = ord c
+    where !cp = ord c

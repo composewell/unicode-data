@@ -86,4 +86,4 @@ isSpace c = cp <= UC.MaxIsSpace && case c of
     '\f' -> True
     '\r' -> True
     _    -> UC.generalCategoryPlanes0To3 cp == UC.Space
-    where cp = ord c
+    where !cp = ord c

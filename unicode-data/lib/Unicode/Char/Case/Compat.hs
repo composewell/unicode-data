@@ -49,7 +49,7 @@ isUpper c =
         UC.UppercaseLetter -> True
         UC.TitlecaseLetter -> True
         _                  -> False
-    where cp = ord c
+    where !cp = ord c
 
 -- | Selects lower-case alphabetic Unicode characters (letters).
 --
@@ -69,7 +69,7 @@ isLower c =
     case UC.generalCategoryPlanes0To3 cp of
         UC.LowercaseLetter -> True
         _                  -> False
-    where cp = ord c
+    where !cp = ord c
 
 -- | Convert a letter to the corresponding upper-case letter, if any.
 -- Any other character is returned unchanged.

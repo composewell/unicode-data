@@ -251,7 +251,7 @@ generalCategory c
     -- Default: Cn
     | otherwise = NotAssigned
     where
-    cp = ord c
+    !cp = ord c
     !(Ptr bitmap#) = generalCategoryBitmap
 
 generalCategoryBitmap :: Ptr Word8

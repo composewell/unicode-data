@@ -379,7 +379,7 @@ script c
     -- Default: 156
     | otherwise = 156
     where
-    cp = ord c
+    !cp = ord c
     !(Ptr bitmap#) = scriptBitmap
 
 scriptBitmap :: Ptr Word8

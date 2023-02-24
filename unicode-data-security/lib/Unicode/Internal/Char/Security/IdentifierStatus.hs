@@ -20,7 +20,7 @@ import Unicode.Internal.Bits (lookupBit64)
 
 {-# INLINE isAllowedInIdentifier #-}
 isAllowedInIdentifier :: Char -> Bool
-isAllowedInIdentifier = \c -> let cp = ord c in cp >= 0x0027 && cp <= 0x323AF && lookupBit64 bitmap# cp
+isAllowedInIdentifier = \c -> let !cp = ord c in cp >= 0x0027 && cp <= 0x323AF && lookupBit64 bitmap# cp
     where
     !(Ptr bitmap#) = isAllowedInIdentifierBitmap
 

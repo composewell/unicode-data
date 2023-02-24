@@ -257,7 +257,7 @@ scriptExtensions c
     -- Default: 211
     | otherwise = 211
     where
-    cp = ord c
+    !cp = ord c
     !(Ptr bitmap#) = scriptExtensionsBitmap
 
 scriptExtensionsBitmap :: Ptr Word8

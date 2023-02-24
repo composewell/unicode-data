@@ -19,7 +19,7 @@ import Unicode.Internal.Bits (lookupBit64)
 
 {-# INLINE isPattern_Syntax #-}
 isPattern_Syntax :: Char -> Bool
-isPattern_Syntax = \c -> let cp = ord c in cp >= 0x0021 && cp <= 0xFE46 && lookupBit64 bitmap# cp
+isPattern_Syntax = \c -> let !cp = ord c in cp >= 0x0021 && cp <= 0xFE46 && lookupBit64 bitmap# cp
     where
     !(Ptr bitmap#) = isPattern_SyntaxBitmap
 
@@ -60,7 +60,7 @@ isPattern_SyntaxBitmap = Ptr
 
 {-# INLINE isPattern_White_Space #-}
 isPattern_White_Space :: Char -> Bool
-isPattern_White_Space = \c -> let cp = ord c in cp >= 0x0009 && cp <= 0x2029 && lookupBit64 bitmap# cp
+isPattern_White_Space = \c -> let !cp = ord c in cp >= 0x0009 && cp <= 0x2029 && lookupBit64 bitmap# cp
     where
     !(Ptr bitmap#) = isPattern_White_SpaceBitmap
 
@@ -74,7 +74,7 @@ isPattern_White_SpaceBitmap = Ptr
 
 {-# INLINE isWhite_Space #-}
 isWhite_Space :: Char -> Bool
-isWhite_Space = \c -> let cp = ord c in cp >= 0x0009 && cp <= 0x3000 && lookupBit64 bitmap# cp
+isWhite_Space = \c -> let !cp = ord c in cp >= 0x0009 && cp <= 0x3000 && lookupBit64 bitmap# cp
     where
     !(Ptr bitmap#) = isWhite_SpaceBitmap
 

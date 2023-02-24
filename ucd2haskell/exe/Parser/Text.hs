@@ -204,7 +204,7 @@ genBitmap funcName ordList = mconcat
         -- Only planes 0-3
         then
             ( mconcat
-                [ " = \\c -> let cp = ord c in cp >= 0x"
+                [ " = \\c -> let !cp = ord c in cp >= 0x"
                 , showPaddedHeX (minimum ordList)
                 , " && cp <= 0x"
                 , showPaddedHeX (maximum ordList)
@@ -234,7 +234,7 @@ genBitmap funcName ordList = mconcat
                     , ")\n"
                     , "    | otherwise = False\n"
                     , "    where\n"
-                    , "    cp = ord c\n" ]
+                    , "    !cp = ord c\n" ]
                 , planes0To3 <> plane14 )
 
 positionsToBitMap :: [Int] -> [Bool]
@@ -306,7 +306,7 @@ genEnumBitmap funcName (defPUA, pPUA) (def, pDef) planes0To3 plane14 = mconcat
         -- Only planes 0-3
         then
             ( mconcat
-                [ " = \\c -> let cp = ord c in if cp >= 0x"
+                [ " = \\c -> let !cp = ord c in if cp >= 0x"
                 , showPaddedHeX (length planes0To3')
                 , " then "
                 , pDef
@@ -344,7 +344,7 @@ genEnumBitmap funcName (defPUA, pPUA) (def, pDef) planes0To3 plane14 = mconcat
                     , "    -- Default: ", show def, "\n"
                     , "    | otherwise = " <> pDef, "\n"
                     , "    where\n"
-                    , "    cp = ord c\n" ]
+                    , "    !cp = ord c\n" ]
                 , planes0To3' <> plane14' )
 
 splitPlanes :: (HasCallStack) => String -> (a -> Bool) -> [a] -> ([a], [a])

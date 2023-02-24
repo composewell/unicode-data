@@ -26,7 +26,7 @@ isXID_Continue c
     | cp < 0xE01F0 = lookupBit64 bitmap# (cp - 0xADC50)
     | otherwise = False
     where
-    cp = ord c
+    !cp = ord c
     !(Ptr bitmap#) = isXID_ContinueBitmap
 
 isXID_ContinueBitmap :: Ptr Word8
@@ -136,7 +136,7 @@ isXID_ContinueBitmap = Ptr
 
 {-# INLINE isXID_Start #-}
 isXID_Start :: Char -> Bool
-isXID_Start = \c -> let cp = ord c in cp >= 0x0041 && cp <= 0x323AF && lookupBit64 bitmap# cp
+isXID_Start = \c -> let !cp = ord c in cp >= 0x0041 && cp <= 0x323AF && lookupBit64 bitmap# cp
     where
     !(Ptr bitmap#) = isXID_StartBitmap
 
@@ -253,7 +253,7 @@ isID_Continue c
     | cp < 0xE01F0 = lookupBit64 bitmap# (cp - 0xADC50)
     | otherwise = False
     where
-    cp = ord c
+    !cp = ord c
     !(Ptr bitmap#) = isID_ContinueBitmap
 
 isID_ContinueBitmap :: Ptr Word8
@@ -363,7 +363,7 @@ isID_ContinueBitmap = Ptr
 
 {-# INLINE isID_Start #-}
 isID_Start :: Char -> Bool
-isID_Start = \c -> let cp = ord c in cp >= 0x0041 && cp <= 0x323AF && lookupBit64 bitmap# cp
+isID_Start = \c -> let !cp = ord c in cp >= 0x0041 && cp <= 0x323AF && lookupBit64 bitmap# cp
     where
     !(Ptr bitmap#) = isID_StartBitmap
 
@@ -473,7 +473,7 @@ isID_StartBitmap = Ptr
 
 {-# INLINE isUppercase #-}
 isUppercase :: Char -> Bool
-isUppercase = \c -> let cp = ord c in cp >= 0x0041 && cp <= 0x1F189 && lookupBit64 bitmap# cp
+isUppercase = \c -> let !cp = ord c in cp >= 0x0041 && cp <= 0x1F189 && lookupBit64 bitmap# cp
     where
     !(Ptr bitmap#) = isUppercaseBitmap
 
@@ -545,7 +545,7 @@ isUppercaseBitmap = Ptr
 
 {-# INLINE isLowercase #-}
 isLowercase :: Char -> Bool
-isLowercase = \c -> let cp = ord c in cp >= 0x0061 && cp <= 0x1E943 && lookupBit64 bitmap# cp
+isLowercase = \c -> let !cp = ord c in cp >= 0x0061 && cp <= 0x1E943 && lookupBit64 bitmap# cp
     where
     !(Ptr bitmap#) = isLowercaseBitmap
 
@@ -616,7 +616,7 @@ isLowercaseBitmap = Ptr
 
 {-# INLINE isAlphabetic #-}
 isAlphabetic :: Char -> Bool
-isAlphabetic = \c -> let cp = ord c in cp >= 0x0041 && cp <= 0x323AF && lookupBit64 bitmap# cp
+isAlphabetic = \c -> let !cp = ord c in cp >= 0x0041 && cp <= 0x323AF && lookupBit64 bitmap# cp
     where
     !(Ptr bitmap#) = isAlphabeticBitmap
 
