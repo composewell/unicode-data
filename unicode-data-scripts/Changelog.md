@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 (Unreleased)
+
+- Added `scriptShortName`.
+- Removed dependency to `unicode-data`.
+- Fixed huge `Addr#` beeing inlined.
+
 ## 0.2.0.1 (December 2022)
 
 - Fix [Unicode scripts handling on big-endian architectures](https://github.com/composewell/unicode-data/issues/97).
