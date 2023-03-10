@@ -7,7 +7,17 @@ module Unicode.Text.CaseSpec
 import Data.Foldable (traverse_)
 import qualified Data.Text as T
 import qualified Unicode.Text.Case as C
+import qualified Unicode.Char as U
 import Test.Hspec
+
+#if MIN_VERSION_base(4,15,0)
+import GHC.Unicode (unicodeVersion)
+#else
+import Data.Version (Version, makeVersion)
+
+unicodeVersion :: Version
+unicodeVersion = makeVersion [0,0,0]
+#endif
 
 {- [NOTE]
 These tests may fail if the compiler’s Unicode version
@@ -28,14 +38,6 @@ does not match the version of this package.
 
 spec :: Spec
 spec = do
-#ifndef COMPATIBLE_GHC_UNICODE
-    let it' t = before_ (pendingWith "Incompatible GHC Unicode version") . it t
-#elif !MIN_VERSION_text(2,0,1)
-    let it' t = before_ (pendingWith "Incompatible: required text >= 2.0.1")
-              . it t
-#else
-    let it' = it
-#endif
     let cs = T.pack [minBound..maxBound]
     describe "toLower" do
         it "Idempotent" do
@@ -76,5 +78,14 @@ spec = do
 #if MIN_VERSION_text(2,0,0)
             C.toCaseFold cs `shouldBe` T.toCaseFold cs
 #endif
-
-
+    where
+    -- We need to match a GHC version with the same Unicode version.
+    -- See: the compatibility table at the top of the file.
+    it' = if U.unicodeVersion == unicodeVersion
+#if !MIN_VERSION_text(2,0,1)
+        then \t -> before_ (pendingWith "Incompatible: required text >= 2.0.1")
+                 . it t
+#else
+        then it
+#endif
+        else \t -> before_ (pendingWith "Incompatible GHC Unicode version"). it t
