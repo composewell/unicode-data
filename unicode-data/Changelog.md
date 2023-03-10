@@ -1,6 +1,9 @@
 # Changelog
 
-## (Unreleased)
+## 0.5.0 (March 2023)
+
+- Improve performance.
+- Fixed huge `Addr#` beeing inlined.
 
 ### Breaking changes
 

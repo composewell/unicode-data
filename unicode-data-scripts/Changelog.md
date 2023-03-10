@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0 (Unreleased)
+## 0.3.0 (March 2023)
 
 - Added `scriptShortName`.
 - Removed dependency to `unicode-data`.
