@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0 (March 2023)
+
+- Improve performance.
+
 ## 0.2.0 (September 2022)
 
 - Update to [Unicode 15.0.0](https://www.unicode.org/versions/Unicode15.0.0/).

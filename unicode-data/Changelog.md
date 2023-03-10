@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.0 (March 2023)
+
+- Improve performance.
+- Fixed huge `Addr#` beeing inlined.
+
+### Breaking changes
+
+- The return type of `integerValue` has changed from `Maybe Int` to
+  `(Integral a) => Maybe a`, in order to deal with possible overflow.
+
+  __Migration:__ replace `integerValue` with `integerValue @Int` if the compiler
+  cannot infer the return type. Prefer `@Int64` or `@Integer` if you do not
+  check integer overflow.
+
 ## 0.4.0.1 (December 2022)
 
 - Fix [Unicode blocks handling on big-endian architectures](https://github.com/composewell/unicode-data/issues/97).

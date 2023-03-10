@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 module Unicode.Char.General.BlocksBench
     ( benchmarks
     ) where
@@ -16,8 +18,7 @@ benchmarks charRange = bgroup "Unicode.Char.General.Blocks"
       [ benchChars "unicode-data" charRange (fmap fromEnum . B.block)
       ]
     , bgroup "blockDefinition"
-      -- [FIXME] We should addd NFData instance for BlockDefinition
-      [ benchRangeNF "unicode-data"  (show . B.blockDefinition)
+      [ benchRangeNF "unicode-data" B.blockDefinition
       ]
     ]
 
@@ -36,3 +37,6 @@ fold_
     -> (a, a)
     -> ()
 fold_ f = foldr (deepseq . f) () . range
+
+-- NOTE: Orphan instance
+instance NFData B.BlockDefinition

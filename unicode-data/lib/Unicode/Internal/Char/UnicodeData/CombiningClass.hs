@@ -947,7 +947,7 @@ combiningClass = \case
 
 {-# INLINE isCombining #-}
 isCombining :: Char -> Bool
-isCombining = \c -> let cp = ord c in cp >= 0x0300 && cp <= 0x1E94A && lookupBit64 bitmap# cp
+isCombining = \c -> let !cp = ord c in cp >= 0x0300 && cp <= 0x1E94A && lookupBit64 bitmap# cp
     where
     !(Ptr bitmap#) = isCombiningBitmap
 

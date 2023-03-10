@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                unicode-data-names
-version:             0.2.0
+version:             0.3.0
 synopsis:            Unicode characters names and aliases
 description:
   @unicode-data-names@ provides Haskell APIs to access the Unicode
@@ -27,11 +27,11 @@ tested-with:         GHC==8.0.2
                    , GHC==8.8.4
                    , GHC==8.10.7
                    , GHC==9.0.2
-                   , GHC==9.2.6
+                   , GHC==9.2.7
                    , GHC==9.4.4
                    , GHC==9.6.0
 
-extra-source-files:
+extra-doc-files:
     Changelog.md
     README.md
 
@@ -70,7 +70,6 @@ common compile-options
 
 library
   import: default-extensions, compile-options
-  default-language: Haskell2010
   exposed-modules:
       -- The module structure is derived from
       -- https://www.unicode.org/reports/tr44/#Property_Index_Table
@@ -88,6 +87,10 @@ library
   hs-source-dirs: lib
   build-depends:
       base             >= 4.7   && < 4.19,
+  -- Support for raw string literals unpacking is included in base ≥ 4.15
+  if impl(ghc < 9.0.0)
+    build-depends:
+      ghc-prim >= 0.3.1 && < 1.0
 
 test-suite test
   import: default-extensions, compile-options
@@ -100,13 +103,11 @@ test-suite test
   build-depends:
       base             >= 4.7   && < 4.19
     , hspec            >= 2.0   && < 2.11
-    , unicode-data     >= 0.4   && < 0.5
+    , unicode-data     >= 0.5   && < 0.6
     , unicode-data-names
-  default-language: Haskell2010
 
 executable export-all-chars
   import: default-extensions, compile-options
-  default-language: Haskell2010
   ghc-options: -O2
   hs-source-dirs: test
   main-is: export_all_chars.hs
@@ -128,6 +129,8 @@ benchmark bench
     base        >= 4.7   && < 4.19,
     deepseq     >= 1.1   && < 1.5,
     tasty-bench >= 0.2.5 && < 0.4,
-    tasty       >= 1.4.1,
+    tasty       >= 1.4.1 && < 1.5,
     unicode-data-names
-  ghc-options: -O2 -fdicts-strict -rtsopts
+  ghc-options: -O2 -fdicts-strict -rtsopts -with-rtsopts=-A32m
+  if impl(ghc >= 8.6)
+    ghc-options: -fproc-alignment=64

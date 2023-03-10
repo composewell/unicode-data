@@ -9,6 +9,7 @@ module Unicode.CharSpec
 import qualified Data.Char as Char
 import Data.Ix (Ix(..))
 import Data.Maybe (isJust)
+import Data.Foldable (traverse_)
 import qualified Unicode.Char as UChar
 import qualified Unicode.Char.General.Blocks as UBlocks
 -- [TODO] Remove the following qualified imports once isLetter and isSpace
@@ -20,8 +21,16 @@ import qualified Unicode.Char.Case.Compat as UCharCompat
 import qualified Unicode.Char.Numeric as UNumeric
 import qualified Unicode.Char.Numeric.Compat as UNumericCompat
 import qualified Unicode.Internal.Char.UnicodeData.GeneralCategory as UC
-import Data.Foldable (traverse_)
 import Test.Hspec
+
+#if MIN_VERSION_base(4,15,0)
+import GHC.Unicode (unicodeVersion)
+#else
+import Data.Version (Version, makeVersion)
+
+unicodeVersion :: Version
+unicodeVersion = makeVersion [0,0,0]
+#endif
 
 {- [NOTE]
 These tests may fail if the compiler’s Unicode version
@@ -42,15 +51,6 @@ does not match the version of this package.
 
 spec :: Spec
 spec = do
-#ifdef COMPATIBLE_GHC_UNICODE
-  let describe' = describe
-  let it' = it
-#else
-  let describe' t = before_ (pendingWith "Incompatible GHC Unicode version")
-                  . describe t
-  let it' t = before_ (pendingWith "Incompatible GHC Unicode version")
-            . it t
-#endif
   describe "Unicode blocks" do
     it "Characters not in any block are unassigned"
         let { check c = case UBlocks.block c of
@@ -79,6 +79,10 @@ spec = do
                     [ "Block is different for “", show c, "”. Expected: “Just "
                     , show b, "” but got: “", show b', "”." ]
         } in traverse_ check [minBound..maxBound]
+    it "Examples" do
+        let blockDef = UBlocks.blockDefinition UBlocks.Latin1Supplement
+        UBlocks.blockRange blockDef `shouldBe` (0x0080, 0x00ff)
+        UBlocks.blockName  blockDef `shouldBe` "Latin-1 Supplement"
   describe' "Unicode general categories" do
     it "generalCategory" do
       -- [NOTE] We cannot compare the categories directly, so use 'show'.
@@ -261,6 +265,14 @@ spec = do
       let check c = not (UNumericCompat.isNumber c) || isJust (UNumeric.numericValue c)
       traverse_ (`shouldSatisfy` check) [minBound..maxBound]
   where
+    -- We need to match a GHC version with the same Unicode version.
+    -- See: the compatibility table at the top of the file.
+    (describe', it') = if UChar.unicodeVersion == unicodeVersion
+        then ( describe, it )
+        else ( \t -> before_ (pendingWith "Incompatible GHC Unicode version")
+                   . describe t
+             , \t -> before_ (pendingWith "Incompatible GHC Unicode version")
+                   . it t )
     shouldBeEqualTo
         :: forall a b. (Bounded a, Enum a, Show a, Eq b, Show b)
         => (a -> b)

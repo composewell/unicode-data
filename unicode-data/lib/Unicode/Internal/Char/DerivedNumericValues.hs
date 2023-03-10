@@ -15,6 +15,7 @@ where
 
 import Data.Ratio ((%))
 
+{-# NOINLINE numericValue #-}
 numericValue :: Char -> Maybe Rational
 numericValue = \case
   '0' -> Just 0

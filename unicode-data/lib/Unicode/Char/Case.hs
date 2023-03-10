@@ -249,4 +249,7 @@ step = \case
         where
             -- Mask for a single Unicode code point: (1 << 21) - 1
             mask = 0x1fffff
-            cp = fromIntegral (s .&. mask)
+            -- [NOTE] As of GHC 9.4, Int64 is represented internally by Int64#,
+            -- so the previous code `fromIntegral s .&. mask` leads to
+            -- unefficient generated code.
+            cp = fromIntegral s .&. mask

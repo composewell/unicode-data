@@ -36,9 +36,11 @@ import Data.Foldable (foldl')
 import Data.Function (on, (&))
 import Data.Functor ((<&>))
 import Data.List
-    (dropWhileEnd, elemIndex, groupBy, intersperse, sort, sortBy, unfoldr)
+    ( dropWhileEnd, elemIndex, groupBy, intersperse
+    , partition, sort, sortBy, unfoldr)
 import Data.Maybe (fromMaybe)
 import Data.Ratio ((%))
+import Data.Semigroup (Arg(..))
 import Data.Word (Word8, Word32)
 import GHC.Stack (HasCallStack)
 import Numeric (showHex)
@@ -137,7 +139,7 @@ readCodePointM :: String -> Maybe Char
 readCodePointM "" = Nothing
 readCodePointM u  = Just (readCodePoint u)
 
-parseCodePointRange :: String -> Either Char (Char, Char)
+parseCodePointRange :: String -> CharRange
 parseCodePointRange
     = (\(c1, c2) -> maybe (Left c1) (Right . (c1,)) c2)
     . bimap readCodePoint (readCodePointM . drop 2)
@@ -204,7 +206,7 @@ genBitmap funcName ordList = mconcat
         -- Only planes 0-3
         then
             ( mconcat
-                [ " = \\c -> let cp = ord c in cp >= 0x"
+                [ " = \\c -> let !cp = ord c in cp >= 0x"
                 , showPaddedHeX (minimum ordList)
                 , " && cp <= 0x"
                 , showPaddedHeX (maximum ordList)
@@ -234,7 +236,7 @@ genBitmap funcName ordList = mconcat
                     , ")\n"
                     , "    | otherwise = False\n"
                     , "    where\n"
-                    , "    cp = ord c\n" ]
+                    , "    !cp = ord c\n" ]
                 , planes0To3 <> plane14 )
 
 positionsToBitMap :: [Int] -> [Bool]
@@ -253,8 +255,7 @@ bitMapToAddrLiteral
   -> String
   -- ^ String to append
   -> String
-bitMapToAddrLiteral bs cs =
-    chunkAddrLiteral 4 0xff encode (unfoldr mkChunks bs) cs
+bitMapToAddrLiteral bs = chunkAddrLiteral 4 0xff encode (unfoldr mkChunks bs)
 
     where
 
@@ -278,6 +279,8 @@ genEnumBitmap
   :: forall a. (HasCallStack, Bounded a, Enum a, Eq a, Show a)
   => String
   -- ^ Function name
+  -> Bool
+  -- ^ If true, use raw Int
   -> (a, String)
   -- ^ Value for planes 15-16
   -> (a, String)
@@ -287,9 +290,9 @@ genEnumBitmap
   -> [a]
   -- ^ List of values to encode for plane 14
   -> String
-genEnumBitmap funcName (defPUA, pPUA) (def, pDef) planes0To3 plane14 = mconcat
+genEnumBitmap funcName rawInt (defPUA, pPUA) (def, pDef) planes0To3 plane14 = mconcat
     [ "{-# INLINE ", funcName, " #-}\n"
-    , funcName, " :: Char -> Int\n"
+    , funcName, " :: Char -> Int", rawSuffix, "\n"
     , funcName, func
     , "    !(Ptr bitmap#) = ", bitmapLookup, "\n\n"
     , bitmapLookup, " :: Ptr Word8\n"
@@ -297,6 +300,7 @@ genEnumBitmap funcName (defPUA, pPUA) (def, pDef) planes0To3 plane14 = mconcat
     , "    \"", enumMapToAddrLiteral 4 0xff bitmap "\"#"
     ]
     where
+    rawSuffix = if rawInt then "#" else ""
     bitmapLookup = funcName <> "Bitmap"
     planes0To3' = dropWhileEnd (== def) planes0To3
     check = if length planes0To3 <= 0x40000
@@ -306,11 +310,11 @@ genEnumBitmap funcName (defPUA, pPUA) (def, pDef) planes0To3 plane14 = mconcat
         -- Only planes 0-3
         then
             ( mconcat
-                [ " = \\c -> let cp = ord c in if cp >= 0x"
+                [ " = \\c -> let !cp = ord c in if cp >= 0x"
                 , showPaddedHeX (length planes0To3')
                 , " then "
-                , pDef
-                , " else lookupIntN bitmap# cp\n"
+                , pDef, rawSuffix
+                , " else lookupIntN", rawSuffix, " bitmap# cp\n"
                 , "    where\n" ]
             , planes0To3' )
         -- All the planes
@@ -322,29 +326,29 @@ genEnumBitmap funcName (defPUA, pPUA) (def, pDef) planes0To3 plane14 = mconcat
                     [ " c\n"
                     , "    -- Planes 0-3\n"
                     , "    | cp < 0x", showPaddedHeX bound1
-                                     , " = lookupIntN bitmap# cp\n"
+                                     , " = lookupIntN", rawSuffix, " bitmap# cp\n"
                     , "    -- Planes 4-13: ", show def, "\n"
-                    , "    | cp < 0xE0000 = " <> pDef, "\n"
+                    , "    | cp < 0xE0000 = " <> pDef, rawSuffix, "\n"
                     , "    -- Plane 14\n"
                     , "    | cp < 0x", showPaddedHeX bound2
-                                     , " = lookupIntN bitmap# (cp - 0x"
+                                     , " = lookupIntN", rawSuffix, " bitmap# (cp - 0x"
                                      , showPaddedHeX (0xE0000 - bound1)
                                      , ")\n"
                     , if defPUA == def
                         then ""
                         else mconcat
                             [ "    -- Plane 14: ", show def, "\n"
-                            , "    | cp < 0xF0000 = ", pDef, "\n"
+                            , "    | cp < 0xF0000 = ", pDef, rawSuffix, "\n"
                             , "    -- Plane 15: ", show defPUA, "\n"
-                            , "    | cp < 0xFFFFE = ", pPUA, "\n"
+                            , "    | cp < 0xFFFFE = ", pPUA, rawSuffix, "\n"
                             , "    -- Plane 15: ", show def, "\n"
-                            , "    | cp < 0x100000 = " <> pDef, "\n"
+                            , "    | cp < 0x100000 = ", pDef, rawSuffix, "\n"
                             , "    -- Plane 16: ", show defPUA, "\n"
-                            , "    | cp < 0x10FFFE = " <> pPUA, "\n" ]
+                            , "    | cp < 0x10FFFE = ", pPUA, rawSuffix, "\n" ]
                     , "    -- Default: ", show def, "\n"
-                    , "    | otherwise = " <> pDef, "\n"
+                    , "    | otherwise = " <> pDef, rawSuffix, "\n"
                     , "    where\n"
-                    , "    cp = ord c\n" ]
+                    , "    !cp = ord c\n" ]
                 , planes0To3' <> plane14' )
 
 splitPlanes :: (HasCallStack) => String -> (a -> Bool) -> [a] -> ([a], [a])
@@ -478,12 +482,13 @@ genBlocksModule
 genBlocksModule moduleName = done <$> Fold.foldl' step initial
     where
 
-    done (blocks, defs, ranges) = let ranges' = reverse ranges in unlines
+    done (count, blocks, defs, ranges) = let ranges' = reverse ranges in unlines
         [ apacheLicense 2022 moduleName
+        , "{-# LANGUAGE LambdaCase #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
-        , "(Block(..), BlockDefinition(..), block, blockDefinition)"
+        , "(Block(..), block, blockDefinition)"
         , "where"
         , ""
         , "import Data.Ix (Ix)"
@@ -500,25 +505,25 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , "    = " <> mconcat (intersperse "\n    | " (reverse blocks))
         , "    deriving (Enum, Bounded, Eq, Ord, Ix, Show)"
         , ""
-        , "-- | Block definition: range and name."
-        , "--"
-        , "-- @since 0.3.1"
-        , "data BlockDefinition = BlockDefinition"
-        , "    { blockRange :: !(Int, Int) -- ^ Range"
-        , "    , blockName :: !String -- ^ Name"
-        , "    } deriving (Eq, Ord, Show)"
-        , ""
         , "-- | Block definition"
         , "--"
-        , "-- @since 0.3.1"
-        , "blockDefinition :: Block -> BlockDefinition"
-        , "blockDefinition b = case b of"
-        , mconcat (reverse defs)
-        , "-- | Character block, if defined."
+        , "-- Undefined for values greater than " <> show (pred count) <> "."
+        , "--"
+        , "-- Returned value:"
+        , "--"
+        , "-- * Lower bound"
+        , "-- * Upper bound"
+        , "-- * Name (null terminated ASCII string)"
         , "--"
         , "-- @since 0.3.1"
-        , "block :: Char -> Maybe Int"
-        , "block (C# c#) = getBlock 0# " <> shows (length ranges - 1) "#"
+        , "blockDefinition :: Int# -> (# Int#, Int#, Addr# #)"
+        , "blockDefinition = \\case"
+        , mconcat (reverse defs)
+        , "-- | Character block, if defined, else -1."
+        , "--"
+        , "-- @since 0.3.1"
+        , "block :: Char# -> Int#"
+        , "block c# = getBlock 0# " <> shows (length ranges - 1) "#"
         , "    where"
         , "    -- [NOTE] Encoding"
         , "    -- A range is encoded as two LE Word32:"
@@ -530,7 +535,7 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , ""
         , "    -- Binary search"
         , "    getBlock l# u# = if isTrue# (l# ># u#)"
-        , "        then Nothing"
+        , "        then -1#"
         , "        else"
         , "            let k# = l# +# uncheckedIShiftRL# (u# -# l#) 1#"
         , "                j# = k# `uncheckedIShiftL#` 1#"
@@ -546,7 +551,7 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , "                    then getBlock l# (k# -# 1#)"
         , "                    -- cp in block: get block index"
         , "                    else let block# = cpL0# `uncheckedShiftRL#` 21#"
-        , "                         in Just (I# (word2Int# block#))"
+        , "                         in word2Int# block#"
         , ""
         , "    getRawCodePoint# = lookupWord32# ranges#"
         , ""
@@ -558,13 +563,14 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , "    \"" <> enumMapToAddrLiteral 4 0xff (mkRanges ranges') "\"#"
         ]
 
-    initial :: ([String], [String], [(Int, Int)])
-    initial = (mempty, mempty, mempty)
+    initial :: (Int, [String], [String], [(Int, Int)])
+    initial = (0, mempty, mempty, mempty)
 
-    step (blocks, defs, ranges) (blockName, blockRange) =
+    step (count, blocks, defs, ranges) (blockName, blockRange) =
         let blockID = mkHaskellConstructor blockName
-        in ( mkBlockConstructor blockID blockName blockRange : blocks
-           , mkBlockDef   blockID blockName blockRange : defs
+        in ( succ count
+           , mkBlockConstructor blockID blockName blockRange : blocks
+           , mkBlockDef   count         blockName blockRange : defs
            , blockRange : ranges )
 
     mkBlockConstructor blockID blockName (l, u) = mconcat
@@ -578,16 +584,12 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
         , "."
         ]
 
-    mkBlockDef blockID blockName (l, u) = mconcat
+    mkBlockDef blockIndex blockName (l, u) = mconcat
         [ "    "
-        , blockID
-        , " -> BlockDefinition (0x"
-        , showPaddedHex l
-        , ", 0x"
-        , showPaddedHex u
-        , ") "
-        , show blockName
-        , "\n"
+        , if u == ord maxBound then "_   " else shows blockIndex "#"
+        , " -> (# 0x", showPaddedHeX l, "#, 0x", showPaddedHeX u, "#, \""
+        , blockName -- NOTE: name is ASCII
+        , "\\0\"# #)\n"
         ]
 
     -- [NOTE] Encoding: a range is encoded as two LE Word32:
@@ -605,6 +607,9 @@ genBlocksModule moduleName = done <$> Fold.foldl' step initial
 defaultScript :: String
 defaultScript = "Unknown"
 
+defaultScriptAbbr :: String
+defaultScriptAbbr = "Zzzz"
+
 genScriptsModule
     :: Monad m
     => String
@@ -618,19 +623,26 @@ genScriptsModule moduleName aliases =
         let scripts = Set.toList
                         (foldr addScript (Set.singleton defaultScript) ranges)
         in unlines
-            [ apacheLicense 2022 moduleName
+            [ "{-# LANGUAGE LambdaCase #-}"
+            , "{-# LANGUAGE PatternSynonyms #-}"
             , "{-# OPTIONS_HADDOCK hide #-}"
             , ""
+            , apacheLicense 2022 moduleName
+            , ""
             , "module " <> moduleName
-            , "(Script(..), script, scriptDefinition)"
+            , "  ( Script(..)"
+            , "  , scriptShortName"
+            , "  , script"
+            , "  , scriptDefinition"
+            , "  , pattern ScriptCharMask"
+            , "  , pattern ScriptCharMaskComplement )"
             , "where"
             , ""
             , "import Data.Char (ord)"
-            , "import Data.Int (Int32)"
             , "import Data.Ix (Ix)"
             , "import Data.Word (Word8)"
-            , "import GHC.Exts (Ptr(..))"
-            , "import Unicode.Internal.Bits (lookupIntN)"
+            , "import GHC.Exts (Addr#, Int#, Ptr(..), nullAddr#)"
+            , "import Unicode.Internal.Bits.Scripts (lookupIntN#)"
             , ""
             , "-- | Unicode [script](https://www.unicode.org/reports/tr24/)."
             , "--"
@@ -644,11 +656,40 @@ genScriptsModule moduleName aliases =
             , "  = " <> mkScripts scripts
             , "  deriving (Enum, Bounded, Eq, Ord, Ix, Show)"
             , ""
+            , "-- | Returns the 4-letter ISO 15924 script code as a NUL-terminated CString."
+            , "--"
+            , "-- @since 0.3.0"
+            , "scriptShortName :: Script -> Addr#"
+            , "scriptShortName = \\case"
+            , "    " <> mkScriptShortNames scripts
+            , ""
+            , "-- | Used to detect single character in ranges."
+            , "pattern ScriptCharMask :: Int#"
+            , "pattern ScriptCharMask = 0x800000# -- 1 << 23"
+            , ""
+            , "-- | Used to extract single character in ranges."
+            , "pattern ScriptCharMaskComplement :: Int#"
+            , "pattern ScriptCharMaskComplement = 0x7fffff# -- 1 << 23 ^ 0xffffff"
+            , ""
             , "-- | Script definition: list of corresponding characters."
             , "--"
+            , "-- Returned tuple value:"
+            , "--"
+            , "-- 1. Minimum codepoint."
+            , "-- 2. Maximum codepoint."
+            , "-- 3. Bitmap of ranges, without the extrema."
+            , "-- 4. Offset of last entry, in bytes."
+            , "--"
+            , "-- Encoding:"
+            , ""
+            , "-- * A single character is encoded as an LE Word32:"
+            , "--   codepoint with the 24th bit set."
+            , "-- * A range is encoded as two LE Word32: first is lower bound codepoint,"
+            , "--   second is upper bound codepoint."
+            , "--"
             , "-- @since 0.1.0"
-            , "scriptDefinition :: Script -> (Ptr Int32, Int)"
-            , "scriptDefinition b = case b of"
+            , "scriptDefinition :: Script -> (# Int#, Int#, Addr#, Int# #)"
+            , "scriptDefinition = \\case"
             , mkScriptDefinitions ranges
             , "-- | Script of a character."
             , "--"
@@ -714,9 +755,23 @@ genScriptsModule moduleName aliases =
         . intersperse ", "
         . fmap (\abbr -> mconcat ["@", abbr, "@"])
 
+    mkScriptShortNames :: [String] -> String
+    mkScriptShortNames
+        = mconcat
+        . intersperse "\n    "
+        . fmap (\script -> mconcat
+            [ mkHaskellConstructor script
+            -- [NOTE] ASCII string
+            , " -> \""
+            , case Map.lookup script aliasesMap of
+                Just as -> head as
+                Nothing -> error ("No abbreviation for script: " <> script)
+            , "\\0\"#" ])
+
     mkScriptDefinitions :: [ScriptLine] -> String
     mkScriptDefinitions
         = foldMap mkScriptDefinition
+        . sortBy (compare `on` (fst . head))
         . groupBy ((==) `on` fst)
         . reverse
         . addUnknownRanges
@@ -745,25 +800,62 @@ genScriptsModule moduleName aliases =
         | otherwise          = Just (Right (expected, pred c))
 
     mkScriptDefinition :: [ScriptLine] -> String
-    mkScriptDefinition ranges = mconcat
-        [ "  "
-        , mkHaskellConstructor (fst (head ranges))
-        , " -> (Ptr \""
-        , foldMap encodeRange ranges
-        , "\"#, "
-        , show (foldr (\r -> either (const (+1)) (const (+2)) (snd r)) 0 ranges :: Word)
-        , ")\n"
-        ]
+    mkScriptDefinition = \case
+        [(script, r)] -> mconcat
+            [ "    "
+            , mkHaskellConstructor script
+            , " -> (# 0x"
+            , showHexCodepoint (either id fst r)
+            , "#, 0x"
+            , showHexCodepoint (either id snd r)
+            , "#, nullAddr#, 0# #)\n"
+            ]
+        ranges -> mconcat
+            [ "    "
+            , mkHaskellConstructor script
+            , " -> (# 0x"
+            , showHexCodepoint lower
+            , "#, 0x"
+            , showHexCodepoint upper
+            , "#, \""
+            , mconcat encodedRanges
+            , "\"#, "
+            , show ((count - 1) * 4)
+            , "# #)\n"
+            ]
+            where
+            script = fst (head ranges)
+            firstRange = snd (head ranges)
+            firstRange' = case firstRange of
+                Left{}         -> []
+                Right (c1, c2) -> if succ c1 == c2
+                    then [Left c2]
+                    else [Right (succ c1, c2)]
+            lastRange  = snd (last ranges)
+            lastRange' = case lastRange of
+                Left{}         -> []
+                Right (c1, c2) -> if c1 == pred c2
+                    then [Left c1]
+                    else [Right (c1, pred c2)]
+            lower = either id fst firstRange
+            upper = either id snd lastRange
+            ranges' = case firstRange' <> fmap snd (drop 1 (init ranges)) <> lastRange' of
+                [] -> error ("mkScriptDefinition: empty literal for " <> script)
+                rs -> rs
+            (encodedRanges, count) = foldr go (mempty, 0) ranges'
+            go r (bs, c) = case encodeRange r of
+                (b, n) -> (b : bs, c + n)
 
     -- Encoding:
-    -- • A single char is encoded as an LE Int32.
-    -- • A range is encoded as two LE Int32 (first is lower bound, second is
-    --   upper bound), which correspond to the codepoints with the 32th bit set.
-    encodeRange :: ScriptLine -> String
-    encodeRange (_, r) = case r of
-        Left  c      -> encodeBytes (fromIntegral (ord c))
-        Right (l, u) -> encodeBytes (setBit (fromIntegral (ord l)) 31)
-                     <> encodeBytes (setBit (fromIntegral (ord u)) 31)
+    -- • A single character is encoded as an LE Word32:
+    --   codepoint with the 24th bit set.
+    -- • A range is encoded as two LE Word32: first is lower bound codepoint,
+    --   second is upper bound codepoint.
+    encodeRange :: CharRange -> (String, Int)
+    encodeRange = \case
+        Left  c      -> (encodeBytes (setBit (fromIntegral (ord c)) 23), 1)
+        Right (l, u) -> (encodeBytes (fromIntegral (ord l))
+                      <> encodeBytes (fromIntegral (ord u)), 2)
     encodeBytes = foldr addByte "" . word32ToWord8s
     addByte n acc = '\\' : shows n acc
 
@@ -775,15 +867,105 @@ genScriptsModule moduleName aliases =
                 then addMissing (def:acc, succ expected) x
                 else (script:acc, succ c)
             def = getScript defaultScript
+            isDef = (== def)
             getScript s = fromMaybe (error "script not found") (elemIndex s scripts)
-            -- [TODO] simplify
-            (planes0To3, plane14) = splitPlanes "Cannot generate: genScriptsModule" (== def) charScripts'
-        in genEnumBitmap
-            "script"
-            (def, show (fromEnum def))
-            (def, show (fromEnum def))
-            planes0To3
-            plane14
+            -- In order to reduce the size of the bitmap,
+            -- we divide the characters by planes:
+            -- • Planes 0 to 1: bitmap lookup
+            -- • Planes 2 to 3: fast ranges check (“Han” or “Unknown” scripts)
+            -- • Planes 4 to 13: “Unknown” script
+            -- • Plane 14: fast ranges check
+            -- • Planes 15-16: “Unknown” script
+            planes0To1 = dropWhileEnd isDef (take 0x20000 charScripts')
+            planes2To16 = dropWhileEnd isDef (drop 0x20000 charScripts')
+            planes2To3 = dropWhileEnd isDef (take (0x40000 - 0x20000) planes2To16)
+            plane14 = dropWhileEnd isDef (drop (0xE0000 - 0x20000) planes2To16)
+            boundPlanes0To1 = length planes0To1
+            otherPlanes = zip planes2To3 [0x20000..]
+                       <> zip plane14    [0xE0000..]
+        in mconcat
+            [ "{-# INLINE script #-}\n"
+            , "script :: Char -> Int#\n"
+            , "script c\n"
+            , "    -- Planes 0-1\n"
+            , "    | cp < 0x", showPaddedHeX boundPlanes0To1
+                             , " = lookupIntN# bitmap# cp\n"
+            , mkScriptsBounds def (scripts !!) otherPlanes
+            , "    -- Default: ", defaultScript, "\n"
+            , "    | otherwise = ", show def, "#\n"
+            , "    where\n"
+            , "    !cp = ord c\n"
+            , "    !(Ptr bitmap#) = scriptBitmap\n\n"
+            , "scriptBitmap :: Ptr Word8\n"
+            , "scriptBitmap = Ptr\n"
+            , "    \"", enumMapToAddrLiteral 4 0xff planes0To1 "\"#"
+            ]
+
+    mkScriptsBounds :: Int -> (Int -> String) -> [(Int,Int)] -> String
+    mkScriptsBounds def getScriptName
+        = foldMap (mkScriptBound getScriptName)
+        . groupBy ((==) `on` fst)
+        . filter ((/= def) . fst)
+        . foldr addScriptBound mempty
+
+    mkScriptBound :: (Int -> String) -> [(Int, (Int, Int))] -> String
+    mkScriptBound getScriptName xs = mconcat
+        [ "    -- "
+        , mconcat $ if maxPlane /= minPlane
+            then [ "Planes ", show minPlane, "-", show maxPlane, ": "]
+            else [ "Plane ", show minPlane, ": "]
+        , getScriptName script, "\n"
+        , "    | cp <= 0x", showPaddedHeX (snd lastRange)
+        , mkBinarySearch [snd lastRange] " && " (snd <$> xs)
+        , " = ", show script, "#\n"
+        ]
+        where
+        script = fst (head xs)
+        firstRange = snd (head xs)
+        lastRange = snd (last xs)
+        minPlane = fst firstRange `shiftR` 16
+        maxPlane = snd lastRange `shiftR` 16
+        mkBinarySearch bs prefix = \case
+            [] -> ""
+            [(l, u)] -> mconcat $ if l `elem` bs
+                then if u `elem` bs
+                    then mempty
+                    else [ prefix, "cp <= 0x", showPaddedHeX u ]
+                else if u `elem` bs
+                    then [ prefix, "cp >= 0x", showPaddedHeX l ]
+                    else if l == u
+                        then [ prefix, "cp == 0x", showPaddedHeX l]
+                        else [ prefix
+                             , "(cp >= 0x", showPaddedHeX l, " && "
+                             , "cp <= 0x", showPaddedHeX u, ")" ]
+            ys ->
+                let !(l, l') = head ys
+                    !u = snd (last ys)
+                    !b1 = max (l' + 1) (l + div (u - l) 2)
+                    isLowerHalf (x, y) = y < b1 || (x <= b1 && (b1 - x > y - b1))
+                    (before, after) = case partition isLowerHalf ys of
+                        t@(b, a) -> if null a || null b
+                            then error (show (script, before, after))
+                            else t
+                    !b2 = fst (head after)
+                    !search1 = mkBinarySearch (b2:bs) " && " after
+                    !search2 = mkBinarySearch bs      " || " before
+                in mconcat $ if null search1 && null search2
+                    then [ prefix, "cp >= 0x", showPaddedHeX b2 ]
+                    else [ prefix
+                         , "(cp >= 0x", showPaddedHeX b2
+                         , search1
+                         , search2, ")" ]
+
+    addScriptBound
+        :: (Int, Int)
+        -> [(Int, (Int, Int))]
+        -> [(Int, (Int, Int))]
+    addScriptBound (s, c) = \case
+        rs@((s', (_, u)) : rs') -> if s == s'
+            then (s, (c, u)) : rs'
+            else (s, (c, c)) : rs
+        [] -> [(s, (c, c))]
 
     rangeToCharScripts :: (String -> b) -> ScriptLine -> [(Char, b)]
     rangeToCharScripts f (script, r) = case r of
@@ -797,7 +979,7 @@ genScriptExtensionsModule
     -> ScriptExtensions
     -> Fold m ScriptLine String
 genScriptExtensionsModule moduleName aliases extensions =
-    done <$> Fold.foldl' processLine mempty
+    done <$> Fold.foldl' processLine (Set.singleton defaultScript, mempty, mempty)
 
     where
 
@@ -808,32 +990,15 @@ genScriptExtensionsModule moduleName aliases extensions =
     scriptsAbbr =
         Map.foldrWithKey (\abbr as -> Map.insert (head as) abbr) mempty aliases
     getScriptAbbr :: String -> String
-    getScriptAbbr = fromMaybe (error "script not found") . (scriptsAbbr Map.!?)
-
-    -- All possible values: extensions + scripts
-    extensionsSet :: Set.Set [String]
-    extensionsSet = Set.fromList (Map.elems extensions)
-                  <> Set.map pure (Map.keysSet aliases)
-    extensionsList = sortBy
-        (compare `on` fmap mkScript)
-        (Set.toList extensionsSet)
-
-    encodeExtensions :: [String] -> Int
-    encodeExtensions e = fromMaybe
-        (error ("extension not found: " <> show e))
-        (elemIndex e extensionsList)
-
-    encodedExtensions :: Map.Map [String] Int
-    encodedExtensions =
-        let l = length extensionsSet
-        in if length extensionsSet > 0xff
-            then error ("Too many script extensions: " <> show l)
-            else Map.fromSet encodeExtensions extensionsSet
+    getScriptAbbr s = fromMaybe
+        (error ("script not found: " <> s))
+        (scriptsAbbr Map.!? s)
 
     processLine
-        :: (Set.Set [String], Map.Map Char Int) -- used exts, encoded char exts
+        :: (Set.Set String, Set.Set [String], Map.Map Char [String])
+        -- ^ used scripts, used exts, char exts
         -> ScriptLine
-        -> (Set.Set [String], Map.Map Char Int)
+        -> (Set.Set String, Set.Set [String], Map.Map Char [String])
     processLine acc (script, range) = case range of
         Left c         -> addChar script c acc
         Right (c1, c2) -> foldr (addChar script) acc [c1..c2]
@@ -841,80 +1006,129 @@ genScriptExtensionsModule moduleName aliases extensions =
     addChar
         :: String -- script
         -> Char   -- processed char
-        -> (Set.Set [String], Map.Map Char Int)
-        -> (Set.Set [String], Map.Map Char Int)
-    addChar script c (extsAcc, charAcc) = case Map.lookup c extensions of
-        -- Char has explicit extensions
-        Just exts -> ( Set.insert exts extsAcc
-                     , Map.insert c (encodedExtensions Map.! exts) charAcc)
-        -- Char has no explicit extensions: use its script
-        Nothing   ->
-            let exts = [getScriptAbbr script]
-            in ( Set.insert exts extsAcc
-               , Map.insert c (encodedExtensions Map.! exts) charAcc)
+        -> (Set.Set String, Set.Set [String], Map.Map Char [String])
+        -> (Set.Set String, Set.Set [String], Map.Map Char [String])
+    addChar script c (scripts, extsAcc, charAcc) =
+        case Map.lookup c extensions of
+            -- Char has explicit extensions
+            Just exts ->
+                ( Set.insert script scripts
+                , Set.insert exts extsAcc
+                , Map.insert c exts charAcc)
+            -- Char has no explicit extensions: use its script
+            Nothing ->
+                let exts = [getScriptAbbr script]
+                in ( Set.insert script scripts
+                   , Set.insert exts extsAcc
+                   , Map.insert c exts charAcc)
 
-    done (usedExts, exts) = unlines
+    done (usedScripts, usedExts, exts) = unlines
         [ apacheLicense 2022 moduleName
-        , "{-# LANGUAGE OverloadedLists #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
-        , "(scriptExtensions, decodeScriptExtensions)"
+        , "(scriptExtensions)"
         , "where"
         , ""
         , "import Data.Char (ord)"
-        , "import Data.List.NonEmpty (NonEmpty)"
         , "import Data.Word (Word8)"
-        , "import GHC.Exts (Ptr(..))"
-        , "import Unicode.Internal.Char.Scripts (Script(..))"
-        , "import Unicode.Internal.Bits (lookupIntN)"
-        , ""
-        , "-- | Useful to decode the output of 'scriptExtensions'."
-        , "decodeScriptExtensions :: Int -> NonEmpty Script"
-        , "decodeScriptExtensions = \\case" <> mkDecodeScriptExtensions usedExts
-        , "    _   -> [" <> mkHaskellConstructor defaultScript <> "]"
+        , "import GHC.Exts (Addr#, Int#, Ptr(..), nullAddr#)"
+        , "import Unicode.Internal.Bits.Scripts (lookupIntN#)"
         , ""
         , "-- | Script extensions of a character."
         , "--"
+        , "-- Returned value:"
+        , "--"
+        , "-- 1. First script, encoded by its index."
+        , "-- 2. Second script if defined, else -1."
+        , "-- 3. List of the remaining scripts, encoded by their index as Word8."
+        , "-- 4. Total of scripts extensions minus 3. It corresponds to the index of the"
+        , "--    last entry of the previous list, if not empty."
+        , "--"
         , "-- @since 0.1.0"
+        , "scriptExtensions :: Char -> (# Int#, Int#, Addr#, Int# #)"
+        , "scriptExtensions c = case encodedScriptExtensions c of"
+            <> mkDecodeScriptExtensions encodeExtensions encodeAbbr
+                    (usedExts Set.\\ singleScriptExtensionsSet)
+        , "    s    -> (# s, -1#, nullAddr#, -2# #)"
+        , ""
         , genEnumBitmap
-            "scriptExtensions"
+            "encodedScriptExtensions"
+            True
             (def, show (fromEnum def))
             (def, show (fromEnum def))
             planes0To3
             plane14
         ]
         where
-        scriptExtensions = mkScriptExtensions exts
+        scripts
+            = fmap snd
+            . Set.toList
+            . Set.map (mkHaskellConstructor &&& id)
+            $ usedScripts
+        encodedAbbr :: Map.Map String Word8
+        encodedAbbr = Map.fromList (first getScriptAbbr <$> zip scripts [0..])
+        encodeAbbr :: String -> Word8
+        encodeAbbr = (encodedAbbr Map.!)
+
+        singleScriptExtensions = pure . getScriptAbbr <$> scripts
+        singleScriptExtensionsSet = Set.fromList singleScriptExtensions
+        multiScriptExtensions :: Set.Set [String]
+        multiScriptExtensions = Set.fromList (Map.elems extensions)
+                                Set.\\ singleScriptExtensionsSet
+        -- Encode single script as their script value
+        extensionsList = singleScriptExtensions
+                      <> Set.toList multiScriptExtensions
+
+        encodedExtensions :: Map.Map [String] Word8
+        encodedExtensions = let len = length extensionsList in if len > 0xff
+            then error ("Too many script extensions: " <> show len)
+            else Map.fromList (zip extensionsList [0..])
+
+        encodeExtensions = (encodedExtensions Map.!)
+
+        def = encodeExtensions [defaultScriptAbbr]
+        scriptExtensions = mkScriptExtensions def (Map.map encodeExtensions exts)
         -- [TODO] simplify
         (planes0To3, plane14) = splitPlanes
             "Cannot generate: genScriptExtensionsModule"
             (== def)
             scriptExtensions
 
-    mkDecodeScriptExtensions :: Set.Set [String] -> String
     mkDecodeScriptExtensions
+        :: ([String] -> Word8)
+        -> (String -> Word8)
+        -> Set.Set [String]
+        -> String
+    mkDecodeScriptExtensions encodeExtensions encodeAbbr
         = mkDecodeScriptExtensions'
-        . Set.map (\exts -> (encodedExtensions Map.! exts, exts))
-    mkDecodeScriptExtensions' = foldMap $ \(v, exts) -> mconcat
-        [ "\n    "
-        , show v
-        , " -> ["
-        , mconcat (intersperse ", " (mkScript <$> exts))
-        , "]"
-        ]
-    mkScript :: String -> String
-    mkScript = mkHaskellConstructor . head . (aliases Map.!)
+        . Set.map (\exts -> Arg (encodeExtensions exts)
+                                (sort (encodeAbbr <$> exts)))
+    mkDecodeScriptExtensions' = foldMap $ \(Arg v exts) -> case exts of
+        []       -> error "impossible"
+        [e1]     -> mk v e1 Nothing   Nothing   (-2)
+        [e1,e2]  -> mk v e1 (Just e2) Nothing   (-1)
+        e1:e2:es -> mk v e1 (Just e2) (Just es) (length exts - 3)
+        where
+        mk :: Word8 -> Word8 -> Maybe Word8 -> Maybe [Word8] -> Int -> String
+        mk v e1 e2 mes n = mconcat
+            [ "\n    "
+            , show v
+            , "# -> (# "
+            , show e1, "#, "
+            , maybe "0" show e2
+            , case mes of
+                Nothing -> "#, nullAddr#, "
+                Just es -> "#, \"" <> enumMapToAddrLiteral 0 0xff es "\"#, "
+            , show n
+            , "# #)" ]
 
-    def :: Int
-    def = encodedExtensions Map.! [getScriptAbbr defaultScript]
-
-    mkScriptExtensions
+    mkScriptExtensions def
         = reverse
         . snd
-        . Map.foldlWithKey addCharExt ('\0', mempty)
-    addCharExt (expected, acc) c v = if expected < c
-        then addCharExt (succ expected, def : acc) c v
+        . Map.foldlWithKey (addCharExt def) ('\0', mempty)
+    addCharExt def (expected, acc) c v = if expected < c
+        then addCharExt def (succ expected, def : acc) c v
         else (succ c, v : acc)
 
 -------------------------------------------------------------------------------
@@ -1020,6 +1234,7 @@ genGeneralCategoryModule moduleName =
         , "-- | Return the general category of a character"
         , genEnumBitmap
             "generalCategory"
+            False
             (Co, generalCategoryConstructor Co)
             (Cn, generalCategoryConstructor Cn)
             (reverse acc1)
@@ -1532,17 +1747,74 @@ genNamesModule
     => String
     -> Fold m CharName String
 genNamesModule moduleName =
-    done <$> Fold.foldl' addCharName (mempty, mempty, 0)
+    done <$> Fold.foldl' addCharName initial
 
     where
 
-    addCharName (names, offsets, offset) (CharName char name) =
-        ( name <> ['\0'] : names
-        , encodeOffset char offset : offsets
-        , offset + length name + 1
-        )
+    initial :: (Char, [String], [[Int]], Int, Char, Char)
+    initial = ('\0', mempty, mempty, 0, '\0', '\0')
 
-    encodeOffset char offset = encode32LE (ord char) (encode32LE offset mempty)
+    addCharName
+        (expected, names, offsets, offset, maxPlanes03, maxPlane14)
+        entry@(CharName char name) = if expected < char
+            then if expected < '\xE0000' && char >= '\xE0000'
+                then addCharName
+                    ( '\xE0000'
+                    , names
+                    , offsets
+                    , offset
+                    , maxPlanes03
+                    , maxPlane14 )
+                    entry
+                else addCharName
+                    ( succ expected
+                    , names
+                    , encodeOffset 0 0 : offsets
+                    , offset
+                    , maxPlanes03
+                    , maxPlane14 )
+                    entry
+            else
+                let !(name', len, len', compressed) = encodeName name
+                in if (char < '\x40000' || char >= '\xE0000') &&
+                    offset <= 0xffffff && (len < hangul || compressed)
+                    then
+                        ( succ expected
+                        , name' : names
+                        , encodeOffset offset len : offsets
+                        , offset + len'
+                        , if char < '\x40000'
+                            then max maxPlanes03 char
+                            else maxPlanes03
+                        , max maxPlane14 char )
+                    else error (mconcat
+                        [ "genNamesModule: Cannot encode '\\x"
+                        , showHexCodepoint char
+                        , "' “", name, "”"
+                        , " (offset: 0x"
+                        , showPaddedHeX offset
+                        , ", length: 0x"
+                        , showPaddedHeX len
+                        , ")" ])
+
+    cjkCompat = 0xf0
+    cjkUnified = 0xf1
+    tangut = 0xf2
+    hangul = 0x80
+
+    encodeName name
+        | take 28 name == "CJK COMPATIBILITY IDEOGRAPH-" = ("", cjkCompat, 0, True)
+        | take 22 name == "CJK UNIFIED IDEOGRAPH-"       = ("", cjkUnified, 0, True)
+        | take 17 name == "TANGUT IDEOGRAPH-"            = ("", tangut, 0, True)
+        | take 16 name == "HANGUL SYLLABLE "             =
+            let !name' = drop 16 name; !len = length name'
+            in if len <= 12
+                then (name', hangul + len, len, True)
+                else error ("genNamesModule: cannot encode Hangul: " <> show len)
+        | otherwise = let !len = length name in (name, len, len, False)
+
+    encodeOffset offset len = encode32LE offset' mempty
+        where !offset' = len .|. (offset `shiftL` 8)
     encode32LE v acc
         = (v             .&. 0xff)
         : (v `shiftR` 8  .&. 0xff)
@@ -1550,50 +1822,115 @@ genNamesModule moduleName =
         :  v `shiftR` 24
         : acc
 
-    done (names, offsets, _) = unlines
+    done (_, names, offsets, _, maxPlanes03, maxPlane14) = unlines
         [ apacheLicense 2022 moduleName
-        , "{-# LANGUAGE OverloadedStrings #-}"
+        , "{-# LANGUAGE PatternSynonyms #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
-        , "(name)"
-        , "where"
+        , "    ( name"
+        , "    , pattern NoName"
+        , "    , pattern CjkCompatibilityIdeograph"
+        , "    , pattern CjkUnifiedIdeograph"
+        , "    , pattern TangutIdeograph"
+        , "    , pattern HangulSyllable"
+        , "    ) where"
         , ""
         , "import Data.Int (Int32)"
-        , "import Foreign.C (CChar, CString)"
+        , "import Foreign.C (CChar)"
         , "import GHC.Exts"
+        , "    ( Addr#, Char#, Int#, Ptr(..),"
+        , "      ord#, (-#), (<#),"
+        , "      uncheckedIShiftRL#, andI#,"
+        , "      plusAddr#, isTrue# )"
         , "import Unicode.Internal.Bits.Names (lookupInt32#)"
+        , ""
+        , "-- | No name. Used to test length returned by 'name'."
+        , "--"
+        , "-- @since 0.3.0"
+        , "pattern NoName :: Int#"
+        , "pattern NoName = 0#"
+        , ""
+        , "-- | CJK compatibility ideograph. Used to test the length returned by 'name'."
+        , "--"
+        , "-- @since 0.3.0"
+        , "pattern CjkCompatibilityIdeograph :: Int#"
+        , "pattern CjkCompatibilityIdeograph = 0x" <> showHex cjkCompat "#"
+        , ""
+        , "-- | CJK unified ideograph. Used to test the length returned by 'name'."
+        , "--"
+        , "-- @since 0.3.0"
+        , "pattern CjkUnifiedIdeograph :: Int#"
+        , "pattern CjkUnifiedIdeograph = 0x" <> showHex cjkUnified "#"
+        , ""
+        , "-- | Tangut ideograph. Used to test the length returned by 'name'."
+        , "--"
+        , "-- @since 0.3.0"
+        , "pattern TangutIdeograph :: Int#"
+        , "pattern TangutIdeograph = 0x" <> showHex tangut "#"
+        , ""
+        , "-- | Hangul syllable. Used to test the length returned by 'name'."
+        , "--"
+        , "-- @since 0.3.0"
+        , "pattern HangulSyllable :: Int#"
+        , "pattern HangulSyllable = 0x" <> showHex hangul "#"
         , ""
         , "-- | Name of a character, if defined."
         , "--"
+        , "-- The return value represents: (ASCII string, string length or special value)."
+        , "--"
+        , "-- Some characters require specific processing:"
+        , "--"
+        , "-- * If length = @'CjkCompatibilityIdeograph'@,"
+        , "--   then the name is generated from the pattern “CJK COMPATIBILITY IDEOGRAPH-*”,"
+        , "--   where * is the hexadecimal codepoint."
+        , "-- * If length = @'CjkUnifiedIdeograph'@,"
+        , "--   then the name is generated from the pattern “CJK UNIFIED IDEOGRAPH-*”,"
+        , "--   where * is the hexadecimal codepoint."
+        , "-- * If length = @'TangutIdeograph'@,"
+        , "--   then the name is generated from the pattern “TANGUT IDEOGRAPH-*”,"
+        , "--   where * is the hexadecimal codepoint."
+        , "-- * If length ≥ @'HangulSyllable'@,"
+        , "--   then the name is generated by prepending “HANGUL SYLLABLE ”"
+        , "--   to the returned string."
+        , "--"
+        , "-- See an example of such implementation using 'String's in 'Unicode.Char.General.Names.name'."
+        , "--"
         , "-- @since 0.1.0"
         , "{-# INLINE name #-}"
-        , "name :: Char -> Maybe CString"
-        , "name (C# c#) = getName 0# " <> shows (length names - 1) "#"
-        , "    where"
-        , "    -- [NOTE] Encoding"
-        , "    -- • The names are ASCII. Each name is encoded as a NUL-terminated CString."
-        , "    -- • The names are concatenated in names#."
-        , "    -- • The name of a character, if defined, is referenced by an offset in names#."
-        , "    -- • The offsets are stored in offsets#. A character entry is composed of two"
-        , "    --   LE Word32: the first one is the codepoint, the second one is the offset."
-        , "    -- • We use binary search on offsets# to extract names from names#."
-        , "    cp# = ord# c#"
-        , "    -- Binary search"
-        , "    getName l# u# = if isTrue# (l# ># u#)"
-        , "        then Nothing"
-        , "        else"
-        , "            let k# = l# +# uncheckedIShiftRL# (u# -# l#) 1#"
-        , "                j# = k# `uncheckedIShiftL#` 1#"
-        , "                cp'# = getRawCodePoint# j#"
-        , "            in if isTrue# (cp'# <# cp#)"
-        , "                then getName (k# +# 1#) u#"
-        , "                else if isTrue# (cp'# ==# cp#)"
-        , "                    then let offset# = getRawCodePoint# (j# +# 1#)"
-        , "                         in Just (Ptr (names# `plusAddr#` offset#))"
-        , "                    else getName l# (k# -# 1#)"
+        , "name :: Char# -> (# Addr#, Int# #)"
+        , "name c#"
+        , "    | isTrue# (cp# <# 0x"
+            <> showHexCodepoint (succ maxPlanes03)
+            <> "#) = getName cp#"
+        , "    | isTrue# (cp# <# 0xE0000#) = (# \"\\0\"#, 0# #)"
+        , "    | isTrue# (cp# <# 0x"
+            <> showHexCodepoint (succ maxPlane14)
+            <> "#) = getName (cp# -# 0x"
+            <> showPaddedHeX (0xE0000 - ord (succ maxPlanes03))
+            <> "#)"
+        , "    | otherwise = (# \"\\0\"#, 0# #)"
         , ""
-        , "    getRawCodePoint# = lookupInt32# offsets#"
+        , "    where"
+        , ""
+        , "    -- [NOTE] Encoding"
+        , "    -- • The names are ASCII. Each name is encoded as a raw bytes literal."
+        , "    -- • The names are concatenated in names#."
+        , "    --   There are exceptions (see function’s doc)."
+        , "    -- • The name of a character, if defined, is referenced by an offset in names#."
+        , "    -- • The offsets are stored in offsets#. A character entry is composed of:"
+        , "    --   • a LE Word24 for the offset;"
+        , "    --   • a Word8 for the length of the name or a special value."
+        , ""
+        , "    !cp# = ord# c#"
+        , ""
+        , "    {-# INLINE getName #-}"
+        , "    getName k# ="
+        , "        let !entry# = lookupInt32# offsets# k#"
+        , "            !offset# = entry# `uncheckedIShiftRL#` 8#"
+        , "            !name# = names# `plusAddr#` offset#"
+        , "            !len# = entry# `andI#` 0xff#"
+        , "        in (# name#, len# #)"
         , ""
         , "    !(Ptr names#) = namesBitmap"
         , "    !(Ptr offsets#) = offsetsBitmap"
@@ -1619,7 +1956,7 @@ genAliasesModule
     => String
     -> Fold m CharAliases String
 genAliasesModule moduleName =
-    done <$> Fold.foldr (\a -> (:) (mkCharAliases a)) mempty
+    done <$> Fold.foldr ((:) . mkCharAliases) mempty
 
     where
 
@@ -1627,25 +1964,71 @@ genAliasesModule moduleName =
     mkCharAliases (CharAliases char aliases) = mconcat
         [ "  '\\x"
         , showHexCodepoint char
-        , "' -> "
-        , show . Map.toList
-               . Map.fromListWith (flip (<>))
-               $ fmap ((:[])) <$> aliases
-        , "\n"
+        , "'# -> \""
+        , mkCharAliasesLiteral char aliases
+        , "\"#\n"
         ]
+
+    mkCharAliasesLiteral :: Char -> Aliases -> String
+    mkCharAliasesLiteral char aliasesList =
+        enumMapToAddrLiteral 0 0xfff (reverse index) (mconcat (reverse aliases))
+        where
+        (index, aliases, _) = Map.foldlWithKey'
+            (addAliasType char)
+            (mempty, mempty, Map.size aliasesMap)
+            aliasesMap
+        -- Group aliases by type
+        aliasesMap = foldr
+            (\(ty, a) -> Map.adjust (a:) ty)
+            (Map.fromSet (const []) (Set.fromList [minBound..maxBound]))
+            aliasesList
+
+    -- [FIXME] [(Word8:AliasType,Word8:index of first alias)] [CString]
+    addAliasType
+        :: Char
+        -> ([Word8], [String], Int) -- (index, aliases, last alias index)
+        -> AliasType
+        -> [Alias]
+        -> ([Word8], [String], Int)
+    addAliasType char (index, aliasesAcc, lastAliasIndex) _ty = \case
+        [] ->
+            ( 0 : index
+            , aliasesAcc
+            , lastAliasIndex )
+        aliases -> -- traceShow (char, ty, fromIntegral lastAliasIndex :: Word8)
+            ( fromIntegral lastAliasIndex : index
+            , encodedAliases
+            , lastAliasIndex' )
+            where
+            (encodedAliases, lastAliasIndex') =
+                addEncodedAliases (aliasesAcc, lastAliasIndex) aliases
+            addEncodedAliases acc@(as, offset) = \case
+                Alias alias : rest -> if offset' < 0xff
+                    then addEncodedAliases
+                        -- next offset : null-terminated string
+                        ( mconcat ["\\", show nextAliasOffset, alias, "\\0"]:as
+                        , offset' )
+                        rest
+                    else error . mconcat $
+                        [ "Cannot encode alias “", alias, "” offset for char : "
+                        , show char
+                        , " . Offset: ", show offset', " >= 0xff" ]
+                    where
+                    -- offset + length + null
+                    offset' = offset + length alias + 2
+                    nextAliasOffset = if null rest then 0 else offset'
+                [] -> acc
 
     done names = unlines
         [ apacheLicense 2022 moduleName
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
-        , "(NameAliasType(..), nameAliases, nameAliasesByType, nameAliasesWithTypes)"
+        , "(NameAliasType(..), maxNameAliasType, nameAliases)"
         , "where"
         , ""
         , "import Data.Ix (Ix)"
-        , "import Data.Maybe (fromMaybe)"
-        , "import Foreign.C.String (CString)"
-        , "import GHC.Exts (Ptr(..))"
+        , "import GHC.Exts (Addr#, Char#)"
         , ""
         , "-- | Type of name alias. See Unicode Standard 15.0.0, section 4.8."
         , "--"
@@ -1666,22 +2049,9 @@ genAliasesModule moduleName =
         , "    --   format characters, spaces, and variation selectors."
         , "    deriving (Enum, Bounded, Eq, Ord, Ix, Show)"
         , ""
-        , "-- | All name aliases of a character."
-        , "-- The names are listed in the original order of the UCD."
-        , "--"
-        , "-- See 'nameAliasesWithTypes' for the detailed list by alias type."
-        , "--"
-        , "-- @since 0.1.0"
-        , "{-# INLINE nameAliases #-}"
-        , "nameAliases :: Char -> [CString]"
-        , "nameAliases = mconcat . fmap snd . nameAliasesWithTypes"
-        , ""
-        , "-- | Name aliases of a character for a specific name alias type."
-        , "--"
-        , "-- @since 0.1.0"
-        , "{-# INLINE nameAliasesByType #-}"
-        , "nameAliasesByType :: NameAliasType -> Char -> [CString]"
-        , "nameAliasesByType t = fromMaybe mempty . lookup t . nameAliasesWithTypes"
+        , "-- | >>> maxNameAliasType == fromEnum (maxBound :: NameAliasType)"
+        , "maxNameAliasType :: Int"
+        , "maxNameAliasType = 4"
         , ""
         , "-- | Detailed character names aliases."
         , "-- The names are listed in the original order of the UCD."
@@ -1689,10 +2059,10 @@ genAliasesModule moduleName =
         , "-- See 'nameAliases' if the alias type is not required."
         , "--"
         , "-- @since 0.1.0"
-        , "nameAliasesWithTypes :: Char -> [(NameAliasType, [CString])]"
-        , "nameAliasesWithTypes = \\case"
+        , "nameAliases :: Char# -> Addr#"
+        , "nameAliases = \\case"
         , mconcat names
-        , "  _ -> mempty"
+        , "  _          -> \"\\xff\"#"
         ]
 
 genNumericValuesModule
@@ -1722,6 +2092,7 @@ genNumericValuesModule moduleName =
         , ""
         , "import Data.Ratio ((%))"
         , ""
+        , "{-# NOINLINE numericValue #-}"
         , "numericValue :: Char -> Maybe Rational"
         , "numericValue = \\case" <> values
         , "  _ -> Nothing"
@@ -1871,6 +2242,7 @@ genIdentifierTypeModule moduleName =
         , "-- | Returns the 'IdentifierType's corresponding to a character."
         , genEnumBitmap
             "identifierTypes"
+            False
             (def', show (fromEnum def'))
             (def', show (fromEnum def'))
             planes0To3
@@ -2026,7 +2398,7 @@ parseBlockLines = Stream.mapMaybe parseBlockLine
 -- Parsing script file
 -------------------------------------------------------------------------------
 
-type ScriptLine = (String, Either Char (Char, Char))
+type ScriptLine = (String, CharRange)
 
 parseScriptLine :: String -> Maybe ScriptLine
 parseScriptLine ln
@@ -2042,7 +2414,7 @@ parseScriptLine ln
 
         in (trim script, parseRange (trim rangeLn))
 
-    parseRange :: String -> Either Char (Char, Char)
+    parseRange :: String -> CharRange
     parseRange
         = (\(c1, c2) -> maybe (Left c1) (Right . (c1,)) c2)
         . bimap readCodePoint (readCodePointM . drop 2)
@@ -2465,7 +2837,7 @@ data AliasType
     | Alternate
     | Figment
     | Abbreviation
-    deriving (Eq, Ord, Read, Show)
+    deriving (Enum, Bounded, Eq, Ord, Read, Show)
 
 newtype Alias = Alias String
 instance Show Alias where

@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                ucd2haskell
-version:             0.4.0
+version:             0.5.0
 synopsis:            Generate the code of the unicode-data* packages
 description:
     Internal package for the generation of @unicode-data*@ packages.
@@ -21,11 +21,11 @@ tested-with:         GHC==8.0.2
                    , GHC==8.8.4
                    , GHC==8.10.7
                    , GHC==9.0.2
-                   , GHC==9.2.6
+                   , GHC==9.2.7
                    , GHC==9.4.4
                    , GHC==9.6.0
 
-extra-source-files:
+extra-doc-files:
     README.md
     NOTICE
 data-dir: data

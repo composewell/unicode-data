@@ -293,7 +293,7 @@ isControl :: Char -> Bool
 -- By definition (https://www.unicode.org/reports/tr44/#General_Category_Values)
 -- “a C0 or C1 control code”, i.e. the 0x00-0x1f, 0x7f, and 0x80-0x9f.
 isControl c = cp <= 0x9F && UC.generalCategoryPlanes0To3 cp == UC.Control
-    where cp = ord c
+    where !cp = ord c
 
 {-| Selects Unicode mark characters, for example accents and the
 like, which combine with preceding characters.
@@ -311,7 +311,7 @@ prop> isMark c == Data.Char.isMark c
 -}
 isMark :: Char -> Bool
 isMark c = UC.NonSpacingMark <= gc && gc <= UC.EnclosingMark
-    where gc = UC.generalCategory c
+    where !gc = UC.generalCategory c
 
 {-| Selects printable Unicode characters (letters, numbers, marks, punctuation,
 symbols and spaces).
@@ -354,7 +354,7 @@ prop> isPunctuation c == Data.Char.isPunctuation c
 -}
 isPunctuation :: Char -> Bool
 isPunctuation c = UC.ConnectorPunctuation <= gc && gc <= UC.OtherPunctuation
-    where gc = UC.generalCategory c
+    where !gc = UC.generalCategory c
 
 {- | Returns 'True' for any whitespace characters, and the control
 characters @\\t@, @\\n@, @\\r@, @\\f@, @\\v@.
@@ -414,7 +414,7 @@ prop> isSymbol c == Data.Char.isSymbol c
 -}
 isSymbol :: Char -> Bool
 isSymbol c = UC.MathSymbol <= gc && gc <= UC.OtherSymbol
-    where gc = UC.generalCategory c
+    where !gc = UC.generalCategory c
 
 -- | Returns 'True' for alphabetic Unicode characters (lower-case, upper-case
 -- and title-case letters, plus letters of caseless scripts and modifiers
@@ -522,8 +522,8 @@ hangulLast = hangulFirst + jamoLCount * jamoVCount * jamoTCount - 1
 --
 -- @since 0.1.0
 isHangul :: Char -> Bool
-isHangul c = n >= hangulFirst && n <= hangulLast
-    where n = ord c
+isHangul c = cp >= hangulFirst && cp <= hangulLast
+    where !cp = ord c
 
 -- | Determine if the given character is a Hangul LV syllable.
 --
@@ -540,8 +540,8 @@ isHangulLV c = assert (jamoTCount == 28)
 --
 -- @since 0.1.0
 isJamo :: Char -> Bool
-isJamo c = n >= jamoLFirst && n <= jamoTLast
-    where n = ord c
+isJamo c = cp >= jamoLFirst && cp <= jamoTLast
+    where !cp = ord c
 
 -- | Given a Unicode character, if it is a leading jamo, return its index in
 -- the list of leading jamo consonants, otherwise return 'Nothing'.
@@ -551,7 +551,7 @@ jamoLIndex :: Char -> Maybe Int
 jamoLIndex c
   | index >= 0 && index < jamoLCount = Just index
   | otherwise = Nothing
-    where index = ord c - jamoLFirst
+    where !index = ord c - jamoLFirst
 
 -- | Given a Unicode character, if it is a vowel jamo, return its index in the
 -- list of vowel jamo, otherwise return 'Nothing'.
@@ -561,7 +561,7 @@ jamoVIndex :: Char -> Maybe Int
 jamoVIndex c
   | index >= 0 && index < jamoVCount = Just index
   | otherwise = Nothing
-    where index = ord c - jamoVFirst
+    where !index = ord c - jamoVFirst
 
 -- | Given a Unicode character, if it is a trailing jamo consonant, return its
 -- index in the list of trailing jamo consonants, otherwise return 'Nothing'.
@@ -576,4 +576,4 @@ jamoTIndex :: Char -> Maybe Int
 jamoTIndex c
   | index > 0 && index < jamoTCount = Just index
   | otherwise = Nothing
-    where index = ord c - jamoTFirst
+    where !index = ord c - jamoTFirst

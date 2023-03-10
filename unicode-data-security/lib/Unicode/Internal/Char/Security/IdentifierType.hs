@@ -101,7 +101,7 @@ identifierTypes c
     -- Default: 0
     | otherwise = 0
     where
-    cp = ord c
+    !cp = ord c
     !(Ptr bitmap#) = identifierTypesBitmap
 
 identifierTypesBitmap :: Ptr Word8
