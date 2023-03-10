@@ -31,7 +31,7 @@ tested-with:         GHC==8.0.2
                    , GHC==9.4.4
                    , GHC==9.6.0
 
-extra-source-files:
+extra-doc-files:
     Changelog.md
     README.md
     NOTICE
@@ -65,7 +65,6 @@ common compile-options
 
 library
   import: default-extensions, compile-options
-  default-language: Haskell2010
   exposed-modules:
       Unicode.Char
       -- The module structure is derived from
@@ -150,7 +149,7 @@ benchmark bench
     base        >= 4.7   && < 4.19,
     deepseq     >= 1.1   && < 1.5,
     tasty-bench >= 0.2.5 && < 0.4,
-    tasty       >= 1.4.1,
+    tasty       >= 1.4.1 && < 1.5,
     unicode-data
   ghc-options: -O2 -fdicts-strict -rtsopts -with-rtsopts=-A32m
   if impl(ghc >= 8.6)

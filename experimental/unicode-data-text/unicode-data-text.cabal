@@ -26,7 +26,7 @@ tested-with:         GHC==8.0.2
                    , GHC==9.2.6
                    , GHC==9.4.4
 
-extra-source-files:
+extra-doc-files:
     Changelog.md
     README.md
 
@@ -60,7 +60,6 @@ common compile-options
 
 library
   import: default-extensions, compile-options
-  default-language: Haskell2010
   exposed-modules:
     Unicode.Text.Case
 
@@ -82,6 +81,7 @@ test-suite test
     base             >= 4.7   && < 4.19,
     hspec            >= 2.0   && < 2.11,
     text             >= 1.2.4 && < 2.1,
+    unicode-data     >= 0.3   && < 0.5,
     unicode-data-text
   build-tool-depends:
     hspec-discover:hspec-discover >= 2.0 && < 2.11
@@ -95,7 +95,7 @@ benchmark bench
     base             >= 4.7   && < 4.19,
     deepseq          >= 1.1   && < 1.5,
     tasty-bench      >= 0.2.5 && < 0.4,
-    tasty            >= 1.4.1,
+    tasty            >= 1.4.1 && < 1.5,
     text             >= 1.2.4 && < 2.1,
     unicode-data     >= 0.3   && < 0.5,
     unicode-data-text
