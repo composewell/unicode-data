@@ -52,7 +52,7 @@ jobs:
           - 9.0.2
           - 9.2.7+exe
           - 9.4.4
-          - 9.6.0
+          - 9.6.1
           - head
           - hlint
 
@@ -116,14 +116,18 @@ jobs:
             cabal_version: 3.8.1.0
 
           # [TODO] Once GHC 9.6.1 is published and supported by ghcup:
-          # • Remove release channel
-          # • Set GHC version to 9.6.1
           # • Set Cabal version to 3.10
-          - name: 9.6.0
-            ghc_version: 9.6.0.20230302
-            ghcup_release_channel: "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml"
+          - name: 9.6.1
+            ghc_version: 9.6.1
             runner: ubuntu-latest
             cabal_version: 3.8.1.0
+
+          # Template for release candidates
+          # - name: 9.8.0
+          #   ghc_version: 9.8.0.XXXXX
+          #   ghcup_release_channel: "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml"
+          #   runner: ubuntu-latest
+          #   cabal_version: 3.8.1.0
 
           # [TODO] Use latest cabal (pre-)release
           - name: head
