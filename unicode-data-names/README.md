@@ -21,7 +21,7 @@ with Python.
 __Warning:__ A Python version with the _exact same Unicode version_ is required.
 
 ```bash
-cabal run -f "export-all-chars" -v0 export-all-chars > ./test/all_chars.csv
+cabal run -O2 -f "export-all-chars" -v0 export-all-chars > ./test/all_chars.csv
 python3 ./test/check.py -v ./test/all_chars.csv
 ```
 

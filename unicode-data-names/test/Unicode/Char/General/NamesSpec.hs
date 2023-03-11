@@ -5,9 +5,12 @@ module Unicode.Char.General.NamesSpec
   ) where
 
 import Unicode.Char.General
+    ( generalCategory,
+      GeneralCategory(NotAssigned, Surrogate, PrivateUse) )
 import Unicode.Char.General.Names
+    ( correctedName, name, nameOrAlias )
 import Data.Foldable (traverse_)
-import Test.Hspec
+import Test.Hspec ( Spec, it, shouldBe, shouldSatisfy )
 
 spec :: Spec
 spec = do

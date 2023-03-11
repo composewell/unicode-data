@@ -9,11 +9,11 @@
 
 module Main where
 
-import Data.Char
-import Data.Foldable
-import Data.Version
+import Data.Char ( ord )
+import Data.Foldable ( traverse_ )
+import Data.Version ( showVersion )
 import Unicode.Char (unicodeVersion)
-import Numeric
+import Numeric ( showHex )
 
 import qualified Unicode.Char.General.Names as UNames
 
@@ -39,4 +39,4 @@ addEntry :: Char -> IO ()
 addEntry c = do
   putStr (mkCodePointHex c)
   putChar ','
-  putStrLn (show (UNames.name c))
+  print (UNames.name c)
