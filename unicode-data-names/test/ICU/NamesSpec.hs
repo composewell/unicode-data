@@ -1,6 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 
-module Unicode.Char.General.Names.ICUSpec
+module ICU.NamesSpec
     ( spec
     ) where
 

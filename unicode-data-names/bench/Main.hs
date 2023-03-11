@@ -57,7 +57,7 @@ main = defaultMain
         "unicode-data" -> benchNF title
         _              ->
             bcompare ( "$NF == \"unicode-data\" && $(NF-1) == \"" ++
-                       groupTitle ++ "\"")
+                       groupTitle ++ "\"" )
           . benchNF title
 
     benchNF :: forall a. (NFData a) => String -> (Char -> a) -> Benchmark

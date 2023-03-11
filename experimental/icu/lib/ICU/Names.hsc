@@ -49,7 +49,7 @@ unicodeVersion
 charName :: Int -> Char -> Maybe String
 charName ty c
     = unsafePerformIO
-    $ allocaArray bufferLength $
+    . allocaArray bufferLength $
         \ptr -> u_charName cp ty ptr (fromIntegral bufferLength) >>=
         \case
             0   -> pure Nothing
