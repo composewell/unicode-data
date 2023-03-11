@@ -50,7 +50,7 @@ jobs:
           - 8.8.4+macOS+exe
           - 8.10.7+exe
           - 9.0.2
-          - 9.2.6+exe
+          - 9.2.7+exe
           - 9.4.4
           - 9.6.0
           - head
@@ -104,8 +104,8 @@ jobs:
             cabal_version: 3.2
 
             # [NOTE] Last GHC version that can build ucd2haskell
-          - name: 9.2.6+exe
-            ghc_version: 9.2.6
+          - name: 9.2.7+exe
+            ghc_version: 9.2.7
             pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
             runner: ubuntu-latest
             cabal_version: 3.6
@@ -120,7 +120,7 @@ jobs:
           # • Set GHC version to 9.6.1
           # • Set Cabal version to 3.10
           - name: 9.6.0
-            ghc_version: 9.6.0.20230128
+            ghc_version: 9.6.0.20230302
             ghcup_release_channel: "https://raw.githubusercontent.com/haskell/ghcup-metadata/master/ghcup-prereleases-0.0.7.yaml"
             runner: ubuntu-latest
             cabal_version: 3.8.1.0
