@@ -44,6 +44,11 @@ flag has-text
   manual: True
   default: False
 
+flag has-bytestring
+  description: Expose an API using the bytestring package
+  manual: True
+  default: False
+
 flag dev-has-icu
   description:
     Use ICU for test and benchmark. Intended for development on the repository.
@@ -105,6 +110,11 @@ library
       Unicode.Char.General.Names.Text
     build-depends:
       text >= 2.0 && < 2.1
+  if flag(has-bytestring)
+    exposed-modules:
+      Unicode.Char.General.Names.ByteString
+    build-depends:
+      bytestring >= 0.11.2 && < 0.12
 
 test-suite test
   import: default-extensions, compile-options
@@ -125,6 +135,12 @@ test-suite test
         Unicode.Char.General.Names.TextSpec
     build-depends:
       text >= 2.0 && < 2.1
+  if flag(has-bytestring)
+    cpp-options: -DHAS_BYTESTRING
+    other-modules:
+        Unicode.Char.General.Names.ByteStringSpec
+    build-depends:
+      bytestring >= 0.11.2 && < 0.12
   if flag(dev-has-icu)
     cpp-options: -DHAS_ICU
     other-modules:
@@ -161,6 +177,10 @@ benchmark bench
     cpp-options: -DHAS_TEXT
     build-depends:
       text >= 2.0 && < 2.1
+  if flag(has-bytestring)
+    cpp-options: -DHAS_BYTESTRING
+    build-depends:
+      bytestring >= 0.11.2 && < 0.12
   if flag(dev-has-icu)
     cpp-options: -DHAS_ICU
     build-depends:

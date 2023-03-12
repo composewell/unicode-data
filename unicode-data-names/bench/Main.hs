@@ -5,6 +5,10 @@ import Data.Ix (Ix(..))
 import Test.Tasty.Bench (Benchmark, bgroup, bcompare, bench, nf, defaultMain)
 
 import qualified Unicode.Char.General.Names as String
+#ifdef HAS_BYTESTRING
+import qualified Unicode.Char.General.Names.ByteString as ByteString
+import Data.ByteString ()
+#endif
 #ifdef HAS_TEXT
 import qualified Unicode.Char.General.Names.Text as Text
 import Data.Text ()
@@ -33,6 +37,14 @@ main = defaultMain
                 , Bench "icu"          ICUString.name
 #endif
             ]
+#ifdef HAS_BYTESTRING
+            , bgroup' "name" "ByteString"
+                [ Bench "unicode-data" ByteString.name
+-- #ifdef HAS_ICU
+--                 , Bench "icu"          ICUByteString.name
+-- #endif
+                ]
+#endif
 #ifdef HAS_TEXT
             , bgroup' "name" "Text"
                 [ Bench "unicode-data" Text.name
@@ -49,6 +61,14 @@ main = defaultMain
                 , Bench "icu"          ICUString.correctedName
 #endif
                 ]
+#ifdef HAS_BYTESTRING
+            , bgroup' "name" "ByteString"
+                [ Bench "unicode-data" ByteString.correctedName
+-- #ifdef HAS_ICU
+--                 , Bench "icu"          ICUByteString.correctedName
+-- #endif
+                ]
+#endif
 #ifdef HAS_TEXT
             , bgroup' "correctedName" "Text"
                 [ Bench "unicode-data" Text.correctedName
@@ -58,11 +78,32 @@ main = defaultMain
                 ]
 #endif
             ]
+        , bgroup "nameOrAlias"
+            [ bgroup' "nameOrAlias" "String"
+                [ Bench "unicode-data" String.nameOrAlias
+                ]
+#ifdef HAS_BYTESTRING
+            , bgroup' "nameOrAlias" "ByteString"
+                [ Bench "unicode-data" ByteString.nameOrAlias
+                ]
+#endif
+#ifdef HAS_TEXT
+            , bgroup' "nameOrAlias" "Text"
+                [ Bench "unicode-data" Text.nameOrAlias
+                ]
+#endif
+            ]
         , bgroup "nameAliasesByType"
             [ bgroup' "nameAliasesByType" "String"
                 [ Bench "unicode-data"
                     (\c -> (`String.nameAliasesByType` c) <$> [minBound..maxBound])
                 ]
+#ifdef HAS_BYTESTRING
+            , bgroup' "nameAliasesByType" "ByteString"
+                [ Bench "unicode-data"
+                    (\c -> (`ByteString.nameAliasesByType` c) <$> [minBound..maxBound])
+                ]
+#endif
 #ifdef HAS_TEXT
             , bgroup' "nameAliasesByType" "Text"
                 [ Bench "unicode-data"
@@ -74,6 +115,11 @@ main = defaultMain
             [ bgroup' "nameAliasesWithTypes" "String"
                 [ Bench "unicode-data" (show . String.nameAliasesWithTypes)
                 ]
+#ifdef HAS_BYTESTRING
+            , bgroup' "nameAliasesWithTypes" "ByteString"
+                [ Bench "unicode-data" (show . ByteString.nameAliasesWithTypes)
+                ]
+#endif
 #ifdef HAS_TEXT
             , bgroup' "nameAliasesWithTypes" "Text"
                 [ Bench "unicode-data" (show . Text.nameAliasesWithTypes)
@@ -84,6 +130,11 @@ main = defaultMain
             [ bgroup' "nameAliases" "String"
                 [ Bench "unicode-data" String.nameAliases
                 ]
+#ifdef HAS_BYTESTRING
+            , bgroup' "nameAliases" "ByteString"
+                [ Bench "unicode-data" ByteString.nameAliases
+                ]
+#endif
 #ifdef HAS_TEXT
             , bgroup' "nameAliases" "Text"
                 [ Bench "unicode-data" Text.nameAliases

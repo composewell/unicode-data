@@ -4,16 +4,27 @@ module Unicode.Char.General.NamesSpec
   ( spec
   ) where
 
+import GHC.Exts (Char(..), isTrue#, (<#), ord#, andI#)
 import Unicode.Char.General
     ( generalCategory,
       GeneralCategory(NotAssigned, Surrogate, PrivateUse) )
 import Unicode.Char.General.Names
     ( correctedName, name, nameOrAlias )
+import qualified Unicode.Internal.Char.UnicodeData.DerivedName as DerivedName
 import Data.Foldable (traverse_)
 import Test.Hspec ( Spec, it, shouldBe, shouldSatisfy )
 
 spec :: Spec
 spec = do
+    it "template hex code length is 4 or 5"
+        -- Ensure no padding is required for hexadecimal codepoints and
+        -- that we the allocation is correct for ByteString & Text APIs.
+        let {
+            check (C# c#) = case DerivedName.name c# of
+                (# _, len# #) ->
+                    isTrue# (len# <# DerivedName.CjkCompatibilityIdeograph) ||
+                    isTrue# ((0xFFF# <# ord# c#) `andI#` (ord# c# <# 0x100000#))
+        } in traverse_ (`shouldSatisfy` check) [minBound..maxBound]
     it "name: Test some characters" do
         name minBound  `shouldBe` Nothing
         name 'A'       `shouldBe` Just "LATIN CAPITAL LETTER A"
