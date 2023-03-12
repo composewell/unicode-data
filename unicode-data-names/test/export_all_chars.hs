@@ -1,5 +1,3 @@
-{-# LANGUAGE BlockArguments #-}
-
 -------------------------------------------------------------------------------
 -- |
 -- Description: Export all characters and their properties to a CSV file.
