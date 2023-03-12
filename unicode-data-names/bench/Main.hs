@@ -4,9 +4,16 @@ import Control.DeepSeq (NFData, deepseq)
 import Data.Ix (Ix(..))
 import Test.Tasty.Bench (Benchmark, bgroup, bcompare, bench, nf, defaultMain)
 
-import qualified Unicode.Char.General.Names as Names
+import qualified Unicode.Char.General.Names as String
+#ifdef HAS_TEXT
+import qualified Unicode.Char.General.Names.Text as Text
+import Data.Text ()
+#endif
 #ifdef HAS_ICU
-import qualified ICU.Names as ICU
+import qualified ICU.Names as ICUString
+#ifdef HAS_TEXT
+import qualified ICU.Names.Text as ICUText
+#endif
 #endif
 
 -- | A unit benchmark
@@ -19,45 +26,88 @@ data Bench = forall a. (NFData a) => Bench
 main :: IO ()
 main = defaultMain
     [ bgroup "Unicode.Char.General.Names"
-        [ bgroup' "name"
-            [ Bench "unicode-data" Names.name
+        [ bgroup "name"
+            [ bgroup' "name" "String"
+                [ Bench "unicode-data" String.name
 #ifdef HAS_ICU
-            , Bench "icu"          ICU.name
+                , Bench "icu"          ICUString.name
 #endif
             ]
-        , bgroup' "correctedName"
-            [ Bench "unicode-data" Names.correctedName
+#ifdef HAS_TEXT
+            , bgroup' "name" "Text"
+                [ Bench "unicode-data" Text.name
 #ifdef HAS_ICU
-            , Bench "icu"          ICU.correctedName
+                , Bench "icu"          ICUText.name
+#endif
+                ]
 #endif
             ]
-        , bgroup' "nameOrAlias"
-            [ Bench "unicode-data" Names.name
+        , bgroup "correctedName"
+            [ bgroup' "correctedName" "String"
+                [ Bench "unicode-data" String.correctedName
+#ifdef HAS_ICU
+                , Bench "icu"          ICUString.correctedName
+#endif
+                ]
+#ifdef HAS_TEXT
+            , bgroup' "correctedName" "Text"
+                [ Bench "unicode-data" Text.correctedName
+#ifdef HAS_ICU
+                , Bench "icu"          ICUText.correctedName
+#endif
+                ]
+#endif
             ]
-        , bgroup' "nameAliasesByType"
-            [ Bench "unicode-data"
-                (\c -> (`Names.nameAliasesByType` c) <$> [minBound..maxBound])
+        , bgroup "nameAliasesByType"
+            [ bgroup' "nameAliasesByType" "String"
+                [ Bench "unicode-data"
+                    (\c -> (`String.nameAliasesByType` c) <$> [minBound..maxBound])
+                ]
+#ifdef HAS_TEXT
+            , bgroup' "nameAliasesByType" "Text"
+                [ Bench "unicode-data"
+                    (\c -> (`Text.nameAliasesByType` c) <$> [minBound..maxBound])
+                ]
+#endif
             ]
-        , bgroup' "nameAliasesWithTypes"
-            [ Bench "unicode-data" (show . Names.nameAliasesWithTypes)
+        , bgroup "nameAliasesWithTypes"
+            [ bgroup' "nameAliasesWithTypes" "String"
+                [ Bench "unicode-data" (show . String.nameAliasesWithTypes)
+                ]
+#ifdef HAS_TEXT
+            , bgroup' "nameAliasesWithTypes" "Text"
+                [ Bench "unicode-data" (show . Text.nameAliasesWithTypes)
+                ]
+#endif
             ]
-        , bgroup' "nameAliases"
-            [ Bench "unicode-data" Names.nameAliases
+        , bgroup "nameAliases"
+            [ bgroup' "nameAliases" "String"
+                [ Bench "unicode-data" String.nameAliases
+                ]
+#ifdef HAS_TEXT
+            , bgroup' "nameAliases" "Text"
+                [ Bench "unicode-data" Text.nameAliases
+                ]
+#endif
             ]
         ]
     ]
   where
-    bgroup' groupTitle bs = bgroup groupTitle
-        [ benchNF' groupTitle title f
+    bgroup' superGroupTitle groupTitle bs = bgroup groupTitle
+        [ benchNF' superGroupTitle groupTitle title f
         | Bench title f <- bs
         ]
 
     -- [NOTE] Works if groupTitle uniquely identifies the benchmark group.
-    benchNF' groupTitle title = case title of
+    benchNF' superGroupTitle groupTitle title = case title of
         "unicode-data" -> benchNF title
         _              ->
-            bcompare ( "$NF == \"unicode-data\" && $(NF-1) == \"" ++
-                       groupTitle ++ "\"" )
+            bcompare ( mconcat
+                        [ "$NF == \"unicode-data\" && $(NF-1) == \""
+                        , groupTitle
+                        , "\" && $(NF-2) == \""
+                        , superGroupTitle
+                        , "\"" ] )
           . benchNF title
 
     benchNF :: forall a. (NFData a) => String -> (Char -> a) -> Benchmark

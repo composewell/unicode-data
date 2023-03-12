@@ -39,14 +39,19 @@ source-repository head
   type: git
   location: https://github.com/composewell/unicode-data
 
-flag export-all-chars
-  description: Build the export-all-chars executable
+flag has-text
+  description: Expose an API using the text package
   manual: True
   default: False
 
 flag dev-has-icu
   description:
     Use ICU for test and benchmark. Intended for development on the repository.
+  manual: True
+  default: False
+
+flag export-all-chars
+  description: Build the export-all-chars executable
   manual: True
   default: False
 
@@ -95,6 +100,11 @@ library
   if impl(ghc < 9.0.0)
     build-depends:
       ghc-prim >= 0.3.1 && < 1.0
+  if flag(has-text)
+    exposed-modules:
+      Unicode.Char.General.Names.Text
+    build-depends:
+      text >= 2.0 && < 2.1
 
 test-suite test
   import: default-extensions, compile-options
@@ -109,6 +119,12 @@ test-suite test
     , hspec            >= 2.0   && < 2.11
     , unicode-data     >= 0.4   && < 0.5
     , unicode-data-names
+  if flag(has-text)
+    cpp-options: -DHAS_TEXT
+    other-modules:
+        Unicode.Char.General.Names.TextSpec
+    build-depends:
+      text >= 2.0 && < 2.1
   if flag(dev-has-icu)
     cpp-options: -DHAS_ICU
     other-modules:
@@ -141,6 +157,10 @@ benchmark bench
     tasty-bench >= 0.2.5 && < 0.4,
     tasty       >= 1.4.1 && < 1.5,
     unicode-data-names
+  if flag(has-text)
+    cpp-options: -DHAS_TEXT
+    build-depends:
+      text >= 2.0 && < 2.1
   if flag(dev-has-icu)
     cpp-options: -DHAS_ICU
     build-depends:

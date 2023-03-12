@@ -3,6 +3,8 @@
 ## 0.3.0 (March 2023)
 
 - Improve performance.
+- Added opional support for `Text` API. Use the package flag `has-text`
+  to enable it.
 
 ## 0.2.0 (September 2022)
 

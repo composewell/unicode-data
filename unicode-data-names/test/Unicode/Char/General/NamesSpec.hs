@@ -1,4 +1,4 @@
-{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE CPP, BlockArguments #-}
 
 module Unicode.Char.General.NamesSpec
   ( spec
