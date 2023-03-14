@@ -1732,8 +1732,7 @@ genNamesModule moduleName =
         where
         shows' = \case
             '\0' -> \s -> '\\' : '0' : s
-            -- Note: names are ASCII
-            c    -> (c :)
+            c    -> (c :) -- Note: names are ASCII
 
 genAliasesModule
     :: Monad m
@@ -1750,12 +1749,14 @@ genAliasesModule moduleName =
         , showHexCodepoint char
         , "'# -> \""
         , mkCharAliasesLiteral char aliases
-        , "\"#\n"
+        , "\"#"
         ]
 
     mkCharAliasesLiteral :: Char -> Aliases -> String
     mkCharAliasesLiteral char aliasesList =
-        enumMapToAddrLiteral 0 0xfff (reverse index) (mconcat (reverse aliases))
+        enumMapToAddrLiteral 0 0xfff
+            (reverse index)
+            (mconcat (reverse ("\\0":aliases)))
         where
         (index, aliases, _) = Map.foldlWithKey'
             (addAliasType char)
@@ -1779,40 +1780,39 @@ genAliasesModule moduleName =
             ( 0 : index
             , aliasesAcc
             , lastAliasIndex )
-        aliases -> -- traceShow (char, ty, fromIntegral lastAliasIndex :: Word8)
-            ( fromIntegral lastAliasIndex : index
-            , encodedAliases
-            , lastAliasIndex' )
+        aliases -> if lastAliasIndex < 0xff
+            then
+                ( fromIntegral lastAliasIndex : index
+                , encodedAliases
+                , lastAliasIndex' )
+            else error . mconcat $
+                [ "Cannot encode char ", show char
+                , "aliases. Offset: ", show lastAliasIndex, " >= 0xff" ]
             where
             (encodedAliases, lastAliasIndex') =
                 addEncodedAliases (aliasesAcc, lastAliasIndex) aliases
-            addEncodedAliases acc@(as, offset) = \case
-                Alias alias : rest -> if offset' < 0xff
-                    then addEncodedAliases
-                        -- next offset : null-terminated string
-                        ( mconcat ["\\", show nextAliasOffset, alias, "\\0"]:as
-                        , offset' )
-                        rest
-                    else error . mconcat $
-                        [ "Cannot encode alias “", alias, "” offset for char : "
-                        , show char
-                        , " . Offset: ", show offset', " >= 0xff" ]
+            addEncodedAliases (as, offset) = \case
+                Alias alias : rest -> addEncodedAliases
+                    ( mconcat ["\\", show len, alias] : as
+                    , offset' )
+                    rest
                     where
-                    -- offset + length + null
-                    offset' = offset + length alias + 2
-                    nextAliasOffset = if null rest then 0 else offset'
-                [] -> acc
+                    len = length alias
+                    offset' = offset + len + 1
+                [] -> ("\\0" : as, offset + 1)
 
     done names = unlines
         [ apacheLicense 2022 moduleName
+        , "{-# LANGUAGE DeriveGeneric, PatternSynonyms #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
-        , "(NameAliasType(..), maxNameAliasType, nameAliases)"
+        , "(NameAliasType(..), pattern MaxNameAliasType, nameAliases)"
         , "where"
         , ""
         , "import Data.Ix (Ix)"
-        , "import GHC.Exts (Addr#, Char#)"
+        , "import GHC.Exts (Addr#, Char#, Int#)"
+        , "import GHC.Generics (Generic)"
         , ""
         , "-- | Type of name alias. See Unicode Standard 15.0.0, section 4.8."
         , "--"
@@ -1831,21 +1831,39 @@ genAliasesModule moduleName =
         , "    | Abbreviation"
         , "    -- ^ Commonly occurring abbreviations (or acronyms) for control codes,"
         , "    --   format characters, spaces, and variation selectors."
-        , "    deriving (Enum, Bounded, Eq, Ord, Ix, Show)"
+        , "    deriving (Generic, Enum, Bounded, Eq, Ord, Ix, Show)"
         , ""
-        , "-- | >>> maxNameAliasType == fromEnum (maxBound :: NameAliasType)"
-        , "maxNameAliasType :: Int"
-        , "maxNameAliasType = 4"
+        , "-- $setup"
+        , "-- >>> import GHC.Exts (Int(..))"
+        , ""
+        , "-- |"
+        , "-- >>> I# MaxNameAliasType == fromEnum (maxBound :: NameAliasType)"
+        , "-- True"
+        , "pattern MaxNameAliasType :: Int#"
+        , "pattern MaxNameAliasType = "
+            <> show (fromEnum (maxBound :: AliasType)) <> "#"
         , ""
         , "-- | Detailed character names aliases."
         , "-- The names are listed in the original order of the UCD."
         , "--"
-        , "-- See 'nameAliases' if the alias type is not required."
+        , "-- Encoding:"
+        , "--"
+        , "-- * If there is no alias, return @\"\\\\xff\"#@."
+        , "-- * For each type of alias, the aliases are encoded as list of (length, alias)."
+        , "--   The list terminates with @\\\\0@."
+        , "-- * The list are then concatenated in order of type of alias and"
+        , "--   terminates with @\\\\0@."
+        , "-- * The first "
+            <> show (fromEnum (maxBound :: AliasType) + 1)
+            <> " bytes represent each one the index of the first element of the"
+        , "--   corresponding list of aliases. When the list is empty, then the index is 0."
+        , "-- * Example: @\\\"\\\\5\\\\0\\\\13\\\\0\\\\0\\\\3XXX\\\\2YY\\\\0\\\\4ZZZZ\\\\0\\\\0\\\"#@"
+        , "--   represents: @[('Correction',[\\\"XXX\\\", \\\"YY\\\"]),('Alternate', [\\\"ZZZZ\\\"])]@."
         , "--"
         , "-- @since 0.1.0"
         , "nameAliases :: Char# -> Addr#"
         , "nameAliases = \\case"
-        , mconcat names
+        , mconcat (intersperse "\n" names)
         , "  _          -> \"\\xff\"#"
         ]
 

@@ -30,11 +30,11 @@ import qualified Data.Text as T
 import qualified Data.Text.Internal as T
 import qualified Data.Text.Array as A
 import GHC.Exts
-    ( Addr#, Ptr(..), indexCharOffAddr#, plusAddr#
+    ( Addr#, Ptr(..), indexCharOffAddr#, indexWord8OffAddr#, plusAddr#
     , Char(..), ord#
     , Int#, Int(..), (+#), (-#), (<#), isTrue#, quotRemInt#, dataToTag# )
+import GHC.Word (Word8(..))
 
-import Unicode.Internal.Bits.Names (SPEC(..))
 import qualified Unicode.Internal.Char.UnicodeData.DerivedName as DerivedName
 import qualified Unicode.Internal.Char.UnicodeData.NameAliases as NameAliases
 
@@ -60,44 +60,46 @@ name (C# c#) = case DerivedName.name c# of
                 in Just n
             | otherwise ->
                 let !len = I# (len# -# DerivedName.HangulSyllable +# 16#)
-                    !n = ST.runST (do
+                    ba = ST.runST (do
                         marr <- A.new len
                         A.copyFromPointer marr 0 (Ptr "HANGUL SYLLABLE "#) 16
                         A.copyFromPointer marr 16
                             (Ptr name#)
                             (I# (len# -# DerivedName.HangulSyllable))
-                        arr <- A.unsafeFreeze marr
-                        pure (T.Text arr 0 len))
+                        A.unsafeFreeze marr)
+                    !n = T.Text ba 0 len
                 in Just n
 
 -- See: unpackCStringAscii#. Here we know the length.
 unpackAddr# :: Addr# -> Int# -> T.Text
-unpackAddr# addr# len# = ST.runST (do
-    marr <- A.new (I# len#)
-    A.copyFromPointer marr 0 (Ptr addr#) (I# len#)
-    arr <- A.unsafeFreeze marr
-    pure (T.Text arr 0 (I# len#)))
+unpackAddr# addr# len# = T.Text ba 0 (I# len#)
+    where
+    ba = ST.runST (do
+        marr <- A.new (I# len#)
+        A.copyFromPointer marr 0 (Ptr addr#) (I# len#)
+        A.unsafeFreeze marr)
 
 mkNameFromTemplate :: Addr# -> Int# -> Int# -> T.Text
-mkNameFromTemplate template# len# cp# = ST.runST (do
-    let len'# = len# +# if isTrue# (cp# <# 0x10000#) then 4# else 5#
-    marr <- A.new (I# len'#)
-    A.copyFromPointer marr 0 (Ptr template#) (I# len#)
-    writeHex cp# (len'# -# 1#) marr
-    arr <- A.unsafeFreeze marr
-    pure (T.Text arr 0 (I# len'#)))
+mkNameFromTemplate template# len# cp# = T.Text ba 0 (I# len'#)
+    where
+    len'# = len# +# if isTrue# (cp# <# 0x10000#) then 4# else 5#
+    ba = ST.runST (do
+        marr <- A.new (I# len'#)
+        A.copyFromPointer marr 0 (Ptr template#) (I# len#)
+        writeHex cp# (len'# -# 1#) marr
+        A.unsafeFreeze marr)
 
 -- [NOTE] We assume c# >= '\x1000' to avoid to check for padding
+{-# INLINE writeHex #-}
 writeHex :: Int# -> Int# -> A.MArray s -> ST.ST s ()
 writeHex cp# offset0# !marr = showIt offset0# (quotRemInt# cp# 16#)
     where
-    showIt offset# (# q, r #) = A.unsafeWrite marr (I# offset#) c *> case q of
-        0# -> pure ()
-        _  -> showIt (offset# -# 1#) (quotRemInt# q 16#)
-        where
-        !c = if isTrue# (r <# 10#)
-            then fromIntegral (I# (0x30# +# r))
-            else fromIntegral (I# (0x37# +# r))
+    showIt offset# (# q, r #)
+        = A.unsafeWrite marr (I# offset#)
+                             (W8# (indexWord8OffAddr# "0123456789ABCDEF"# r))
+        *> case q of
+            0# -> pure ()
+            _  -> showIt (offset# -# 1#) (quotRemInt# q 16#)
 
 -- | Returns /corrected/ name of a character (see 'NameAliases.Correction'),
 -- if defined, otherwise returns its original 'name' if defined.
@@ -108,11 +110,12 @@ correctedName :: Char -> Maybe T.Text
 correctedName c@(C# c#) = corrected <|> name c
     where
     -- Assumption: fromEnum NameAliases.Correction == 0
-    !corrected = case indexCharOffAddr# addr# 0# of
-        '\xff'# -> Nothing -- no aliases
-        '\x00'# -> Nothing -- no correction
-        i#      ->
-            let !n = T.unpackCStringAscii# (addr# `plusAddr#` (ord# i# +# 1#))
+    !corrected = case ord# (indexCharOffAddr# addr# 0#) of
+        0xff# -> Nothing -- no aliases
+        0x00# -> Nothing -- no correction
+        i#    ->
+            let l# = ord# (indexCharOffAddr# (addr# `plusAddr#` i#) 0#)
+                !n = unpackAddr# (addr# `plusAddr#` (i# +# 1#)) l#
             in Just n
     !addr# = NameAliases.nameAliases c#
 
@@ -123,16 +126,16 @@ correctedName c@(C# c#) = corrected <|> name c
 nameOrAlias :: Char -> Maybe T.Text
 nameOrAlias c@(C# c#) = name c <|> case indexCharOffAddr# addr# 0# of
     '\xff'# -> Nothing -- no aliases
-    '\x00'# -> let !n = T.unpackCStringAscii# (go 1#) in Just n
-    _       -> let !n = T.unpackCStringAscii# (go 0#) in Just n
+    '\x00'# -> let !n = go 1# in Just n
+    _       -> let !n = go 0# in Just n
     where
     !addr# = NameAliases.nameAliases c#
-    !(I# maxNameAliasType#) = NameAliases.maxNameAliasType
-    go t# = case indexCharOffAddr# (addr# `plusAddr#` t#) 0# of
-        '\0'# -> if isTrue# (t# <# maxNameAliasType#)
-            then go (t# +# 1#)
-            else "\0"# -- impossible: there is at least one alias
-        i# -> addr# `plusAddr#` (ord# i# +# 1#)
+    go t# = case ord# (indexCharOffAddr# (addr# `plusAddr#` t#) 0#) of
+        -- No bound check for t#: there is at least one alias
+        0# -> go (t# +# 1#)
+        i# ->
+            let l# = ord# (indexCharOffAddr# (addr# `plusAddr#` i#) 0#)
+            in unpackAddr# (addr# `plusAddr#` (i# +# 1#)) l#
 
 -- | All name aliases of a character, if defined.
 -- The names are listed in the original order of the UCD.
@@ -142,11 +145,23 @@ nameOrAlias c@(C# c#) = name c <|> case indexCharOffAddr# addr# 0# of
 -- @since 0.3.0
 {-# INLINE nameAliases #-}
 nameAliases :: Char -> [T.Text]
-nameAliases (C# c#) = case indexCharOffAddr# addr# 0# of
+nameAliases (C# c#) = case indexCharOffAddr# addr0# 0# of
     '\xff'# -> [] -- no aliases
-    _       -> foldMap (nameAliasesByType# addr#) [minBound..maxBound]
+    _       -> go (addr0# `plusAddr#` (NameAliases.MaxNameAliasType +# 1#))
+        where
+        go addr# = case ord# (indexCharOffAddr# addr# 0#) of
+            0# -> case ord# (indexCharOffAddr# (addr# `plusAddr#` 1#) 0#) of
+                -- End of list
+                0# -> []
+                -- Skip empty entry
+                l# ->
+                    let !s = unpackAddr# (addr# `plusAddr#` 2#) l#
+                    in s : go (addr# `plusAddr#` (l# +# 2#))
+            l# ->
+                let !s = unpackAddr# (addr# `plusAddr#` 1#) l#
+                in s : go (addr# `plusAddr#` (l# +# 1#))
     where
-    addr# = NameAliases.nameAliases c#
+    addr0# = NameAliases.nameAliases c#
 
 -- | Name aliases of a character for a specific name alias type.
 --
@@ -179,19 +194,13 @@ nameAliasesWithTypes (C# c#) = case indexCharOffAddr# addr# 0# of
 
 {-# INLINE nameAliasesByType# #-}
 nameAliasesByType# :: Addr# -> NameAliases.NameAliasType -> [T.Text]
-nameAliasesByType# addr# t = case indexCharOffAddr# (addr# `plusAddr#` t#) 0# of
-    '\0'# -> [] -- no aliases for this type
-    i#    -> unpackCStrings addr# (ord# i#)
-    where t# = dataToTag# t
-
-{-# INLINE unpackCStrings #-}
-unpackCStrings :: Addr# -> Int# -> [T.Text]
-unpackCStrings addr# = go SPEC
-    where
-    go !_ i# =
-        let !s = T.unpackCStringAscii# (addr# `plusAddr#` (i# +# 1#))
-        in s : case indexCharOffAddr# (addr# `plusAddr#` i#) 0# of
-            '\0'# -> []
-            j#    -> go SPEC (ord# j#)
-
-
+nameAliasesByType# addr0# t =
+    case ord# (indexCharOffAddr# (addr0# `plusAddr#` dataToTag# t) 0#) of
+        0# -> [] -- no aliases for this type
+        i# -> go (addr0# `plusAddr#` i#)
+            where
+            go addr# = case ord# (indexCharOffAddr# addr# 0#) of
+                0# -> []
+                l# ->
+                    let !s = unpackAddr# (addr# `plusAddr#` 1#) l#
+                    in s : go (addr# `plusAddr#` (l# +# 1#))

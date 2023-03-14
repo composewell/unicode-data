@@ -1,4 +1,6 @@
 {-# LANGUAGE CPP #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use fewer imports" #-}
 
 -- |
 -- Module      : Unicode.Internal.Bits
@@ -15,9 +17,7 @@ module Unicode.Internal.Bits.Names
     ( -- * Bitmap lookup
       lookupInt32#
       -- * CString
-    , unpackCString#
-      -- * Miscellaneous
-    , SPEC(..)
+    , unpackNBytes#
     ) where
 
 #include "MachDeps.h"
@@ -41,10 +41,9 @@ import GHC.Exts (int32ToInt#)
 #endif
 
 #if MIN_VERSION_base(4,15,0)
-import GHC.Exts (unpackCString#, SPEC(..))
+import GHC.Exts (unpackNBytes#)
 #else
-import GHC.CString (unpackCString#)
-import GHC.Types (SPEC(..))
+import GHC.CString (unpackNBytes#)
 #endif
 
 {-| @lookupInt32# addr index@ looks up for the @index@-th 32-bits word in
