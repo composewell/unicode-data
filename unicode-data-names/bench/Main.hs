@@ -51,15 +51,20 @@ instance IsOption CharRange where
     optionName = pure "chars"
     optionHelp = pure "Range of chars to test"
 
-data Filter = NoFilter | WithName | WithNameAlias
+data Filter
+    = NoFilter        -- ^ No condition
+    | WithName        -- ^ Char has a name
+    | WithNameAlias   -- ^ Char has a name alias
+    | WithNameOrAlias -- ^ Char has a name or an alias
 
 instance IsOption Filter where
-    defaultValue = WithName
+    defaultValue = WithNameOrAlias
     parseValue = \case
-        "name"  -> Just WithName
-        "alias" -> Just WithNameAlias
-        "none"  -> Just NoFilter
-        _       -> Nothing
+        "name"        -> Just WithName
+        "alias"       -> Just WithNameAlias
+        "nameOrAlias" -> Just WithNameOrAlias
+        "none"        -> Just NoFilter
+        _             -> Nothing
     optionName = pure "chars-filter"
     optionHelp = pure "Filter the chars to test"
 
@@ -252,6 +257,7 @@ benchmarks charRange charFilter = bgroup "All"
             NoFilter -> const True
             WithName -> hasName
             WithNameAlias -> hasNameAlias
+            WithNameOrAlias -> \c -> hasName c || hasNameAlias c
         chars = filter isValid [l..u]
         -- Ensure to have sufficiently chars
         n = 0x10FFFF `div` length chars
