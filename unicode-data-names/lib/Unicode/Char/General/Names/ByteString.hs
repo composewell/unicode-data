@@ -27,17 +27,24 @@ module Unicode.Char.General.Names.ByteString
 import Control.Applicative ((<|>))
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Internal as BS
-import Data.Word (Word8)
-import Foreign.Storable  (Storable(..))
-import Foreign.Ptr (plusPtr)
 import GHC.Exts
-    ( Addr#, Ptr(..), indexCharOffAddr#, indexWord8OffAddr#, plusAddr#
+    ( Addr#, indexCharOffAddr#, indexWord8OffAddr#, plusAddr#
     , Char(..), ord#
-    , Int#, Int(..), (+#), (-#), (<#), isTrue#, quotRemInt#, dataToTag# )
-import GHC.Word (Word8(..))
+    , Int#, Int(..), (+#), (-#), (<#), isTrue#, andI#, uncheckedIShiftRL#
+    , dataToTag#
+    , newPinnedByteArray#, byteArrayContents#
+    , copyAddrToByteArray#, writeWord8Array#
+    , unsafeCoerce# )
+import GHC.IO (IO(..))
+import GHC.ForeignPtr (ForeignPtr(..), ForeignPtrContents (PlainPtr))
+import System.IO.Unsafe (unsafeDupablePerformIO)
 
 import qualified Unicode.Internal.Char.UnicodeData.DerivedName as DerivedName
 import qualified Unicode.Internal.Char.UnicodeData.NameAliases as NameAliases
+
+--------------------------------------------------------------------------------
+-- Name
+--------------------------------------------------------------------------------
 
 -- | Name of a character, if defined.
 --
@@ -48,51 +55,76 @@ name (C# c#) = case DerivedName.name c# of
         DerivedName.NoName -> Nothing
         DerivedName.CjkCompatibilityIdeograph -> Just n
             where
-            !n = mkNameFromTemplate "CJK COMPATIBILITY IDEOGRAPH-"# 28# (ord# c#)
+            !n = mkNameFromTemplate# "CJK COMPATIBILITY IDEOGRAPH-"# 28# (ord# c#)
         DerivedName.CjkUnifiedIdeograph -> Just n
             where
-            !n = mkNameFromTemplate "CJK UNIFIED IDEOGRAPH-"# 22# (ord# c#)
+            !n = mkNameFromTemplate# "CJK UNIFIED IDEOGRAPH-"# 22# (ord# c#)
         DerivedName.TangutIdeograph -> Just n
             where
-            !n = mkNameFromTemplate "TANGUT IDEOGRAPH-"# 17# (ord# c#)
+            !n = mkNameFromTemplate# "TANGUT IDEOGRAPH-"# 17# (ord# c#)
         _
             | isTrue# (len# <# DerivedName.HangulSyllable) ->
                 let !n = unpackAddr# name# len#
                 in Just n
             | otherwise ->
-                let !n = BS.unsafeCreate
-                        (I# (len# -# DerivedName.HangulSyllable +# 16#))
-                        (\ptr ->
-                            BS.memcpy ptr (Ptr "HANGUL SYLLABLE "#) 16 *>
-                            BS.memcpy (ptr `plusPtr` 16)
-                                      (Ptr name#)
-                                      (I# (len# -# DerivedName.HangulSyllable))
-                        )
+                let !n = unsafePack2LenLiteral#
+                            16#
+                            "HANGUL SYLLABLE "#
+                            (len# -# DerivedName.HangulSyllable)
+                            name#
                 in Just n
 
 {-# INLINE unpackAddr# #-}
 unpackAddr# :: Addr# -> Int# -> BS.ByteString
 unpackAddr# addr# len# = BS.unsafePackLenLiteral (I# len#) addr#
 
-mkNameFromTemplate :: Addr# -> Int# -> Int# -> BS.ByteString
-mkNameFromTemplate template# len# cp# =
-    let len'# = len# +# if isTrue# (cp# <# 0x10000#) then 4# else 5#
-    in BS.unsafeCreate (I# len'#) (\ptr ->
-        BS.memcpy ptr (Ptr template#) (I# len'#) *>
-        writeHex cp# (len'# -# 1#) ptr
-    )
+-- [NOTE] bytestring does not expose enough primitives for working with raw
+-- Addr# literals. Therefore we go low level, which performs better than FFI.
+-- Inspiration:
+-- • Data.ByteString.Internal.unsafeCreate
+-- • GHC.ForeignPtr.mallocPlainForeignPtrBytes
 
--- [NOTE] We assume c# >= '\x1000' to avoid to check for padding
-{-# INLINE writeHex #-}
-writeHex :: Int# -> Int# -> Ptr Word8 -> IO ()
-writeHex cp# offset0# !ptr = showIt offset0# (quotRemInt# cp# 16#)
-    where
-    showIt offset# (# q, r #)
-        = pokeByteOff ptr (I# offset#)
-                          (W8# (indexWord8OffAddr# "0123456789ABCDEF"# r))
-        *> case q of
-            0# -> pure ()
-            _  -> showIt (offset# -# 1#) (quotRemInt# q 16#)
+-- | Pack 2 'Addr#' literal into a 'BS.ByteString'.
+{-# INLINE unsafePack2LenLiteral# #-}
+unsafePack2LenLiteral# :: Int# -> Addr# -> Int# -> Addr# -> BS.ByteString
+unsafePack2LenLiteral# l1# addr1# l2# addr2# = unsafeDupablePerformIO (
+    IO (\s0 -> let l# = l1# +# l2# in case newPinnedByteArray# l# s0 of
+        (# s1, marr# #) -> case copyAddrToByteArray# addr1# marr# 0# l1# s1 of
+            s2 -> case copyAddrToByteArray# addr2# marr# l1# l2# s2 of
+                s3 ->
+                    (# s3
+                    -- Note: for compatibility reason we cannot use
+                    -- mutableByteArrayContents# here.
+                    , BS.BS (ForeignPtr (byteArrayContents# (unsafeCoerce# marr#))
+                                        (PlainPtr marr#))
+                            (I# l#) #)))
+
+-- | Create a 'BS.ByteString' from a template prefix and then format the given
+-- codepoint into hexadecimal string.
+mkNameFromTemplate# :: Addr# -> Int# -> Int# -> BS.ByteString
+mkNameFromTemplate# template# len# cp# =
+    let len'# = len# +# if isTrue# (cp# <# 0x10000#) then 4# else 5#
+    in unsafeDupablePerformIO (IO (\s0 -> case newPinnedByteArray# len'# s0 of
+        (# s1, marr# #) -> case copyAddrToByteArray# template# marr# 0# len# s1 of
+            s2 -> case go marr# s2 (len'# -# 1#) cp# of
+                s3 ->
+                    (# s3
+                    , BS.BS (ForeignPtr (byteArrayContents# (unsafeCoerce# marr#))
+                                        (PlainPtr marr#))
+                            (I# len'#) #)
+                where
+                -- Write hex in reverse order
+                -- [NOTE] We assume cp# >= 0x1000 to avoid to check for padding
+                go ma !s !offset = \case
+                    0# -> s
+                    n  -> go ma
+                        (writeWord8Array# ma offset
+                            (indexWord8OffAddr# "0123456789ABCDEF"#
+                                                (andI# 0xf# n)) s)
+                        (offset -# 1#)
+                        (uncheckedIShiftRL# n 4#)
+
+    ))
 
 -- | Returns /corrected/ name of a character (see 'NameAliases.Correction'),
 -- if defined, otherwise returns its original 'name' if defined.
