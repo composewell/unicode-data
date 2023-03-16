@@ -13,3 +13,9 @@ allow-newer:
     *:integer-gmp,
     *:integer-simple,
     *:template-haskell
+
+-- Test all non-dev flags
+package unicode-data-names
+  flags: +export-all-chars
+         +has-text
+         +has-bytestring

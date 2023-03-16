@@ -137,7 +137,7 @@ readCodePointM :: String -> Maybe Char
 readCodePointM "" = Nothing
 readCodePointM u  = Just (readCodePoint u)
 
-parseCodePointRange :: String -> Either Char (Char, Char)
+parseCodePointRange :: String -> CharRange
 parseCodePointRange
     = (\(c1, c2) -> maybe (Left c1) (Right . (c1,)) c2)
     . bimap readCodePoint (readCodePointM . drop 2)
@@ -253,8 +253,7 @@ bitMapToAddrLiteral
   -> String
   -- ^ String to append
   -> String
-bitMapToAddrLiteral bs cs =
-    chunkAddrLiteral 4 0xff encode (unfoldr mkChunks bs) cs
+bitMapToAddrLiteral bs = chunkAddrLiteral 4 0xff encode (unfoldr mkChunks bs)
 
     where
 
@@ -338,9 +337,9 @@ genEnumBitmap funcName (defPUA, pPUA) (def, pDef) planes0To3 plane14 = mconcat
                             , "    -- Plane 15: ", show defPUA, "\n"
                             , "    | cp < 0xFFFFE = ", pPUA, "\n"
                             , "    -- Plane 15: ", show def, "\n"
-                            , "    | cp < 0x100000 = " <> pDef, "\n"
+                            , "    | cp < 0x100000 = ", pDef, "\n"
                             , "    -- Plane 16: ", show defPUA, "\n"
-                            , "    | cp < 0x10FFFE = " <> pPUA, "\n" ]
+                            , "    | cp < 0x10FFFE = ", pPUA, "\n" ]
                     , "    -- Default: ", show def, "\n"
                     , "    | otherwise = " <> pDef, "\n"
                     , "    where\n"
@@ -1532,17 +1531,74 @@ genNamesModule
     => String
     -> Fold m CharName String
 genNamesModule moduleName =
-    done <$> Fold.foldl' addCharName (mempty, mempty, 0)
+    done <$> Fold.foldl' addCharName initial
 
     where
 
-    addCharName (names, offsets, offset) (CharName char name) =
-        ( name <> ['\0'] : names
-        , encodeOffset char offset : offsets
-        , offset + length name + 1
-        )
+    initial :: (Char, [String], [[Int]], Int, Char, Char)
+    initial = ('\0', mempty, mempty, 0, '\0', '\0')
 
-    encodeOffset char offset = encode32LE (ord char) (encode32LE offset mempty)
+    addCharName
+        (expected, names, offsets, offset, maxPlanes03, maxPlane14)
+        entry@(CharName char name) = if expected < char
+            then if expected < '\xE0000' && char >= '\xE0000'
+                then addCharName
+                    ( '\xE0000'
+                    , names
+                    , offsets
+                    , offset
+                    , maxPlanes03
+                    , maxPlane14 )
+                    entry
+                else addCharName
+                    ( succ expected
+                    , names
+                    , encodeOffset 0 0 : offsets
+                    , offset
+                    , maxPlanes03
+                    , maxPlane14 )
+                    entry
+            else
+                let !(name', len, len', compressed) = encodeName name
+                in if (char < '\x40000' || char >= '\xE0000') &&
+                    offset <= 0xffffff && (len < hangul || compressed)
+                    then
+                        ( succ expected
+                        , name' : names
+                        , encodeOffset offset len : offsets
+                        , offset + len'
+                        , if char < '\x40000'
+                            then max maxPlanes03 char
+                            else maxPlanes03
+                        , max maxPlane14 char )
+                    else error (mconcat
+                        [ "genNamesModule: Cannot encode '\\x"
+                        , showHexCodepoint char
+                        , "' “", name, "”"
+                        , " (offset: 0x"
+                        , showPaddedHeX offset
+                        , ", length: 0x"
+                        , showPaddedHeX len
+                        , ")" ])
+
+    cjkCompat = 0xf0
+    cjkUnified = 0xf1
+    tangut = 0xf2
+    hangul = 0x80
+
+    encodeName name
+        | take 28 name == "CJK COMPATIBILITY IDEOGRAPH-" = ("", cjkCompat, 0, True)
+        | take 22 name == "CJK UNIFIED IDEOGRAPH-"       = ("", cjkUnified, 0, True)
+        | take 17 name == "TANGUT IDEOGRAPH-"            = ("", tangut, 0, True)
+        | take 16 name == "HANGUL SYLLABLE "             =
+            let !name' = drop 16 name; !len = length name'
+            in if len <= 12
+                then (name', hangul + len, len, True)
+                else error ("genNamesModule: cannot encode Hangul: " <> show len)
+        | otherwise = let !len = length name in (name, len, len, False)
+
+    encodeOffset offset len = encode32LE offset' mempty
+        where !offset' = len .|. (offset `shiftL` 8)
     encode32LE v acc
         = (v             .&. 0xff)
         : (v `shiftR` 8  .&. 0xff)
@@ -1550,50 +1606,115 @@ genNamesModule moduleName =
         :  v `shiftR` 24
         : acc
 
-    done (names, offsets, _) = unlines
+    done (_, names, offsets, _, maxPlanes03, maxPlane14) = unlines
         [ apacheLicense 2022 moduleName
-        , "{-# LANGUAGE OverloadedStrings #-}"
+        , "{-# LANGUAGE PatternSynonyms #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
-        , "(name)"
-        , "where"
+        , "    ( name"
+        , "    , pattern NoName"
+        , "    , pattern CjkCompatibilityIdeograph"
+        , "    , pattern CjkUnifiedIdeograph"
+        , "    , pattern TangutIdeograph"
+        , "    , pattern HangulSyllable"
+        , "    ) where"
         , ""
         , "import Data.Int (Int32)"
-        , "import Foreign.C (CChar, CString)"
+        , "import Foreign.C (CChar)"
         , "import GHC.Exts"
+        , "    ( Addr#, Char#, Int#, Ptr(..),"
+        , "      ord#, (-#), (<#),"
+        , "      uncheckedIShiftRL#, andI#,"
+        , "      plusAddr#, isTrue# )"
         , "import Unicode.Internal.Bits.Names (lookupInt32#)"
+        , ""
+        , "-- | No name. Used to test length returned by 'name'."
+        , "--"
+        , "-- @since 0.3.0"
+        , "pattern NoName :: Int#"
+        , "pattern NoName = 0#"
+        , ""
+        , "-- | CJK compatibility ideograph. Used to test the length returned by 'name'."
+        , "--"
+        , "-- @since 0.3.0"
+        , "pattern CjkCompatibilityIdeograph :: Int#"
+        , "pattern CjkCompatibilityIdeograph = 0x" <> showHex cjkCompat "#"
+        , ""
+        , "-- | CJK unified ideograph. Used to test the length returned by 'name'."
+        , "--"
+        , "-- @since 0.3.0"
+        , "pattern CjkUnifiedIdeograph :: Int#"
+        , "pattern CjkUnifiedIdeograph = 0x" <> showHex cjkUnified "#"
+        , ""
+        , "-- | Tangut ideograph. Used to test the length returned by 'name'."
+        , "--"
+        , "-- @since 0.3.0"
+        , "pattern TangutIdeograph :: Int#"
+        , "pattern TangutIdeograph = 0x" <> showHex tangut "#"
+        , ""
+        , "-- | Hangul syllable. Used to test the length returned by 'name'."
+        , "--"
+        , "-- @since 0.3.0"
+        , "pattern HangulSyllable :: Int#"
+        , "pattern HangulSyllable = 0x" <> showHex hangul "#"
         , ""
         , "-- | Name of a character, if defined."
         , "--"
+        , "-- The return value represents: (ASCII string, string length or special value)."
+        , "--"
+        , "-- Some characters require specific processing:"
+        , "--"
+        , "-- * If length = @'CjkCompatibilityIdeograph'@,"
+        , "--   then the name is generated from the pattern “CJK COMPATIBILITY IDEOGRAPH-*”,"
+        , "--   where * is the hexadecimal codepoint."
+        , "-- * If length = @'CjkUnifiedIdeograph'@,"
+        , "--   then the name is generated from the pattern “CJK UNIFIED IDEOGRAPH-*”,"
+        , "--   where * is the hexadecimal codepoint."
+        , "-- * If length = @'TangutIdeograph'@,"
+        , "--   then the name is generated from the pattern “TANGUT IDEOGRAPH-*”,"
+        , "--   where * is the hexadecimal codepoint."
+        , "-- * If length ≥ @'HangulSyllable'@,"
+        , "--   then the name is generated by prepending “HANGUL SYLLABLE ”"
+        , "--   to the returned string."
+        , "--"
+        , "-- See an example of such implementation using 'String's in 'Unicode.Char.General.Names.name'."
+        , "--"
         , "-- @since 0.1.0"
         , "{-# INLINE name #-}"
-        , "name :: Char -> Maybe CString"
-        , "name (C# c#) = getName 0# " <> shows (length names - 1) "#"
-        , "    where"
-        , "    -- [NOTE] Encoding"
-        , "    -- • The names are ASCII. Each name is encoded as a NUL-terminated CString."
-        , "    -- • The names are concatenated in names#."
-        , "    -- • The name of a character, if defined, is referenced by an offset in names#."
-        , "    -- • The offsets are stored in offsets#. A character entry is composed of two"
-        , "    --   LE Word32: the first one is the codepoint, the second one is the offset."
-        , "    -- • We use binary search on offsets# to extract names from names#."
-        , "    cp# = ord# c#"
-        , "    -- Binary search"
-        , "    getName l# u# = if isTrue# (l# ># u#)"
-        , "        then Nothing"
-        , "        else"
-        , "            let k# = l# +# uncheckedIShiftRL# (u# -# l#) 1#"
-        , "                j# = k# `uncheckedIShiftL#` 1#"
-        , "                cp'# = getRawCodePoint# j#"
-        , "            in if isTrue# (cp'# <# cp#)"
-        , "                then getName (k# +# 1#) u#"
-        , "                else if isTrue# (cp'# ==# cp#)"
-        , "                    then let offset# = getRawCodePoint# (j# +# 1#)"
-        , "                         in Just (Ptr (names# `plusAddr#` offset#))"
-        , "                    else getName l# (k# -# 1#)"
+        , "name :: Char# -> (# Addr#, Int# #)"
+        , "name c#"
+        , "    | isTrue# (cp# <# 0x"
+            <> showHexCodepoint (succ maxPlanes03)
+            <> "#) = getName cp#"
+        , "    | isTrue# (cp# <# 0xE0000#) = (# \"\\0\"#, 0# #)"
+        , "    | isTrue# (cp# <# 0x"
+            <> showHexCodepoint (succ maxPlane14)
+            <> "#) = getName (cp# -# 0x"
+            <> showPaddedHeX (0xE0000 - ord (succ maxPlanes03))
+            <> "#)"
+        , "    | otherwise = (# \"\\0\"#, 0# #)"
         , ""
-        , "    getRawCodePoint# = lookupInt32# offsets#"
+        , "    where"
+        , ""
+        , "    -- [NOTE] Encoding"
+        , "    -- • The names are ASCII. Each name is encoded as a raw bytes literal."
+        , "    -- • The names are concatenated in names#."
+        , "    --   There are exceptions (see function’s doc)."
+        , "    -- • The name of a character, if defined, is referenced by an offset in names#."
+        , "    -- • The offsets are stored in offsets#. A character entry is composed of:"
+        , "    --   • a LE Word24 for the offset;"
+        , "    --   • a Word8 for the length of the name or a special value."
+        , ""
+        , "    !cp# = ord# c#"
+        , ""
+        , "    {-# INLINE getName #-}"
+        , "    getName k# ="
+        , "        let !entry# = lookupInt32# offsets# k#"
+        , "            !offset# = entry# `uncheckedIShiftRL#` 8#"
+        , "            !name# = names# `plusAddr#` offset#"
+        , "            !len# = entry# `andI#` 0xff#"
+        , "        in (# name#, len# #)"
         , ""
         , "    !(Ptr names#) = namesBitmap"
         , "    !(Ptr offsets#) = offsetsBitmap"
@@ -1611,15 +1732,14 @@ genNamesModule moduleName =
         where
         shows' = \case
             '\0' -> \s -> '\\' : '0' : s
-            -- Note: names are ASCII
-            c    -> (c :)
+            c    -> (c :) -- Note: names are ASCII
 
 genAliasesModule
     :: Monad m
     => String
     -> Fold m CharAliases String
 genAliasesModule moduleName =
-    done <$> Fold.foldr (\a -> (:) (mkCharAliases a)) mempty
+    done <$> Fold.foldr ((:) . mkCharAliases) mempty
 
     where
 
@@ -1627,25 +1747,72 @@ genAliasesModule moduleName =
     mkCharAliases (CharAliases char aliases) = mconcat
         [ "  '\\x"
         , showHexCodepoint char
-        , "' -> "
-        , show . Map.toList
-               . Map.fromListWith (flip (<>))
-               $ fmap ((:[])) <$> aliases
-        , "\n"
+        , "'# -> \""
+        , mkCharAliasesLiteral char aliases
+        , "\"#"
         ]
+
+    mkCharAliasesLiteral :: Char -> Aliases -> String
+    mkCharAliasesLiteral char aliasesList =
+        enumMapToAddrLiteral 0 0xfff
+            (reverse index)
+            (mconcat (reverse ("\\0":aliases)))
+        where
+        (index, aliases, _) = Map.foldlWithKey'
+            (addAliasType char)
+            (mempty, mempty, Map.size aliasesMap)
+            aliasesMap
+        -- Group aliases by type
+        aliasesMap = foldr
+            (\(ty, a) -> Map.adjust (a:) ty)
+            (Map.fromSet (const []) (Set.fromList [minBound..maxBound]))
+            aliasesList
+
+    -- [FIXME] [(Word8:AliasType,Word8:index of first alias)] [CString]
+    addAliasType
+        :: Char
+        -> ([Word8], [String], Int) -- (index, aliases, last alias index)
+        -> AliasType
+        -> [Alias]
+        -> ([Word8], [String], Int)
+    addAliasType char (index, aliasesAcc, lastAliasIndex) _ty = \case
+        [] ->
+            ( 0 : index
+            , aliasesAcc
+            , lastAliasIndex )
+        aliases -> if lastAliasIndex < 0xff
+            then
+                ( fromIntegral lastAliasIndex : index
+                , encodedAliases
+                , lastAliasIndex' )
+            else error . mconcat $
+                [ "Cannot encode char ", show char
+                , "aliases. Offset: ", show lastAliasIndex, " >= 0xff" ]
+            where
+            (encodedAliases, lastAliasIndex') =
+                addEncodedAliases (aliasesAcc, lastAliasIndex) aliases
+            addEncodedAliases (as, offset) = \case
+                Alias alias : rest -> addEncodedAliases
+                    ( mconcat ["\\", show len, alias] : as
+                    , offset' )
+                    rest
+                    where
+                    len = length alias
+                    offset' = offset + len + 1
+                [] -> ("\\0" : as, offset + 1)
 
     done names = unlines
         [ apacheLicense 2022 moduleName
+        , "{-# LANGUAGE DeriveGeneric, PatternSynonyms #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
-        , "(NameAliasType(..), nameAliases, nameAliasesByType, nameAliasesWithTypes)"
+        , "(NameAliasType(..), pattern MaxNameAliasType, nameAliases)"
         , "where"
         , ""
         , "import Data.Ix (Ix)"
-        , "import Data.Maybe (fromMaybe)"
-        , "import Foreign.C.String (CString)"
-        , "import GHC.Exts (Ptr(..))"
+        , "import GHC.Exts (Addr#, Char#, Int#)"
+        , "import GHC.Generics (Generic)"
         , ""
         , "-- | Type of name alias. See Unicode Standard 15.0.0, section 4.8."
         , "--"
@@ -1664,35 +1831,40 @@ genAliasesModule moduleName =
         , "    | Abbreviation"
         , "    -- ^ Commonly occurring abbreviations (or acronyms) for control codes,"
         , "    --   format characters, spaces, and variation selectors."
-        , "    deriving (Enum, Bounded, Eq, Ord, Ix, Show)"
+        , "    deriving (Generic, Enum, Bounded, Eq, Ord, Ix, Show)"
         , ""
-        , "-- | All name aliases of a character."
-        , "-- The names are listed in the original order of the UCD."
-        , "--"
-        , "-- See 'nameAliasesWithTypes' for the detailed list by alias type."
-        , "--"
-        , "-- @since 0.1.0"
-        , "{-# INLINE nameAliases #-}"
-        , "nameAliases :: Char -> [CString]"
-        , "nameAliases = mconcat . fmap snd . nameAliasesWithTypes"
+        , "-- $setup"
+        , "-- >>> import GHC.Exts (Int(..))"
         , ""
-        , "-- | Name aliases of a character for a specific name alias type."
-        , "--"
-        , "-- @since 0.1.0"
-        , "{-# INLINE nameAliasesByType #-}"
-        , "nameAliasesByType :: NameAliasType -> Char -> [CString]"
-        , "nameAliasesByType t = fromMaybe mempty . lookup t . nameAliasesWithTypes"
+        , "-- |"
+        , "-- >>> I# MaxNameAliasType == fromEnum (maxBound :: NameAliasType)"
+        , "-- True"
+        , "pattern MaxNameAliasType :: Int#"
+        , "pattern MaxNameAliasType = "
+            <> show (fromEnum (maxBound :: AliasType)) <> "#"
         , ""
         , "-- | Detailed character names aliases."
         , "-- The names are listed in the original order of the UCD."
         , "--"
-        , "-- See 'nameAliases' if the alias type is not required."
+        , "-- Encoding:"
+        , "--"
+        , "-- * If there is no alias, return @\"\\\\xff\"#@."
+        , "-- * For each type of alias, the aliases are encoded as list of (length, alias)."
+        , "--   The list terminates with @\\\\0@."
+        , "-- * The list are then concatenated in order of type of alias and"
+        , "--   terminates with @\\\\0@."
+        , "-- * The first "
+            <> show (fromEnum (maxBound :: AliasType) + 1)
+            <> " bytes represent each one the index of the first element of the"
+        , "--   corresponding list of aliases. When the list is empty, then the index is 0."
+        , "-- * Example: @\\\"\\\\5\\\\0\\\\13\\\\0\\\\0\\\\3XXX\\\\2YY\\\\0\\\\4ZZZZ\\\\0\\\\0\\\"#@"
+        , "--   represents: @[('Correction',[\\\"XXX\\\", \\\"YY\\\"]),('Alternate', [\\\"ZZZZ\\\"])]@."
         , "--"
         , "-- @since 0.1.0"
-        , "nameAliasesWithTypes :: Char -> [(NameAliasType, [CString])]"
-        , "nameAliasesWithTypes = \\case"
-        , mconcat names
-        , "  _ -> mempty"
+        , "nameAliases :: Char# -> Addr#"
+        , "nameAliases = \\case"
+        , mconcat (intersperse "\n" names)
+        , "  _          -> \"\\xff\"#"
         ]
 
 genNumericValuesModule
@@ -2026,7 +2198,7 @@ parseBlockLines = Stream.mapMaybe parseBlockLine
 -- Parsing script file
 -------------------------------------------------------------------------------
 
-type ScriptLine = (String, Either Char (Char, Char))
+type ScriptLine = (String, CharRange)
 
 parseScriptLine :: String -> Maybe ScriptLine
 parseScriptLine ln
@@ -2042,7 +2214,7 @@ parseScriptLine ln
 
         in (trim script, parseRange (trim rangeLn))
 
-    parseRange :: String -> Either Char (Char, Char)
+    parseRange :: String -> CharRange
     parseRange
         = (\(c1, c2) -> maybe (Left c1) (Right . (c1,)) c2)
         . bimap readCodePoint (readCodePointM . drop 2)
@@ -2465,7 +2637,7 @@ data AliasType
     | Alternate
     | Figment
     | Abbreviation
-    deriving (Eq, Ord, Read, Show)
+    deriving (Enum, Bounded, Eq, Ord, Read, Show)
 
 newtype Alias = Alias String
 instance Show Alias where

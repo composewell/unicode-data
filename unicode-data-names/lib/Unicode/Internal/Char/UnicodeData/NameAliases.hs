@@ -6,16 +6,16 @@
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 
+{-# LANGUAGE DeriveGeneric, PatternSynonyms #-}
 {-# OPTIONS_HADDOCK hide #-}
 
 module Unicode.Internal.Char.UnicodeData.NameAliases
-(NameAliasType(..), nameAliases, nameAliasesByType, nameAliasesWithTypes)
+(NameAliasType(..), pattern MaxNameAliasType, nameAliases)
 where
 
 import Data.Ix (Ix)
-import Data.Maybe (fromMaybe)
-import Foreign.C.String (CString)
-import GHC.Exts (Ptr(..))
+import GHC.Exts (Addr#, Char#, Int#)
+import GHC.Generics (Generic)
 
 -- | Type of name alias. See Unicode Standard 15.0.0, section 4.8.
 --
@@ -34,412 +34,413 @@ data NameAliasType
     | Abbreviation
     -- ^ Commonly occurring abbreviations (or acronyms) for control codes,
     --   format characters, spaces, and variation selectors.
-    deriving (Enum, Bounded, Eq, Ord, Ix, Show)
+    deriving (Generic, Enum, Bounded, Eq, Ord, Ix, Show)
 
--- | All name aliases of a character.
--- The names are listed in the original order of the UCD.
---
--- See 'nameAliasesWithTypes' for the detailed list by alias type.
---
--- @since 0.1.0
-{-# INLINE nameAliases #-}
-nameAliases :: Char -> [CString]
-nameAliases = mconcat . fmap snd . nameAliasesWithTypes
+-- $setup
+-- >>> import GHC.Exts (Int(..))
 
--- | Name aliases of a character for a specific name alias type.
---
--- @since 0.1.0
-{-# INLINE nameAliasesByType #-}
-nameAliasesByType :: NameAliasType -> Char -> [CString]
-nameAliasesByType t = fromMaybe mempty . lookup t . nameAliasesWithTypes
+-- |
+-- >>> I# MaxNameAliasType == fromEnum (maxBound :: NameAliasType)
+-- True
+pattern MaxNameAliasType :: Int#
+pattern MaxNameAliasType = 4#
 
 -- | Detailed character names aliases.
 -- The names are listed in the original order of the UCD.
 --
--- See 'nameAliases' if the alias type is not required.
+-- Encoding:
+--
+-- * If there is no alias, return @"\\xff"#@.
+-- * For each type of alias, the aliases are encoded as list of (length, alias).
+--   The list terminates with @\\0@.
+-- * The list are then concatenated in order of type of alias and
+--   terminates with @\\0@.
+-- * The first 5 bytes represent each one the index of the first element of the
+--   corresponding list of aliases. When the list is empty, then the index is 0.
+-- * Example: @\"\\5\\0\\13\\0\\0\\3XXX\\2YY\\0\\4ZZZZ\\0\\0\"#@
+--   represents: @[('Correction',[\"XXX\", \"YY\"]),('Alternate', [\"ZZZZ\"])]@.
 --
 -- @since 0.1.0
-nameAliasesWithTypes :: Char -> [(NameAliasType, [CString])]
-nameAliasesWithTypes = \case
-  '\x0000' -> [(Control,[Ptr "NULL\0"#]),(Abbreviation,[Ptr "NUL\0"#])]
-  '\x0001' -> [(Control,[Ptr "START OF HEADING\0"#]),(Abbreviation,[Ptr "SOH\0"#])]
-  '\x0002' -> [(Control,[Ptr "START OF TEXT\0"#]),(Abbreviation,[Ptr "STX\0"#])]
-  '\x0003' -> [(Control,[Ptr "END OF TEXT\0"#]),(Abbreviation,[Ptr "ETX\0"#])]
-  '\x0004' -> [(Control,[Ptr "END OF TRANSMISSION\0"#]),(Abbreviation,[Ptr "EOT\0"#])]
-  '\x0005' -> [(Control,[Ptr "ENQUIRY\0"#]),(Abbreviation,[Ptr "ENQ\0"#])]
-  '\x0006' -> [(Control,[Ptr "ACKNOWLEDGE\0"#]),(Abbreviation,[Ptr "ACK\0"#])]
-  '\x0007' -> [(Control,[Ptr "ALERT\0"#]),(Abbreviation,[Ptr "BEL\0"#])]
-  '\x0008' -> [(Control,[Ptr "BACKSPACE\0"#]),(Abbreviation,[Ptr "BS\0"#])]
-  '\x0009' -> [(Control,[Ptr "CHARACTER TABULATION\0"#,Ptr "HORIZONTAL TABULATION\0"#]),(Abbreviation,[Ptr "HT\0"#,Ptr "TAB\0"#])]
-  '\x000A' -> [(Control,[Ptr "LINE FEED\0"#,Ptr "NEW LINE\0"#,Ptr "END OF LINE\0"#]),(Abbreviation,[Ptr "LF\0"#,Ptr "NL\0"#,Ptr "EOL\0"#])]
-  '\x000B' -> [(Control,[Ptr "LINE TABULATION\0"#,Ptr "VERTICAL TABULATION\0"#]),(Abbreviation,[Ptr "VT\0"#])]
-  '\x000C' -> [(Control,[Ptr "FORM FEED\0"#]),(Abbreviation,[Ptr "FF\0"#])]
-  '\x000D' -> [(Control,[Ptr "CARRIAGE RETURN\0"#]),(Abbreviation,[Ptr "CR\0"#])]
-  '\x000E' -> [(Control,[Ptr "SHIFT OUT\0"#,Ptr "LOCKING-SHIFT ONE\0"#]),(Abbreviation,[Ptr "SO\0"#])]
-  '\x000F' -> [(Control,[Ptr "SHIFT IN\0"#,Ptr "LOCKING-SHIFT ZERO\0"#]),(Abbreviation,[Ptr "SI\0"#])]
-  '\x0010' -> [(Control,[Ptr "DATA LINK ESCAPE\0"#]),(Abbreviation,[Ptr "DLE\0"#])]
-  '\x0011' -> [(Control,[Ptr "DEVICE CONTROL ONE\0"#]),(Abbreviation,[Ptr "DC1\0"#])]
-  '\x0012' -> [(Control,[Ptr "DEVICE CONTROL TWO\0"#]),(Abbreviation,[Ptr "DC2\0"#])]
-  '\x0013' -> [(Control,[Ptr "DEVICE CONTROL THREE\0"#]),(Abbreviation,[Ptr "DC3\0"#])]
-  '\x0014' -> [(Control,[Ptr "DEVICE CONTROL FOUR\0"#]),(Abbreviation,[Ptr "DC4\0"#])]
-  '\x0015' -> [(Control,[Ptr "NEGATIVE ACKNOWLEDGE\0"#]),(Abbreviation,[Ptr "NAK\0"#])]
-  '\x0016' -> [(Control,[Ptr "SYNCHRONOUS IDLE\0"#]),(Abbreviation,[Ptr "SYN\0"#])]
-  '\x0017' -> [(Control,[Ptr "END OF TRANSMISSION BLOCK\0"#]),(Abbreviation,[Ptr "ETB\0"#])]
-  '\x0018' -> [(Control,[Ptr "CANCEL\0"#]),(Abbreviation,[Ptr "CAN\0"#])]
-  '\x0019' -> [(Control,[Ptr "END OF MEDIUM\0"#]),(Abbreviation,[Ptr "EOM\0"#,Ptr "EM\0"#])]
-  '\x001A' -> [(Control,[Ptr "SUBSTITUTE\0"#]),(Abbreviation,[Ptr "SUB\0"#])]
-  '\x001B' -> [(Control,[Ptr "ESCAPE\0"#]),(Abbreviation,[Ptr "ESC\0"#])]
-  '\x001C' -> [(Control,[Ptr "INFORMATION SEPARATOR FOUR\0"#,Ptr "FILE SEPARATOR\0"#]),(Abbreviation,[Ptr "FS\0"#])]
-  '\x001D' -> [(Control,[Ptr "INFORMATION SEPARATOR THREE\0"#,Ptr "GROUP SEPARATOR\0"#]),(Abbreviation,[Ptr "GS\0"#])]
-  '\x001E' -> [(Control,[Ptr "INFORMATION SEPARATOR TWO\0"#,Ptr "RECORD SEPARATOR\0"#]),(Abbreviation,[Ptr "RS\0"#])]
-  '\x001F' -> [(Control,[Ptr "INFORMATION SEPARATOR ONE\0"#,Ptr "UNIT SEPARATOR\0"#]),(Abbreviation,[Ptr "US\0"#])]
-  '\x0020' -> [(Abbreviation,[Ptr "SP\0"#])]
-  '\x007F' -> [(Control,[Ptr "DELETE\0"#]),(Abbreviation,[Ptr "DEL\0"#])]
-  '\x0080' -> [(Figment,[Ptr "PADDING CHARACTER\0"#]),(Abbreviation,[Ptr "PAD\0"#])]
-  '\x0081' -> [(Figment,[Ptr "HIGH OCTET PRESET\0"#]),(Abbreviation,[Ptr "HOP\0"#])]
-  '\x0082' -> [(Control,[Ptr "BREAK PERMITTED HERE\0"#]),(Abbreviation,[Ptr "BPH\0"#])]
-  '\x0083' -> [(Control,[Ptr "NO BREAK HERE\0"#]),(Abbreviation,[Ptr "NBH\0"#])]
-  '\x0084' -> [(Control,[Ptr "INDEX\0"#]),(Abbreviation,[Ptr "IND\0"#])]
-  '\x0085' -> [(Control,[Ptr "NEXT LINE\0"#]),(Abbreviation,[Ptr "NEL\0"#])]
-  '\x0086' -> [(Control,[Ptr "START OF SELECTED AREA\0"#]),(Abbreviation,[Ptr "SSA\0"#])]
-  '\x0087' -> [(Control,[Ptr "END OF SELECTED AREA\0"#]),(Abbreviation,[Ptr "ESA\0"#])]
-  '\x0088' -> [(Control,[Ptr "CHARACTER TABULATION SET\0"#,Ptr "HORIZONTAL TABULATION SET\0"#]),(Abbreviation,[Ptr "HTS\0"#])]
-  '\x0089' -> [(Control,[Ptr "CHARACTER TABULATION WITH JUSTIFICATION\0"#,Ptr "HORIZONTAL TABULATION WITH JUSTIFICATION\0"#]),(Abbreviation,[Ptr "HTJ\0"#])]
-  '\x008A' -> [(Control,[Ptr "LINE TABULATION SET\0"#,Ptr "VERTICAL TABULATION SET\0"#]),(Abbreviation,[Ptr "VTS\0"#])]
-  '\x008B' -> [(Control,[Ptr "PARTIAL LINE FORWARD\0"#,Ptr "PARTIAL LINE DOWN\0"#]),(Abbreviation,[Ptr "PLD\0"#])]
-  '\x008C' -> [(Control,[Ptr "PARTIAL LINE BACKWARD\0"#,Ptr "PARTIAL LINE UP\0"#]),(Abbreviation,[Ptr "PLU\0"#])]
-  '\x008D' -> [(Control,[Ptr "REVERSE LINE FEED\0"#,Ptr "REVERSE INDEX\0"#]),(Abbreviation,[Ptr "RI\0"#])]
-  '\x008E' -> [(Control,[Ptr "SINGLE SHIFT TWO\0"#,Ptr "SINGLE-SHIFT-2\0"#]),(Abbreviation,[Ptr "SS2\0"#])]
-  '\x008F' -> [(Control,[Ptr "SINGLE SHIFT THREE\0"#,Ptr "SINGLE-SHIFT-3\0"#]),(Abbreviation,[Ptr "SS3\0"#])]
-  '\x0090' -> [(Control,[Ptr "DEVICE CONTROL STRING\0"#]),(Abbreviation,[Ptr "DCS\0"#])]
-  '\x0091' -> [(Control,[Ptr "PRIVATE USE ONE\0"#,Ptr "PRIVATE USE-1\0"#]),(Abbreviation,[Ptr "PU1\0"#])]
-  '\x0092' -> [(Control,[Ptr "PRIVATE USE TWO\0"#,Ptr "PRIVATE USE-2\0"#]),(Abbreviation,[Ptr "PU2\0"#])]
-  '\x0093' -> [(Control,[Ptr "SET TRANSMIT STATE\0"#]),(Abbreviation,[Ptr "STS\0"#])]
-  '\x0094' -> [(Control,[Ptr "CANCEL CHARACTER\0"#]),(Abbreviation,[Ptr "CCH\0"#])]
-  '\x0095' -> [(Control,[Ptr "MESSAGE WAITING\0"#]),(Abbreviation,[Ptr "MW\0"#])]
-  '\x0096' -> [(Control,[Ptr "START OF GUARDED AREA\0"#,Ptr "START OF PROTECTED AREA\0"#]),(Abbreviation,[Ptr "SPA\0"#])]
-  '\x0097' -> [(Control,[Ptr "END OF GUARDED AREA\0"#,Ptr "END OF PROTECTED AREA\0"#]),(Abbreviation,[Ptr "EPA\0"#])]
-  '\x0098' -> [(Control,[Ptr "START OF STRING\0"#]),(Abbreviation,[Ptr "SOS\0"#])]
-  '\x0099' -> [(Figment,[Ptr "SINGLE GRAPHIC CHARACTER INTRODUCER\0"#]),(Abbreviation,[Ptr "SGC\0"#])]
-  '\x009A' -> [(Control,[Ptr "SINGLE CHARACTER INTRODUCER\0"#]),(Abbreviation,[Ptr "SCI\0"#])]
-  '\x009B' -> [(Control,[Ptr "CONTROL SEQUENCE INTRODUCER\0"#]),(Abbreviation,[Ptr "CSI\0"#])]
-  '\x009C' -> [(Control,[Ptr "STRING TERMINATOR\0"#]),(Abbreviation,[Ptr "ST\0"#])]
-  '\x009D' -> [(Control,[Ptr "OPERATING SYSTEM COMMAND\0"#]),(Abbreviation,[Ptr "OSC\0"#])]
-  '\x009E' -> [(Control,[Ptr "PRIVACY MESSAGE\0"#]),(Abbreviation,[Ptr "PM\0"#])]
-  '\x009F' -> [(Control,[Ptr "APPLICATION PROGRAM COMMAND\0"#]),(Abbreviation,[Ptr "APC\0"#])]
-  '\x00A0' -> [(Abbreviation,[Ptr "NBSP\0"#])]
-  '\x00AD' -> [(Abbreviation,[Ptr "SHY\0"#])]
-  '\x01A2' -> [(Correction,[Ptr "LATIN CAPITAL LETTER GHA\0"#])]
-  '\x01A3' -> [(Correction,[Ptr "LATIN SMALL LETTER GHA\0"#])]
-  '\x034F' -> [(Abbreviation,[Ptr "CGJ\0"#])]
-  '\x0616' -> [(Correction,[Ptr "ARABIC SMALL HIGH LIGATURE ALEF WITH YEH BARREE\0"#])]
-  '\x061C' -> [(Abbreviation,[Ptr "ALM\0"#])]
-  '\x0709' -> [(Correction,[Ptr "SYRIAC SUBLINEAR COLON SKEWED LEFT\0"#])]
-  '\x0CDE' -> [(Correction,[Ptr "KANNADA LETTER LLLA\0"#])]
-  '\x0E9D' -> [(Correction,[Ptr "LAO LETTER FO FON\0"#])]
-  '\x0E9F' -> [(Correction,[Ptr "LAO LETTER FO FAY\0"#])]
-  '\x0EA3' -> [(Correction,[Ptr "LAO LETTER RO\0"#])]
-  '\x0EA5' -> [(Correction,[Ptr "LAO LETTER LO\0"#])]
-  '\x0FD0' -> [(Correction,[Ptr "TIBETAN MARK BKA- SHOG GI MGO RGYAN\0"#])]
-  '\x11EC' -> [(Correction,[Ptr "HANGUL JONGSEONG YESIEUNG-KIYEOK\0"#])]
-  '\x11ED' -> [(Correction,[Ptr "HANGUL JONGSEONG YESIEUNG-SSANGKIYEOK\0"#])]
-  '\x11EE' -> [(Correction,[Ptr "HANGUL JONGSEONG SSANGYESIEUNG\0"#])]
-  '\x11EF' -> [(Correction,[Ptr "HANGUL JONGSEONG YESIEUNG-KHIEUKH\0"#])]
-  '\x180B' -> [(Abbreviation,[Ptr "FVS1\0"#])]
-  '\x180C' -> [(Abbreviation,[Ptr "FVS2\0"#])]
-  '\x180D' -> [(Abbreviation,[Ptr "FVS3\0"#])]
-  '\x180E' -> [(Abbreviation,[Ptr "MVS\0"#])]
-  '\x180F' -> [(Abbreviation,[Ptr "FVS4\0"#])]
-  '\x1BBD' -> [(Correction,[Ptr "SUNDANESE LETTER ARCHAIC I\0"#])]
-  '\x200B' -> [(Abbreviation,[Ptr "ZWSP\0"#])]
-  '\x200C' -> [(Abbreviation,[Ptr "ZWNJ\0"#])]
-  '\x200D' -> [(Abbreviation,[Ptr "ZWJ\0"#])]
-  '\x200E' -> [(Abbreviation,[Ptr "LRM\0"#])]
-  '\x200F' -> [(Abbreviation,[Ptr "RLM\0"#])]
-  '\x202A' -> [(Abbreviation,[Ptr "LRE\0"#])]
-  '\x202B' -> [(Abbreviation,[Ptr "RLE\0"#])]
-  '\x202C' -> [(Abbreviation,[Ptr "PDF\0"#])]
-  '\x202D' -> [(Abbreviation,[Ptr "LRO\0"#])]
-  '\x202E' -> [(Abbreviation,[Ptr "RLO\0"#])]
-  '\x202F' -> [(Abbreviation,[Ptr "NNBSP\0"#])]
-  '\x205F' -> [(Abbreviation,[Ptr "MMSP\0"#])]
-  '\x2060' -> [(Abbreviation,[Ptr "WJ\0"#])]
-  '\x2066' -> [(Abbreviation,[Ptr "LRI\0"#])]
-  '\x2067' -> [(Abbreviation,[Ptr "RLI\0"#])]
-  '\x2068' -> [(Abbreviation,[Ptr "FSI\0"#])]
-  '\x2069' -> [(Abbreviation,[Ptr "PDI\0"#])]
-  '\x2118' -> [(Correction,[Ptr "WEIERSTRASS ELLIPTIC FUNCTION\0"#])]
-  '\x2448' -> [(Correction,[Ptr "MICR ON US SYMBOL\0"#])]
-  '\x2449' -> [(Correction,[Ptr "MICR DASH SYMBOL\0"#])]
-  '\x2B7A' -> [(Correction,[Ptr "LEFTWARDS TRIANGLE-HEADED ARROW WITH DOUBLE VERTICAL STROKE\0"#])]
-  '\x2B7C' -> [(Correction,[Ptr "RIGHTWARDS TRIANGLE-HEADED ARROW WITH DOUBLE VERTICAL STROKE\0"#])]
-  '\xA015' -> [(Correction,[Ptr "YI SYLLABLE ITERATION MARK\0"#])]
-  '\xAA6E' -> [(Correction,[Ptr "MYANMAR LETTER KHAMTI LLA\0"#])]
-  '\xFE00' -> [(Abbreviation,[Ptr "VS1\0"#])]
-  '\xFE01' -> [(Abbreviation,[Ptr "VS2\0"#])]
-  '\xFE02' -> [(Abbreviation,[Ptr "VS3\0"#])]
-  '\xFE03' -> [(Abbreviation,[Ptr "VS4\0"#])]
-  '\xFE04' -> [(Abbreviation,[Ptr "VS5\0"#])]
-  '\xFE05' -> [(Abbreviation,[Ptr "VS6\0"#])]
-  '\xFE06' -> [(Abbreviation,[Ptr "VS7\0"#])]
-  '\xFE07' -> [(Abbreviation,[Ptr "VS8\0"#])]
-  '\xFE08' -> [(Abbreviation,[Ptr "VS9\0"#])]
-  '\xFE09' -> [(Abbreviation,[Ptr "VS10\0"#])]
-  '\xFE0A' -> [(Abbreviation,[Ptr "VS11\0"#])]
-  '\xFE0B' -> [(Abbreviation,[Ptr "VS12\0"#])]
-  '\xFE0C' -> [(Abbreviation,[Ptr "VS13\0"#])]
-  '\xFE0D' -> [(Abbreviation,[Ptr "VS14\0"#])]
-  '\xFE0E' -> [(Abbreviation,[Ptr "VS15\0"#])]
-  '\xFE0F' -> [(Abbreviation,[Ptr "VS16\0"#])]
-  '\xFE18' -> [(Correction,[Ptr "PRESENTATION FORM FOR VERTICAL RIGHT WHITE LENTICULAR BRACKET\0"#])]
-  '\xFEFF' -> [(Alternate,[Ptr "BYTE ORDER MARK\0"#]),(Abbreviation,[Ptr "BOM\0"#,Ptr "ZWNBSP\0"#])]
-  '\x122D4' -> [(Correction,[Ptr "CUNEIFORM SIGN NU11 TENU\0"#])]
-  '\x122D5' -> [(Correction,[Ptr "CUNEIFORM SIGN NU11 OVER NU11 BUR OVER BUR\0"#])]
-  '\x16E56' -> [(Correction,[Ptr "MEDEFAIDRIN CAPITAL LETTER H\0"#])]
-  '\x16E57' -> [(Correction,[Ptr "MEDEFAIDRIN CAPITAL LETTER NG\0"#])]
-  '\x16E76' -> [(Correction,[Ptr "MEDEFAIDRIN SMALL LETTER H\0"#])]
-  '\x16E77' -> [(Correction,[Ptr "MEDEFAIDRIN SMALL LETTER NG\0"#])]
-  '\x1B001' -> [(Correction,[Ptr "HENTAIGANA LETTER E-1\0"#])]
-  '\x1D0C5' -> [(Correction,[Ptr "BYZANTINE MUSICAL SYMBOL FTHORA SKLIRON CHROMA VASIS\0"#])]
-  '\xE0100' -> [(Abbreviation,[Ptr "VS17\0"#])]
-  '\xE0101' -> [(Abbreviation,[Ptr "VS18\0"#])]
-  '\xE0102' -> [(Abbreviation,[Ptr "VS19\0"#])]
-  '\xE0103' -> [(Abbreviation,[Ptr "VS20\0"#])]
-  '\xE0104' -> [(Abbreviation,[Ptr "VS21\0"#])]
-  '\xE0105' -> [(Abbreviation,[Ptr "VS22\0"#])]
-  '\xE0106' -> [(Abbreviation,[Ptr "VS23\0"#])]
-  '\xE0107' -> [(Abbreviation,[Ptr "VS24\0"#])]
-  '\xE0108' -> [(Abbreviation,[Ptr "VS25\0"#])]
-  '\xE0109' -> [(Abbreviation,[Ptr "VS26\0"#])]
-  '\xE010A' -> [(Abbreviation,[Ptr "VS27\0"#])]
-  '\xE010B' -> [(Abbreviation,[Ptr "VS28\0"#])]
-  '\xE010C' -> [(Abbreviation,[Ptr "VS29\0"#])]
-  '\xE010D' -> [(Abbreviation,[Ptr "VS30\0"#])]
-  '\xE010E' -> [(Abbreviation,[Ptr "VS31\0"#])]
-  '\xE010F' -> [(Abbreviation,[Ptr "VS32\0"#])]
-  '\xE0110' -> [(Abbreviation,[Ptr "VS33\0"#])]
-  '\xE0111' -> [(Abbreviation,[Ptr "VS34\0"#])]
-  '\xE0112' -> [(Abbreviation,[Ptr "VS35\0"#])]
-  '\xE0113' -> [(Abbreviation,[Ptr "VS36\0"#])]
-  '\xE0114' -> [(Abbreviation,[Ptr "VS37\0"#])]
-  '\xE0115' -> [(Abbreviation,[Ptr "VS38\0"#])]
-  '\xE0116' -> [(Abbreviation,[Ptr "VS39\0"#])]
-  '\xE0117' -> [(Abbreviation,[Ptr "VS40\0"#])]
-  '\xE0118' -> [(Abbreviation,[Ptr "VS41\0"#])]
-  '\xE0119' -> [(Abbreviation,[Ptr "VS42\0"#])]
-  '\xE011A' -> [(Abbreviation,[Ptr "VS43\0"#])]
-  '\xE011B' -> [(Abbreviation,[Ptr "VS44\0"#])]
-  '\xE011C' -> [(Abbreviation,[Ptr "VS45\0"#])]
-  '\xE011D' -> [(Abbreviation,[Ptr "VS46\0"#])]
-  '\xE011E' -> [(Abbreviation,[Ptr "VS47\0"#])]
-  '\xE011F' -> [(Abbreviation,[Ptr "VS48\0"#])]
-  '\xE0120' -> [(Abbreviation,[Ptr "VS49\0"#])]
-  '\xE0121' -> [(Abbreviation,[Ptr "VS50\0"#])]
-  '\xE0122' -> [(Abbreviation,[Ptr "VS51\0"#])]
-  '\xE0123' -> [(Abbreviation,[Ptr "VS52\0"#])]
-  '\xE0124' -> [(Abbreviation,[Ptr "VS53\0"#])]
-  '\xE0125' -> [(Abbreviation,[Ptr "VS54\0"#])]
-  '\xE0126' -> [(Abbreviation,[Ptr "VS55\0"#])]
-  '\xE0127' -> [(Abbreviation,[Ptr "VS56\0"#])]
-  '\xE0128' -> [(Abbreviation,[Ptr "VS57\0"#])]
-  '\xE0129' -> [(Abbreviation,[Ptr "VS58\0"#])]
-  '\xE012A' -> [(Abbreviation,[Ptr "VS59\0"#])]
-  '\xE012B' -> [(Abbreviation,[Ptr "VS60\0"#])]
-  '\xE012C' -> [(Abbreviation,[Ptr "VS61\0"#])]
-  '\xE012D' -> [(Abbreviation,[Ptr "VS62\0"#])]
-  '\xE012E' -> [(Abbreviation,[Ptr "VS63\0"#])]
-  '\xE012F' -> [(Abbreviation,[Ptr "VS64\0"#])]
-  '\xE0130' -> [(Abbreviation,[Ptr "VS65\0"#])]
-  '\xE0131' -> [(Abbreviation,[Ptr "VS66\0"#])]
-  '\xE0132' -> [(Abbreviation,[Ptr "VS67\0"#])]
-  '\xE0133' -> [(Abbreviation,[Ptr "VS68\0"#])]
-  '\xE0134' -> [(Abbreviation,[Ptr "VS69\0"#])]
-  '\xE0135' -> [(Abbreviation,[Ptr "VS70\0"#])]
-  '\xE0136' -> [(Abbreviation,[Ptr "VS71\0"#])]
-  '\xE0137' -> [(Abbreviation,[Ptr "VS72\0"#])]
-  '\xE0138' -> [(Abbreviation,[Ptr "VS73\0"#])]
-  '\xE0139' -> [(Abbreviation,[Ptr "VS74\0"#])]
-  '\xE013A' -> [(Abbreviation,[Ptr "VS75\0"#])]
-  '\xE013B' -> [(Abbreviation,[Ptr "VS76\0"#])]
-  '\xE013C' -> [(Abbreviation,[Ptr "VS77\0"#])]
-  '\xE013D' -> [(Abbreviation,[Ptr "VS78\0"#])]
-  '\xE013E' -> [(Abbreviation,[Ptr "VS79\0"#])]
-  '\xE013F' -> [(Abbreviation,[Ptr "VS80\0"#])]
-  '\xE0140' -> [(Abbreviation,[Ptr "VS81\0"#])]
-  '\xE0141' -> [(Abbreviation,[Ptr "VS82\0"#])]
-  '\xE0142' -> [(Abbreviation,[Ptr "VS83\0"#])]
-  '\xE0143' -> [(Abbreviation,[Ptr "VS84\0"#])]
-  '\xE0144' -> [(Abbreviation,[Ptr "VS85\0"#])]
-  '\xE0145' -> [(Abbreviation,[Ptr "VS86\0"#])]
-  '\xE0146' -> [(Abbreviation,[Ptr "VS87\0"#])]
-  '\xE0147' -> [(Abbreviation,[Ptr "VS88\0"#])]
-  '\xE0148' -> [(Abbreviation,[Ptr "VS89\0"#])]
-  '\xE0149' -> [(Abbreviation,[Ptr "VS90\0"#])]
-  '\xE014A' -> [(Abbreviation,[Ptr "VS91\0"#])]
-  '\xE014B' -> [(Abbreviation,[Ptr "VS92\0"#])]
-  '\xE014C' -> [(Abbreviation,[Ptr "VS93\0"#])]
-  '\xE014D' -> [(Abbreviation,[Ptr "VS94\0"#])]
-  '\xE014E' -> [(Abbreviation,[Ptr "VS95\0"#])]
-  '\xE014F' -> [(Abbreviation,[Ptr "VS96\0"#])]
-  '\xE0150' -> [(Abbreviation,[Ptr "VS97\0"#])]
-  '\xE0151' -> [(Abbreviation,[Ptr "VS98\0"#])]
-  '\xE0152' -> [(Abbreviation,[Ptr "VS99\0"#])]
-  '\xE0153' -> [(Abbreviation,[Ptr "VS100\0"#])]
-  '\xE0154' -> [(Abbreviation,[Ptr "VS101\0"#])]
-  '\xE0155' -> [(Abbreviation,[Ptr "VS102\0"#])]
-  '\xE0156' -> [(Abbreviation,[Ptr "VS103\0"#])]
-  '\xE0157' -> [(Abbreviation,[Ptr "VS104\0"#])]
-  '\xE0158' -> [(Abbreviation,[Ptr "VS105\0"#])]
-  '\xE0159' -> [(Abbreviation,[Ptr "VS106\0"#])]
-  '\xE015A' -> [(Abbreviation,[Ptr "VS107\0"#])]
-  '\xE015B' -> [(Abbreviation,[Ptr "VS108\0"#])]
-  '\xE015C' -> [(Abbreviation,[Ptr "VS109\0"#])]
-  '\xE015D' -> [(Abbreviation,[Ptr "VS110\0"#])]
-  '\xE015E' -> [(Abbreviation,[Ptr "VS111\0"#])]
-  '\xE015F' -> [(Abbreviation,[Ptr "VS112\0"#])]
-  '\xE0160' -> [(Abbreviation,[Ptr "VS113\0"#])]
-  '\xE0161' -> [(Abbreviation,[Ptr "VS114\0"#])]
-  '\xE0162' -> [(Abbreviation,[Ptr "VS115\0"#])]
-  '\xE0163' -> [(Abbreviation,[Ptr "VS116\0"#])]
-  '\xE0164' -> [(Abbreviation,[Ptr "VS117\0"#])]
-  '\xE0165' -> [(Abbreviation,[Ptr "VS118\0"#])]
-  '\xE0166' -> [(Abbreviation,[Ptr "VS119\0"#])]
-  '\xE0167' -> [(Abbreviation,[Ptr "VS120\0"#])]
-  '\xE0168' -> [(Abbreviation,[Ptr "VS121\0"#])]
-  '\xE0169' -> [(Abbreviation,[Ptr "VS122\0"#])]
-  '\xE016A' -> [(Abbreviation,[Ptr "VS123\0"#])]
-  '\xE016B' -> [(Abbreviation,[Ptr "VS124\0"#])]
-  '\xE016C' -> [(Abbreviation,[Ptr "VS125\0"#])]
-  '\xE016D' -> [(Abbreviation,[Ptr "VS126\0"#])]
-  '\xE016E' -> [(Abbreviation,[Ptr "VS127\0"#])]
-  '\xE016F' -> [(Abbreviation,[Ptr "VS128\0"#])]
-  '\xE0170' -> [(Abbreviation,[Ptr "VS129\0"#])]
-  '\xE0171' -> [(Abbreviation,[Ptr "VS130\0"#])]
-  '\xE0172' -> [(Abbreviation,[Ptr "VS131\0"#])]
-  '\xE0173' -> [(Abbreviation,[Ptr "VS132\0"#])]
-  '\xE0174' -> [(Abbreviation,[Ptr "VS133\0"#])]
-  '\xE0175' -> [(Abbreviation,[Ptr "VS134\0"#])]
-  '\xE0176' -> [(Abbreviation,[Ptr "VS135\0"#])]
-  '\xE0177' -> [(Abbreviation,[Ptr "VS136\0"#])]
-  '\xE0178' -> [(Abbreviation,[Ptr "VS137\0"#])]
-  '\xE0179' -> [(Abbreviation,[Ptr "VS138\0"#])]
-  '\xE017A' -> [(Abbreviation,[Ptr "VS139\0"#])]
-  '\xE017B' -> [(Abbreviation,[Ptr "VS140\0"#])]
-  '\xE017C' -> [(Abbreviation,[Ptr "VS141\0"#])]
-  '\xE017D' -> [(Abbreviation,[Ptr "VS142\0"#])]
-  '\xE017E' -> [(Abbreviation,[Ptr "VS143\0"#])]
-  '\xE017F' -> [(Abbreviation,[Ptr "VS144\0"#])]
-  '\xE0180' -> [(Abbreviation,[Ptr "VS145\0"#])]
-  '\xE0181' -> [(Abbreviation,[Ptr "VS146\0"#])]
-  '\xE0182' -> [(Abbreviation,[Ptr "VS147\0"#])]
-  '\xE0183' -> [(Abbreviation,[Ptr "VS148\0"#])]
-  '\xE0184' -> [(Abbreviation,[Ptr "VS149\0"#])]
-  '\xE0185' -> [(Abbreviation,[Ptr "VS150\0"#])]
-  '\xE0186' -> [(Abbreviation,[Ptr "VS151\0"#])]
-  '\xE0187' -> [(Abbreviation,[Ptr "VS152\0"#])]
-  '\xE0188' -> [(Abbreviation,[Ptr "VS153\0"#])]
-  '\xE0189' -> [(Abbreviation,[Ptr "VS154\0"#])]
-  '\xE018A' -> [(Abbreviation,[Ptr "VS155\0"#])]
-  '\xE018B' -> [(Abbreviation,[Ptr "VS156\0"#])]
-  '\xE018C' -> [(Abbreviation,[Ptr "VS157\0"#])]
-  '\xE018D' -> [(Abbreviation,[Ptr "VS158\0"#])]
-  '\xE018E' -> [(Abbreviation,[Ptr "VS159\0"#])]
-  '\xE018F' -> [(Abbreviation,[Ptr "VS160\0"#])]
-  '\xE0190' -> [(Abbreviation,[Ptr "VS161\0"#])]
-  '\xE0191' -> [(Abbreviation,[Ptr "VS162\0"#])]
-  '\xE0192' -> [(Abbreviation,[Ptr "VS163\0"#])]
-  '\xE0193' -> [(Abbreviation,[Ptr "VS164\0"#])]
-  '\xE0194' -> [(Abbreviation,[Ptr "VS165\0"#])]
-  '\xE0195' -> [(Abbreviation,[Ptr "VS166\0"#])]
-  '\xE0196' -> [(Abbreviation,[Ptr "VS167\0"#])]
-  '\xE0197' -> [(Abbreviation,[Ptr "VS168\0"#])]
-  '\xE0198' -> [(Abbreviation,[Ptr "VS169\0"#])]
-  '\xE0199' -> [(Abbreviation,[Ptr "VS170\0"#])]
-  '\xE019A' -> [(Abbreviation,[Ptr "VS171\0"#])]
-  '\xE019B' -> [(Abbreviation,[Ptr "VS172\0"#])]
-  '\xE019C' -> [(Abbreviation,[Ptr "VS173\0"#])]
-  '\xE019D' -> [(Abbreviation,[Ptr "VS174\0"#])]
-  '\xE019E' -> [(Abbreviation,[Ptr "VS175\0"#])]
-  '\xE019F' -> [(Abbreviation,[Ptr "VS176\0"#])]
-  '\xE01A0' -> [(Abbreviation,[Ptr "VS177\0"#])]
-  '\xE01A1' -> [(Abbreviation,[Ptr "VS178\0"#])]
-  '\xE01A2' -> [(Abbreviation,[Ptr "VS179\0"#])]
-  '\xE01A3' -> [(Abbreviation,[Ptr "VS180\0"#])]
-  '\xE01A4' -> [(Abbreviation,[Ptr "VS181\0"#])]
-  '\xE01A5' -> [(Abbreviation,[Ptr "VS182\0"#])]
-  '\xE01A6' -> [(Abbreviation,[Ptr "VS183\0"#])]
-  '\xE01A7' -> [(Abbreviation,[Ptr "VS184\0"#])]
-  '\xE01A8' -> [(Abbreviation,[Ptr "VS185\0"#])]
-  '\xE01A9' -> [(Abbreviation,[Ptr "VS186\0"#])]
-  '\xE01AA' -> [(Abbreviation,[Ptr "VS187\0"#])]
-  '\xE01AB' -> [(Abbreviation,[Ptr "VS188\0"#])]
-  '\xE01AC' -> [(Abbreviation,[Ptr "VS189\0"#])]
-  '\xE01AD' -> [(Abbreviation,[Ptr "VS190\0"#])]
-  '\xE01AE' -> [(Abbreviation,[Ptr "VS191\0"#])]
-  '\xE01AF' -> [(Abbreviation,[Ptr "VS192\0"#])]
-  '\xE01B0' -> [(Abbreviation,[Ptr "VS193\0"#])]
-  '\xE01B1' -> [(Abbreviation,[Ptr "VS194\0"#])]
-  '\xE01B2' -> [(Abbreviation,[Ptr "VS195\0"#])]
-  '\xE01B3' -> [(Abbreviation,[Ptr "VS196\0"#])]
-  '\xE01B4' -> [(Abbreviation,[Ptr "VS197\0"#])]
-  '\xE01B5' -> [(Abbreviation,[Ptr "VS198\0"#])]
-  '\xE01B6' -> [(Abbreviation,[Ptr "VS199\0"#])]
-  '\xE01B7' -> [(Abbreviation,[Ptr "VS200\0"#])]
-  '\xE01B8' -> [(Abbreviation,[Ptr "VS201\0"#])]
-  '\xE01B9' -> [(Abbreviation,[Ptr "VS202\0"#])]
-  '\xE01BA' -> [(Abbreviation,[Ptr "VS203\0"#])]
-  '\xE01BB' -> [(Abbreviation,[Ptr "VS204\0"#])]
-  '\xE01BC' -> [(Abbreviation,[Ptr "VS205\0"#])]
-  '\xE01BD' -> [(Abbreviation,[Ptr "VS206\0"#])]
-  '\xE01BE' -> [(Abbreviation,[Ptr "VS207\0"#])]
-  '\xE01BF' -> [(Abbreviation,[Ptr "VS208\0"#])]
-  '\xE01C0' -> [(Abbreviation,[Ptr "VS209\0"#])]
-  '\xE01C1' -> [(Abbreviation,[Ptr "VS210\0"#])]
-  '\xE01C2' -> [(Abbreviation,[Ptr "VS211\0"#])]
-  '\xE01C3' -> [(Abbreviation,[Ptr "VS212\0"#])]
-  '\xE01C4' -> [(Abbreviation,[Ptr "VS213\0"#])]
-  '\xE01C5' -> [(Abbreviation,[Ptr "VS214\0"#])]
-  '\xE01C6' -> [(Abbreviation,[Ptr "VS215\0"#])]
-  '\xE01C7' -> [(Abbreviation,[Ptr "VS216\0"#])]
-  '\xE01C8' -> [(Abbreviation,[Ptr "VS217\0"#])]
-  '\xE01C9' -> [(Abbreviation,[Ptr "VS218\0"#])]
-  '\xE01CA' -> [(Abbreviation,[Ptr "VS219\0"#])]
-  '\xE01CB' -> [(Abbreviation,[Ptr "VS220\0"#])]
-  '\xE01CC' -> [(Abbreviation,[Ptr "VS221\0"#])]
-  '\xE01CD' -> [(Abbreviation,[Ptr "VS222\0"#])]
-  '\xE01CE' -> [(Abbreviation,[Ptr "VS223\0"#])]
-  '\xE01CF' -> [(Abbreviation,[Ptr "VS224\0"#])]
-  '\xE01D0' -> [(Abbreviation,[Ptr "VS225\0"#])]
-  '\xE01D1' -> [(Abbreviation,[Ptr "VS226\0"#])]
-  '\xE01D2' -> [(Abbreviation,[Ptr "VS227\0"#])]
-  '\xE01D3' -> [(Abbreviation,[Ptr "VS228\0"#])]
-  '\xE01D4' -> [(Abbreviation,[Ptr "VS229\0"#])]
-  '\xE01D5' -> [(Abbreviation,[Ptr "VS230\0"#])]
-  '\xE01D6' -> [(Abbreviation,[Ptr "VS231\0"#])]
-  '\xE01D7' -> [(Abbreviation,[Ptr "VS232\0"#])]
-  '\xE01D8' -> [(Abbreviation,[Ptr "VS233\0"#])]
-  '\xE01D9' -> [(Abbreviation,[Ptr "VS234\0"#])]
-  '\xE01DA' -> [(Abbreviation,[Ptr "VS235\0"#])]
-  '\xE01DB' -> [(Abbreviation,[Ptr "VS236\0"#])]
-  '\xE01DC' -> [(Abbreviation,[Ptr "VS237\0"#])]
-  '\xE01DD' -> [(Abbreviation,[Ptr "VS238\0"#])]
-  '\xE01DE' -> [(Abbreviation,[Ptr "VS239\0"#])]
-  '\xE01DF' -> [(Abbreviation,[Ptr "VS240\0"#])]
-  '\xE01E0' -> [(Abbreviation,[Ptr "VS241\0"#])]
-  '\xE01E1' -> [(Abbreviation,[Ptr "VS242\0"#])]
-  '\xE01E2' -> [(Abbreviation,[Ptr "VS243\0"#])]
-  '\xE01E3' -> [(Abbreviation,[Ptr "VS244\0"#])]
-  '\xE01E4' -> [(Abbreviation,[Ptr "VS245\0"#])]
-  '\xE01E5' -> [(Abbreviation,[Ptr "VS246\0"#])]
-  '\xE01E6' -> [(Abbreviation,[Ptr "VS247\0"#])]
-  '\xE01E7' -> [(Abbreviation,[Ptr "VS248\0"#])]
-  '\xE01E8' -> [(Abbreviation,[Ptr "VS249\0"#])]
-  '\xE01E9' -> [(Abbreviation,[Ptr "VS250\0"#])]
-  '\xE01EA' -> [(Abbreviation,[Ptr "VS251\0"#])]
-  '\xE01EB' -> [(Abbreviation,[Ptr "VS252\0"#])]
-  '\xE01EC' -> [(Abbreviation,[Ptr "VS253\0"#])]
-  '\xE01ED' -> [(Abbreviation,[Ptr "VS254\0"#])]
-  '\xE01EE' -> [(Abbreviation,[Ptr "VS255\0"#])]
-  '\xE01EF' -> [(Abbreviation,[Ptr "VS256\0"#])]
-
-  _ -> mempty
+nameAliases :: Char# -> Addr#
+nameAliases = \case
+  '\x0000'# -> "\0\5\0\0\11\4NULL\0\3NUL\0\0"#
+  '\x0001'# -> "\0\5\0\0\23\16START OF HEADING\0\3SOH\0\0"#
+  '\x0002'# -> "\0\5\0\0\20\13START OF TEXT\0\3STX\0\0"#
+  '\x0003'# -> "\0\5\0\0\18\11END OF TEXT\0\3ETX\0\0"#
+  '\x0004'# -> "\0\5\0\0\26\19END OF TRANSMISSION\0\3EOT\0\0"#
+  '\x0005'# -> "\0\5\0\0\14\7ENQUIRY\0\3ENQ\0\0"#
+  '\x0006'# -> "\0\5\0\0\18\11ACKNOWLEDGE\0\3ACK\0\0"#
+  '\x0007'# -> "\0\5\0\0\12\5ALERT\0\3BEL\0\0"#
+  '\x0008'# -> "\0\5\0\0\16\9BACKSPACE\0\2BS\0\0"#
+  '\x0009'# -> "\0\5\0\0\49\20CHARACTER TABULATION\21HORIZONTAL TABULATION\0\2HT\3TAB\0\0"#
+  '\x000A'# -> "\0\5\0\0\37\9LINE FEED\8NEW LINE\11END OF LINE\0\2LF\2NL\3EOL\0\0"#
+  '\x000B'# -> "\0\5\0\0\42\15LINE TABULATION\19VERTICAL TABULATION\0\2VT\0\0"#
+  '\x000C'# -> "\0\5\0\0\16\9FORM FEED\0\2FF\0\0"#
+  '\x000D'# -> "\0\5\0\0\22\15CARRIAGE RETURN\0\2CR\0\0"#
+  '\x000E'# -> "\0\5\0\0\34\9SHIFT OUT\17LOCKING-SHIFT ONE\0\2SO\0\0"#
+  '\x000F'# -> "\0\5\0\0\34\8SHIFT IN\18LOCKING-SHIFT ZERO\0\2SI\0\0"#
+  '\x0010'# -> "\0\5\0\0\23\16DATA LINK ESCAPE\0\3DLE\0\0"#
+  '\x0011'# -> "\0\5\0\0\25\18DEVICE CONTROL ONE\0\3DC1\0\0"#
+  '\x0012'# -> "\0\5\0\0\25\18DEVICE CONTROL TWO\0\3DC2\0\0"#
+  '\x0013'# -> "\0\5\0\0\27\20DEVICE CONTROL THREE\0\3DC3\0\0"#
+  '\x0014'# -> "\0\5\0\0\26\19DEVICE CONTROL FOUR\0\3DC4\0\0"#
+  '\x0015'# -> "\0\5\0\0\27\20NEGATIVE ACKNOWLEDGE\0\3NAK\0\0"#
+  '\x0016'# -> "\0\5\0\0\23\16SYNCHRONOUS IDLE\0\3SYN\0\0"#
+  '\x0017'# -> "\0\5\0\0\32\25END OF TRANSMISSION BLOCK\0\3ETB\0\0"#
+  '\x0018'# -> "\0\5\0\0\13\6CANCEL\0\3CAN\0\0"#
+  '\x0019'# -> "\0\5\0\0\20\13END OF MEDIUM\0\3EOM\2EM\0\0"#
+  '\x001A'# -> "\0\5\0\0\17\10SUBSTITUTE\0\3SUB\0\0"#
+  '\x001B'# -> "\0\5\0\0\13\6ESCAPE\0\3ESC\0\0"#
+  '\x001C'# -> "\0\5\0\0\48\26INFORMATION SEPARATOR FOUR\14FILE SEPARATOR\0\2FS\0\0"#
+  '\x001D'# -> "\0\5\0\0\50\27INFORMATION SEPARATOR THREE\15GROUP SEPARATOR\0\2GS\0\0"#
+  '\x001E'# -> "\0\5\0\0\49\25INFORMATION SEPARATOR TWO\16RECORD SEPARATOR\0\2RS\0\0"#
+  '\x001F'# -> "\0\5\0\0\47\25INFORMATION SEPARATOR ONE\14UNIT SEPARATOR\0\2US\0\0"#
+  '\x0020'# -> "\0\0\0\0\5\2SP\0\0"#
+  '\x007F'# -> "\0\5\0\0\13\6DELETE\0\3DEL\0\0"#
+  '\x0080'# -> "\0\0\0\5\24\17PADDING CHARACTER\0\3PAD\0\0"#
+  '\x0081'# -> "\0\0\0\5\24\17HIGH OCTET PRESET\0\3HOP\0\0"#
+  '\x0082'# -> "\0\5\0\0\27\20BREAK PERMITTED HERE\0\3BPH\0\0"#
+  '\x0083'# -> "\0\5\0\0\20\13NO BREAK HERE\0\3NBH\0\0"#
+  '\x0084'# -> "\0\5\0\0\12\5INDEX\0\3IND\0\0"#
+  '\x0085'# -> "\0\5\0\0\16\9NEXT LINE\0\3NEL\0\0"#
+  '\x0086'# -> "\0\5\0\0\29\22START OF SELECTED AREA\0\3SSA\0\0"#
+  '\x0087'# -> "\0\5\0\0\27\20END OF SELECTED AREA\0\3ESA\0\0"#
+  '\x0088'# -> "\0\5\0\0\57\24CHARACTER TABULATION SET\25HORIZONTAL TABULATION SET\0\3HTS\0\0"#
+  '\x0089'# -> "\0\5\0\0\87\39CHARACTER TABULATION WITH JUSTIFICATION\40HORIZONTAL TABULATION WITH JUSTIFICATION\0\3HTJ\0\0"#
+  '\x008A'# -> "\0\5\0\0\50\19LINE TABULATION SET\23VERTICAL TABULATION SET\0\3VTS\0\0"#
+  '\x008B'# -> "\0\5\0\0\45\20PARTIAL LINE FORWARD\17PARTIAL LINE DOWN\0\3PLD\0\0"#
+  '\x008C'# -> "\0\5\0\0\44\21PARTIAL LINE BACKWARD\15PARTIAL LINE UP\0\3PLU\0\0"#
+  '\x008D'# -> "\0\5\0\0\38\17REVERSE LINE FEED\13REVERSE INDEX\0\2RI\0\0"#
+  '\x008E'# -> "\0\5\0\0\38\16SINGLE SHIFT TWO\14SINGLE-SHIFT-2\0\3SS2\0\0"#
+  '\x008F'# -> "\0\5\0\0\40\18SINGLE SHIFT THREE\14SINGLE-SHIFT-3\0\3SS3\0\0"#
+  '\x0090'# -> "\0\5\0\0\28\21DEVICE CONTROL STRING\0\3DCS\0\0"#
+  '\x0091'# -> "\0\5\0\0\36\15PRIVATE USE ONE\13PRIVATE USE-1\0\3PU1\0\0"#
+  '\x0092'# -> "\0\5\0\0\36\15PRIVATE USE TWO\13PRIVATE USE-2\0\3PU2\0\0"#
+  '\x0093'# -> "\0\5\0\0\25\18SET TRANSMIT STATE\0\3STS\0\0"#
+  '\x0094'# -> "\0\5\0\0\23\16CANCEL CHARACTER\0\3CCH\0\0"#
+  '\x0095'# -> "\0\5\0\0\22\15MESSAGE WAITING\0\2MW\0\0"#
+  '\x0096'# -> "\0\5\0\0\52\21START OF GUARDED AREA\23START OF PROTECTED AREA\0\3SPA\0\0"#
+  '\x0097'# -> "\0\5\0\0\48\19END OF GUARDED AREA\21END OF PROTECTED AREA\0\3EPA\0\0"#
+  '\x0098'# -> "\0\5\0\0\22\15START OF STRING\0\3SOS\0\0"#
+  '\x0099'# -> "\0\0\0\5\42\35SINGLE GRAPHIC CHARACTER INTRODUCER\0\3SGC\0\0"#
+  '\x009A'# -> "\0\5\0\0\34\27SINGLE CHARACTER INTRODUCER\0\3SCI\0\0"#
+  '\x009B'# -> "\0\5\0\0\34\27CONTROL SEQUENCE INTRODUCER\0\3CSI\0\0"#
+  '\x009C'# -> "\0\5\0\0\24\17STRING TERMINATOR\0\2ST\0\0"#
+  '\x009D'# -> "\0\5\0\0\31\24OPERATING SYSTEM COMMAND\0\3OSC\0\0"#
+  '\x009E'# -> "\0\5\0\0\22\15PRIVACY MESSAGE\0\2PM\0\0"#
+  '\x009F'# -> "\0\5\0\0\34\27APPLICATION PROGRAM COMMAND\0\3APC\0\0"#
+  '\x00A0'# -> "\0\0\0\0\5\4NBSP\0\0"#
+  '\x00AD'# -> "\0\0\0\0\5\3SHY\0\0"#
+  '\x01A2'# -> "\5\0\0\0\0\24LATIN CAPITAL LETTER GHA\0\0"#
+  '\x01A3'# -> "\5\0\0\0\0\22LATIN SMALL LETTER GHA\0\0"#
+  '\x034F'# -> "\0\0\0\0\5\3CGJ\0\0"#
+  '\x0616'# -> "\5\0\0\0\0\47ARABIC SMALL HIGH LIGATURE ALEF WITH YEH BARREE\0\0"#
+  '\x061C'# -> "\0\0\0\0\5\3ALM\0\0"#
+  '\x0709'# -> "\5\0\0\0\0\34SYRIAC SUBLINEAR COLON SKEWED LEFT\0\0"#
+  '\x0CDE'# -> "\5\0\0\0\0\19KANNADA LETTER LLLA\0\0"#
+  '\x0E9D'# -> "\5\0\0\0\0\17LAO LETTER FO FON\0\0"#
+  '\x0E9F'# -> "\5\0\0\0\0\17LAO LETTER FO FAY\0\0"#
+  '\x0EA3'# -> "\5\0\0\0\0\13LAO LETTER RO\0\0"#
+  '\x0EA5'# -> "\5\0\0\0\0\13LAO LETTER LO\0\0"#
+  '\x0FD0'# -> "\5\0\0\0\0\35TIBETAN MARK BKA- SHOG GI MGO RGYAN\0\0"#
+  '\x11EC'# -> "\5\0\0\0\0\32HANGUL JONGSEONG YESIEUNG-KIYEOK\0\0"#
+  '\x11ED'# -> "\5\0\0\0\0\37HANGUL JONGSEONG YESIEUNG-SSANGKIYEOK\0\0"#
+  '\x11EE'# -> "\5\0\0\0\0\30HANGUL JONGSEONG SSANGYESIEUNG\0\0"#
+  '\x11EF'# -> "\5\0\0\0\0\33HANGUL JONGSEONG YESIEUNG-KHIEUKH\0\0"#
+  '\x180B'# -> "\0\0\0\0\5\4FVS1\0\0"#
+  '\x180C'# -> "\0\0\0\0\5\4FVS2\0\0"#
+  '\x180D'# -> "\0\0\0\0\5\4FVS3\0\0"#
+  '\x180E'# -> "\0\0\0\0\5\3MVS\0\0"#
+  '\x180F'# -> "\0\0\0\0\5\4FVS4\0\0"#
+  '\x1BBD'# -> "\5\0\0\0\0\26SUNDANESE LETTER ARCHAIC I\0\0"#
+  '\x200B'# -> "\0\0\0\0\5\4ZWSP\0\0"#
+  '\x200C'# -> "\0\0\0\0\5\4ZWNJ\0\0"#
+  '\x200D'# -> "\0\0\0\0\5\3ZWJ\0\0"#
+  '\x200E'# -> "\0\0\0\0\5\3LRM\0\0"#
+  '\x200F'# -> "\0\0\0\0\5\3RLM\0\0"#
+  '\x202A'# -> "\0\0\0\0\5\3LRE\0\0"#
+  '\x202B'# -> "\0\0\0\0\5\3RLE\0\0"#
+  '\x202C'# -> "\0\0\0\0\5\3PDF\0\0"#
+  '\x202D'# -> "\0\0\0\0\5\3LRO\0\0"#
+  '\x202E'# -> "\0\0\0\0\5\3RLO\0\0"#
+  '\x202F'# -> "\0\0\0\0\5\5NNBSP\0\0"#
+  '\x205F'# -> "\0\0\0\0\5\4MMSP\0\0"#
+  '\x2060'# -> "\0\0\0\0\5\2WJ\0\0"#
+  '\x2066'# -> "\0\0\0\0\5\3LRI\0\0"#
+  '\x2067'# -> "\0\0\0\0\5\3RLI\0\0"#
+  '\x2068'# -> "\0\0\0\0\5\3FSI\0\0"#
+  '\x2069'# -> "\0\0\0\0\5\3PDI\0\0"#
+  '\x2118'# -> "\5\0\0\0\0\29WEIERSTRASS ELLIPTIC FUNCTION\0\0"#
+  '\x2448'# -> "\5\0\0\0\0\17MICR ON US SYMBOL\0\0"#
+  '\x2449'# -> "\5\0\0\0\0\16MICR DASH SYMBOL\0\0"#
+  '\x2B7A'# -> "\5\0\0\0\0\59LEFTWARDS TRIANGLE-HEADED ARROW WITH DOUBLE VERTICAL STROKE\0\0"#
+  '\x2B7C'# -> "\5\0\0\0\0\60RIGHTWARDS TRIANGLE-HEADED ARROW WITH DOUBLE VERTICAL STROKE\0\0"#
+  '\xA015'# -> "\5\0\0\0\0\26YI SYLLABLE ITERATION MARK\0\0"#
+  '\xAA6E'# -> "\5\0\0\0\0\25MYANMAR LETTER KHAMTI LLA\0\0"#
+  '\xFE00'# -> "\0\0\0\0\5\3VS1\0\0"#
+  '\xFE01'# -> "\0\0\0\0\5\3VS2\0\0"#
+  '\xFE02'# -> "\0\0\0\0\5\3VS3\0\0"#
+  '\xFE03'# -> "\0\0\0\0\5\3VS4\0\0"#
+  '\xFE04'# -> "\0\0\0\0\5\3VS5\0\0"#
+  '\xFE05'# -> "\0\0\0\0\5\3VS6\0\0"#
+  '\xFE06'# -> "\0\0\0\0\5\3VS7\0\0"#
+  '\xFE07'# -> "\0\0\0\0\5\3VS8\0\0"#
+  '\xFE08'# -> "\0\0\0\0\5\3VS9\0\0"#
+  '\xFE09'# -> "\0\0\0\0\5\4VS10\0\0"#
+  '\xFE0A'# -> "\0\0\0\0\5\4VS11\0\0"#
+  '\xFE0B'# -> "\0\0\0\0\5\4VS12\0\0"#
+  '\xFE0C'# -> "\0\0\0\0\5\4VS13\0\0"#
+  '\xFE0D'# -> "\0\0\0\0\5\4VS14\0\0"#
+  '\xFE0E'# -> "\0\0\0\0\5\4VS15\0\0"#
+  '\xFE0F'# -> "\0\0\0\0\5\4VS16\0\0"#
+  '\xFE18'# -> "\5\0\0\0\0\61PRESENTATION FORM FOR VERTICAL RIGHT WHITE LENTICULAR BRACKET\0\0"#
+  '\xFEFF'# -> "\0\0\5\0\22\15BYTE ORDER MARK\0\3BOM\6ZWNBSP\0\0"#
+  '\x122D4'# -> "\5\0\0\0\0\24CUNEIFORM SIGN NU11 TENU\0\0"#
+  '\x122D5'# -> "\5\0\0\0\0\42CUNEIFORM SIGN NU11 OVER NU11 BUR OVER BUR\0\0"#
+  '\x16E56'# -> "\5\0\0\0\0\28MEDEFAIDRIN CAPITAL LETTER H\0\0"#
+  '\x16E57'# -> "\5\0\0\0\0\29MEDEFAIDRIN CAPITAL LETTER NG\0\0"#
+  '\x16E76'# -> "\5\0\0\0\0\26MEDEFAIDRIN SMALL LETTER H\0\0"#
+  '\x16E77'# -> "\5\0\0\0\0\27MEDEFAIDRIN SMALL LETTER NG\0\0"#
+  '\x1B001'# -> "\5\0\0\0\0\21HENTAIGANA LETTER E-1\0\0"#
+  '\x1D0C5'# -> "\5\0\0\0\0\52BYZANTINE MUSICAL SYMBOL FTHORA SKLIRON CHROMA VASIS\0\0"#
+  '\xE0100'# -> "\0\0\0\0\5\4VS17\0\0"#
+  '\xE0101'# -> "\0\0\0\0\5\4VS18\0\0"#
+  '\xE0102'# -> "\0\0\0\0\5\4VS19\0\0"#
+  '\xE0103'# -> "\0\0\0\0\5\4VS20\0\0"#
+  '\xE0104'# -> "\0\0\0\0\5\4VS21\0\0"#
+  '\xE0105'# -> "\0\0\0\0\5\4VS22\0\0"#
+  '\xE0106'# -> "\0\0\0\0\5\4VS23\0\0"#
+  '\xE0107'# -> "\0\0\0\0\5\4VS24\0\0"#
+  '\xE0108'# -> "\0\0\0\0\5\4VS25\0\0"#
+  '\xE0109'# -> "\0\0\0\0\5\4VS26\0\0"#
+  '\xE010A'# -> "\0\0\0\0\5\4VS27\0\0"#
+  '\xE010B'# -> "\0\0\0\0\5\4VS28\0\0"#
+  '\xE010C'# -> "\0\0\0\0\5\4VS29\0\0"#
+  '\xE010D'# -> "\0\0\0\0\5\4VS30\0\0"#
+  '\xE010E'# -> "\0\0\0\0\5\4VS31\0\0"#
+  '\xE010F'# -> "\0\0\0\0\5\4VS32\0\0"#
+  '\xE0110'# -> "\0\0\0\0\5\4VS33\0\0"#
+  '\xE0111'# -> "\0\0\0\0\5\4VS34\0\0"#
+  '\xE0112'# -> "\0\0\0\0\5\4VS35\0\0"#
+  '\xE0113'# -> "\0\0\0\0\5\4VS36\0\0"#
+  '\xE0114'# -> "\0\0\0\0\5\4VS37\0\0"#
+  '\xE0115'# -> "\0\0\0\0\5\4VS38\0\0"#
+  '\xE0116'# -> "\0\0\0\0\5\4VS39\0\0"#
+  '\xE0117'# -> "\0\0\0\0\5\4VS40\0\0"#
+  '\xE0118'# -> "\0\0\0\0\5\4VS41\0\0"#
+  '\xE0119'# -> "\0\0\0\0\5\4VS42\0\0"#
+  '\xE011A'# -> "\0\0\0\0\5\4VS43\0\0"#
+  '\xE011B'# -> "\0\0\0\0\5\4VS44\0\0"#
+  '\xE011C'# -> "\0\0\0\0\5\4VS45\0\0"#
+  '\xE011D'# -> "\0\0\0\0\5\4VS46\0\0"#
+  '\xE011E'# -> "\0\0\0\0\5\4VS47\0\0"#
+  '\xE011F'# -> "\0\0\0\0\5\4VS48\0\0"#
+  '\xE0120'# -> "\0\0\0\0\5\4VS49\0\0"#
+  '\xE0121'# -> "\0\0\0\0\5\4VS50\0\0"#
+  '\xE0122'# -> "\0\0\0\0\5\4VS51\0\0"#
+  '\xE0123'# -> "\0\0\0\0\5\4VS52\0\0"#
+  '\xE0124'# -> "\0\0\0\0\5\4VS53\0\0"#
+  '\xE0125'# -> "\0\0\0\0\5\4VS54\0\0"#
+  '\xE0126'# -> "\0\0\0\0\5\4VS55\0\0"#
+  '\xE0127'# -> "\0\0\0\0\5\4VS56\0\0"#
+  '\xE0128'# -> "\0\0\0\0\5\4VS57\0\0"#
+  '\xE0129'# -> "\0\0\0\0\5\4VS58\0\0"#
+  '\xE012A'# -> "\0\0\0\0\5\4VS59\0\0"#
+  '\xE012B'# -> "\0\0\0\0\5\4VS60\0\0"#
+  '\xE012C'# -> "\0\0\0\0\5\4VS61\0\0"#
+  '\xE012D'# -> "\0\0\0\0\5\4VS62\0\0"#
+  '\xE012E'# -> "\0\0\0\0\5\4VS63\0\0"#
+  '\xE012F'# -> "\0\0\0\0\5\4VS64\0\0"#
+  '\xE0130'# -> "\0\0\0\0\5\4VS65\0\0"#
+  '\xE0131'# -> "\0\0\0\0\5\4VS66\0\0"#
+  '\xE0132'# -> "\0\0\0\0\5\4VS67\0\0"#
+  '\xE0133'# -> "\0\0\0\0\5\4VS68\0\0"#
+  '\xE0134'# -> "\0\0\0\0\5\4VS69\0\0"#
+  '\xE0135'# -> "\0\0\0\0\5\4VS70\0\0"#
+  '\xE0136'# -> "\0\0\0\0\5\4VS71\0\0"#
+  '\xE0137'# -> "\0\0\0\0\5\4VS72\0\0"#
+  '\xE0138'# -> "\0\0\0\0\5\4VS73\0\0"#
+  '\xE0139'# -> "\0\0\0\0\5\4VS74\0\0"#
+  '\xE013A'# -> "\0\0\0\0\5\4VS75\0\0"#
+  '\xE013B'# -> "\0\0\0\0\5\4VS76\0\0"#
+  '\xE013C'# -> "\0\0\0\0\5\4VS77\0\0"#
+  '\xE013D'# -> "\0\0\0\0\5\4VS78\0\0"#
+  '\xE013E'# -> "\0\0\0\0\5\4VS79\0\0"#
+  '\xE013F'# -> "\0\0\0\0\5\4VS80\0\0"#
+  '\xE0140'# -> "\0\0\0\0\5\4VS81\0\0"#
+  '\xE0141'# -> "\0\0\0\0\5\4VS82\0\0"#
+  '\xE0142'# -> "\0\0\0\0\5\4VS83\0\0"#
+  '\xE0143'# -> "\0\0\0\0\5\4VS84\0\0"#
+  '\xE0144'# -> "\0\0\0\0\5\4VS85\0\0"#
+  '\xE0145'# -> "\0\0\0\0\5\4VS86\0\0"#
+  '\xE0146'# -> "\0\0\0\0\5\4VS87\0\0"#
+  '\xE0147'# -> "\0\0\0\0\5\4VS88\0\0"#
+  '\xE0148'# -> "\0\0\0\0\5\4VS89\0\0"#
+  '\xE0149'# -> "\0\0\0\0\5\4VS90\0\0"#
+  '\xE014A'# -> "\0\0\0\0\5\4VS91\0\0"#
+  '\xE014B'# -> "\0\0\0\0\5\4VS92\0\0"#
+  '\xE014C'# -> "\0\0\0\0\5\4VS93\0\0"#
+  '\xE014D'# -> "\0\0\0\0\5\4VS94\0\0"#
+  '\xE014E'# -> "\0\0\0\0\5\4VS95\0\0"#
+  '\xE014F'# -> "\0\0\0\0\5\4VS96\0\0"#
+  '\xE0150'# -> "\0\0\0\0\5\4VS97\0\0"#
+  '\xE0151'# -> "\0\0\0\0\5\4VS98\0\0"#
+  '\xE0152'# -> "\0\0\0\0\5\4VS99\0\0"#
+  '\xE0153'# -> "\0\0\0\0\5\5VS100\0\0"#
+  '\xE0154'# -> "\0\0\0\0\5\5VS101\0\0"#
+  '\xE0155'# -> "\0\0\0\0\5\5VS102\0\0"#
+  '\xE0156'# -> "\0\0\0\0\5\5VS103\0\0"#
+  '\xE0157'# -> "\0\0\0\0\5\5VS104\0\0"#
+  '\xE0158'# -> "\0\0\0\0\5\5VS105\0\0"#
+  '\xE0159'# -> "\0\0\0\0\5\5VS106\0\0"#
+  '\xE015A'# -> "\0\0\0\0\5\5VS107\0\0"#
+  '\xE015B'# -> "\0\0\0\0\5\5VS108\0\0"#
+  '\xE015C'# -> "\0\0\0\0\5\5VS109\0\0"#
+  '\xE015D'# -> "\0\0\0\0\5\5VS110\0\0"#
+  '\xE015E'# -> "\0\0\0\0\5\5VS111\0\0"#
+  '\xE015F'# -> "\0\0\0\0\5\5VS112\0\0"#
+  '\xE0160'# -> "\0\0\0\0\5\5VS113\0\0"#
+  '\xE0161'# -> "\0\0\0\0\5\5VS114\0\0"#
+  '\xE0162'# -> "\0\0\0\0\5\5VS115\0\0"#
+  '\xE0163'# -> "\0\0\0\0\5\5VS116\0\0"#
+  '\xE0164'# -> "\0\0\0\0\5\5VS117\0\0"#
+  '\xE0165'# -> "\0\0\0\0\5\5VS118\0\0"#
+  '\xE0166'# -> "\0\0\0\0\5\5VS119\0\0"#
+  '\xE0167'# -> "\0\0\0\0\5\5VS120\0\0"#
+  '\xE0168'# -> "\0\0\0\0\5\5VS121\0\0"#
+  '\xE0169'# -> "\0\0\0\0\5\5VS122\0\0"#
+  '\xE016A'# -> "\0\0\0\0\5\5VS123\0\0"#
+  '\xE016B'# -> "\0\0\0\0\5\5VS124\0\0"#
+  '\xE016C'# -> "\0\0\0\0\5\5VS125\0\0"#
+  '\xE016D'# -> "\0\0\0\0\5\5VS126\0\0"#
+  '\xE016E'# -> "\0\0\0\0\5\5VS127\0\0"#
+  '\xE016F'# -> "\0\0\0\0\5\5VS128\0\0"#
+  '\xE0170'# -> "\0\0\0\0\5\5VS129\0\0"#
+  '\xE0171'# -> "\0\0\0\0\5\5VS130\0\0"#
+  '\xE0172'# -> "\0\0\0\0\5\5VS131\0\0"#
+  '\xE0173'# -> "\0\0\0\0\5\5VS132\0\0"#
+  '\xE0174'# -> "\0\0\0\0\5\5VS133\0\0"#
+  '\xE0175'# -> "\0\0\0\0\5\5VS134\0\0"#
+  '\xE0176'# -> "\0\0\0\0\5\5VS135\0\0"#
+  '\xE0177'# -> "\0\0\0\0\5\5VS136\0\0"#
+  '\xE0178'# -> "\0\0\0\0\5\5VS137\0\0"#
+  '\xE0179'# -> "\0\0\0\0\5\5VS138\0\0"#
+  '\xE017A'# -> "\0\0\0\0\5\5VS139\0\0"#
+  '\xE017B'# -> "\0\0\0\0\5\5VS140\0\0"#
+  '\xE017C'# -> "\0\0\0\0\5\5VS141\0\0"#
+  '\xE017D'# -> "\0\0\0\0\5\5VS142\0\0"#
+  '\xE017E'# -> "\0\0\0\0\5\5VS143\0\0"#
+  '\xE017F'# -> "\0\0\0\0\5\5VS144\0\0"#
+  '\xE0180'# -> "\0\0\0\0\5\5VS145\0\0"#
+  '\xE0181'# -> "\0\0\0\0\5\5VS146\0\0"#
+  '\xE0182'# -> "\0\0\0\0\5\5VS147\0\0"#
+  '\xE0183'# -> "\0\0\0\0\5\5VS148\0\0"#
+  '\xE0184'# -> "\0\0\0\0\5\5VS149\0\0"#
+  '\xE0185'# -> "\0\0\0\0\5\5VS150\0\0"#
+  '\xE0186'# -> "\0\0\0\0\5\5VS151\0\0"#
+  '\xE0187'# -> "\0\0\0\0\5\5VS152\0\0"#
+  '\xE0188'# -> "\0\0\0\0\5\5VS153\0\0"#
+  '\xE0189'# -> "\0\0\0\0\5\5VS154\0\0"#
+  '\xE018A'# -> "\0\0\0\0\5\5VS155\0\0"#
+  '\xE018B'# -> "\0\0\0\0\5\5VS156\0\0"#
+  '\xE018C'# -> "\0\0\0\0\5\5VS157\0\0"#
+  '\xE018D'# -> "\0\0\0\0\5\5VS158\0\0"#
+  '\xE018E'# -> "\0\0\0\0\5\5VS159\0\0"#
+  '\xE018F'# -> "\0\0\0\0\5\5VS160\0\0"#
+  '\xE0190'# -> "\0\0\0\0\5\5VS161\0\0"#
+  '\xE0191'# -> "\0\0\0\0\5\5VS162\0\0"#
+  '\xE0192'# -> "\0\0\0\0\5\5VS163\0\0"#
+  '\xE0193'# -> "\0\0\0\0\5\5VS164\0\0"#
+  '\xE0194'# -> "\0\0\0\0\5\5VS165\0\0"#
+  '\xE0195'# -> "\0\0\0\0\5\5VS166\0\0"#
+  '\xE0196'# -> "\0\0\0\0\5\5VS167\0\0"#
+  '\xE0197'# -> "\0\0\0\0\5\5VS168\0\0"#
+  '\xE0198'# -> "\0\0\0\0\5\5VS169\0\0"#
+  '\xE0199'# -> "\0\0\0\0\5\5VS170\0\0"#
+  '\xE019A'# -> "\0\0\0\0\5\5VS171\0\0"#
+  '\xE019B'# -> "\0\0\0\0\5\5VS172\0\0"#
+  '\xE019C'# -> "\0\0\0\0\5\5VS173\0\0"#
+  '\xE019D'# -> "\0\0\0\0\5\5VS174\0\0"#
+  '\xE019E'# -> "\0\0\0\0\5\5VS175\0\0"#
+  '\xE019F'# -> "\0\0\0\0\5\5VS176\0\0"#
+  '\xE01A0'# -> "\0\0\0\0\5\5VS177\0\0"#
+  '\xE01A1'# -> "\0\0\0\0\5\5VS178\0\0"#
+  '\xE01A2'# -> "\0\0\0\0\5\5VS179\0\0"#
+  '\xE01A3'# -> "\0\0\0\0\5\5VS180\0\0"#
+  '\xE01A4'# -> "\0\0\0\0\5\5VS181\0\0"#
+  '\xE01A5'# -> "\0\0\0\0\5\5VS182\0\0"#
+  '\xE01A6'# -> "\0\0\0\0\5\5VS183\0\0"#
+  '\xE01A7'# -> "\0\0\0\0\5\5VS184\0\0"#
+  '\xE01A8'# -> "\0\0\0\0\5\5VS185\0\0"#
+  '\xE01A9'# -> "\0\0\0\0\5\5VS186\0\0"#
+  '\xE01AA'# -> "\0\0\0\0\5\5VS187\0\0"#
+  '\xE01AB'# -> "\0\0\0\0\5\5VS188\0\0"#
+  '\xE01AC'# -> "\0\0\0\0\5\5VS189\0\0"#
+  '\xE01AD'# -> "\0\0\0\0\5\5VS190\0\0"#
+  '\xE01AE'# -> "\0\0\0\0\5\5VS191\0\0"#
+  '\xE01AF'# -> "\0\0\0\0\5\5VS192\0\0"#
+  '\xE01B0'# -> "\0\0\0\0\5\5VS193\0\0"#
+  '\xE01B1'# -> "\0\0\0\0\5\5VS194\0\0"#
+  '\xE01B2'# -> "\0\0\0\0\5\5VS195\0\0"#
+  '\xE01B3'# -> "\0\0\0\0\5\5VS196\0\0"#
+  '\xE01B4'# -> "\0\0\0\0\5\5VS197\0\0"#
+  '\xE01B5'# -> "\0\0\0\0\5\5VS198\0\0"#
+  '\xE01B6'# -> "\0\0\0\0\5\5VS199\0\0"#
+  '\xE01B7'# -> "\0\0\0\0\5\5VS200\0\0"#
+  '\xE01B8'# -> "\0\0\0\0\5\5VS201\0\0"#
+  '\xE01B9'# -> "\0\0\0\0\5\5VS202\0\0"#
+  '\xE01BA'# -> "\0\0\0\0\5\5VS203\0\0"#
+  '\xE01BB'# -> "\0\0\0\0\5\5VS204\0\0"#
+  '\xE01BC'# -> "\0\0\0\0\5\5VS205\0\0"#
+  '\xE01BD'# -> "\0\0\0\0\5\5VS206\0\0"#
+  '\xE01BE'# -> "\0\0\0\0\5\5VS207\0\0"#
+  '\xE01BF'# -> "\0\0\0\0\5\5VS208\0\0"#
+  '\xE01C0'# -> "\0\0\0\0\5\5VS209\0\0"#
+  '\xE01C1'# -> "\0\0\0\0\5\5VS210\0\0"#
+  '\xE01C2'# -> "\0\0\0\0\5\5VS211\0\0"#
+  '\xE01C3'# -> "\0\0\0\0\5\5VS212\0\0"#
+  '\xE01C4'# -> "\0\0\0\0\5\5VS213\0\0"#
+  '\xE01C5'# -> "\0\0\0\0\5\5VS214\0\0"#
+  '\xE01C6'# -> "\0\0\0\0\5\5VS215\0\0"#
+  '\xE01C7'# -> "\0\0\0\0\5\5VS216\0\0"#
+  '\xE01C8'# -> "\0\0\0\0\5\5VS217\0\0"#
+  '\xE01C9'# -> "\0\0\0\0\5\5VS218\0\0"#
+  '\xE01CA'# -> "\0\0\0\0\5\5VS219\0\0"#
+  '\xE01CB'# -> "\0\0\0\0\5\5VS220\0\0"#
+  '\xE01CC'# -> "\0\0\0\0\5\5VS221\0\0"#
+  '\xE01CD'# -> "\0\0\0\0\5\5VS222\0\0"#
+  '\xE01CE'# -> "\0\0\0\0\5\5VS223\0\0"#
+  '\xE01CF'# -> "\0\0\0\0\5\5VS224\0\0"#
+  '\xE01D0'# -> "\0\0\0\0\5\5VS225\0\0"#
+  '\xE01D1'# -> "\0\0\0\0\5\5VS226\0\0"#
+  '\xE01D2'# -> "\0\0\0\0\5\5VS227\0\0"#
+  '\xE01D3'# -> "\0\0\0\0\5\5VS228\0\0"#
+  '\xE01D4'# -> "\0\0\0\0\5\5VS229\0\0"#
+  '\xE01D5'# -> "\0\0\0\0\5\5VS230\0\0"#
+  '\xE01D6'# -> "\0\0\0\0\5\5VS231\0\0"#
+  '\xE01D7'# -> "\0\0\0\0\5\5VS232\0\0"#
+  '\xE01D8'# -> "\0\0\0\0\5\5VS233\0\0"#
+  '\xE01D9'# -> "\0\0\0\0\5\5VS234\0\0"#
+  '\xE01DA'# -> "\0\0\0\0\5\5VS235\0\0"#
+  '\xE01DB'# -> "\0\0\0\0\5\5VS236\0\0"#
+  '\xE01DC'# -> "\0\0\0\0\5\5VS237\0\0"#
+  '\xE01DD'# -> "\0\0\0\0\5\5VS238\0\0"#
+  '\xE01DE'# -> "\0\0\0\0\5\5VS239\0\0"#
+  '\xE01DF'# -> "\0\0\0\0\5\5VS240\0\0"#
+  '\xE01E0'# -> "\0\0\0\0\5\5VS241\0\0"#
+  '\xE01E1'# -> "\0\0\0\0\5\5VS242\0\0"#
+  '\xE01E2'# -> "\0\0\0\0\5\5VS243\0\0"#
+  '\xE01E3'# -> "\0\0\0\0\5\5VS244\0\0"#
+  '\xE01E4'# -> "\0\0\0\0\5\5VS245\0\0"#
+  '\xE01E5'# -> "\0\0\0\0\5\5VS246\0\0"#
+  '\xE01E6'# -> "\0\0\0\0\5\5VS247\0\0"#
+  '\xE01E7'# -> "\0\0\0\0\5\5VS248\0\0"#
+  '\xE01E8'# -> "\0\0\0\0\5\5VS249\0\0"#
+  '\xE01E9'# -> "\0\0\0\0\5\5VS250\0\0"#
+  '\xE01EA'# -> "\0\0\0\0\5\5VS251\0\0"#
+  '\xE01EB'# -> "\0\0\0\0\5\5VS252\0\0"#
+  '\xE01EC'# -> "\0\0\0\0\5\5VS253\0\0"#
+  '\xE01ED'# -> "\0\0\0\0\5\5VS254\0\0"#
+  '\xE01EE'# -> "\0\0\0\0\5\5VS255\0\0"#
+  '\xE01EF'# -> "\0\0\0\0\5\5VS256\0\0"#
+  _          -> "\xff"#
