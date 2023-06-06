@@ -65,7 +65,7 @@ library
   build-depends:
     base             >= 4.7   && < 4.19,
     text             >= 1.2.4 && < 2.1,
-    unicode-data     >= 0.3   && < 0.5
+    unicode-data     >= 0.5   && < 0.6
 
 test-suite test
   import: default-extensions, compile-options
@@ -96,7 +96,7 @@ benchmark bench
     tasty-bench      >= 0.2.5 && < 0.4,
     tasty            >= 1.4.1 && < 1.5,
     text             >= 1.2.4 && < 2.1,
-    unicode-data     >= 0.3   && < 0.5,
+    unicode-data     >= 0.5   && < 0.6,
     unicode-data-text
   -- [NOTE] Recommendation of tasty-bench to reduce garbage collection noisiness
   ghc-options: -O2 -fdicts-strict -rtsopts -with-rtsopts=-A32m
