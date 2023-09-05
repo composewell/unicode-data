@@ -13,3 +13,9 @@ allow-newer:
     *:integer-gmp,
     *:integer-simple,
     *:template-haskell
+
+-- Allow to build with GHC 9.8+
+if impl(ghc >= 9.8)
+    allow-newer:
+        *:hspec,
+        *:deepseq
