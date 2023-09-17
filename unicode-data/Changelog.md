@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0 (June 2023)
+
+- Fix the inlining of `Addr#` literals and reduce their size. This results in
+  a sensible decrease of the executable size.
+
 ## 0.4.0.1 (December 2022)
 
 - Fix [Unicode blocks handling on big-endian architectures](https://github.com/composewell/unicode-data/issues/97).
