@@ -124,7 +124,7 @@ test-suite test
     , unicode-data
   -- We need to match a GHC version with the same Unicode version.
   -- See: test/Unicode/CharSpec.hs for compatibility table.
-  if impl(ghc >= 9.6.0)
+  if impl(ghc >= 9.6.0) && impl(ghc < 9.8.0)
     cpp-options: -DCOMPATIBLE_GHC_UNICODE
 
 benchmark bench
