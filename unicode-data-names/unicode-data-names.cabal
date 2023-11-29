@@ -84,7 +84,7 @@ library
 
   hs-source-dirs: lib
   build-depends:
-      base             >= 4.7   && < 4.19,
+      base             >= 4.7   && < 4.20,
 
 test-suite test
   import: default-extensions, compile-options
@@ -95,8 +95,8 @@ test-suite test
   other-modules:
       Unicode.Char.General.NamesSpec
   build-depends:
-      base             >= 4.7   && < 4.19
-    , hspec            >= 2.0   && < 2.11
+      base             >= 4.7   && < 4.20
+    , hspec            >= 2.0   && < 2.12
     , unicode-data     >= 0.4   && < 0.5
     , unicode-data-names
 
@@ -120,8 +120,8 @@ benchmark bench
   hs-source-dirs: bench
   main-is: Main.hs
   build-depends:
-    base        >= 4.7   && < 4.19,
-    deepseq     >= 1.1   && < 1.5,
+    base        >= 4.7   && < 4.20,
+    deepseq     >= 1.1   && < 1.6,
     tasty-bench >= 0.2.5 && < 0.4,
     tasty       >= 1.4.1 && < 1.5,
     unicode-data-names
