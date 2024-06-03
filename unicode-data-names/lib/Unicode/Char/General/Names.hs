@@ -8,9 +8,10 @@
 -- Unicode character names and name aliases with 'String' API.
 -- See Unicode standard 15.0.0, section 4.8.
 --
--- There are also an optional API:
+-- There are also two optional APIs:
 --
 -- * @ByteString@ API, which requires using the package flag @has-bytestring@.
+-- * @Text@ API, which requires using the package flag @has-text@.
 --
 -- @since 0.1.0
 

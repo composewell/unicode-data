@@ -21,8 +21,15 @@ import qualified Unicode.Internal.Char.UnicodeData.NameAliases as NameAliases
 import qualified Unicode.Char.General.Names.ByteString as ByteString
 import Data.ByteString ()
 #endif
+#ifdef HAS_TEXT
+import qualified Unicode.Char.General.Names.Text as Text
+import Data.Text ()
+#endif
 #ifdef HAS_ICU
 import qualified ICU.Names as ICUString
+#ifdef HAS_TEXT
+import qualified ICU.Names.Text as ICUText
+#endif
 #endif
 
 --------------------------------------------------------------------------------
@@ -117,6 +124,14 @@ benchmarks charRange charFilter = bgroup "All"
 -- #endif
                 ]
 #endif
+#ifdef HAS_TEXT
+            , bgroup' "name" "Text"
+                [ Bench "unicode-data" Text.name
+#ifdef HAS_ICU
+                , Bench "icu"          ICUText.name
+#endif
+                ]
+#endif
             ]
         , bgroup "correctedName"
             [ bgroup' "correctedName" "String"
@@ -133,6 +148,14 @@ benchmarks charRange charFilter = bgroup "All"
 -- #endif
                 ]
 #endif
+#ifdef HAS_TEXT
+            , bgroup' "correctedName" "Text"
+                [ Bench "unicode-data" Text.correctedName
+#ifdef HAS_ICU
+                , Bench "icu"          ICUText.correctedName
+#endif
+                ]
+#endif
             ]
         , bgroup "nameOrAlias"
             [ bgroup' "nameOrAlias" "String"
@@ -141,6 +164,11 @@ benchmarks charRange charFilter = bgroup "All"
 #ifdef HAS_BYTESTRING
             , bgroup' "nameOrAlias" "ByteString"
                 [ Bench "unicode-data" ByteString.nameOrAlias
+                ]
+#endif
+#ifdef HAS_TEXT
+            , bgroup' "nameOrAlias" "Text"
+                [ Bench "unicode-data" Text.nameOrAlias
                 ]
 #endif
             ]
@@ -155,6 +183,12 @@ benchmarks charRange charFilter = bgroup "All"
                     (\c -> fold_ (`String.nameAliasesByType` c))
                 ]
 #endif
+#ifdef HAS_TEXT
+            , bgroup' "nameAliasesByType" "Text"
+                [ Bench "unicode-data"
+                    (\c -> fold_ (`String.nameAliasesByType` c))
+                ]
+#endif
             ]
         , bgroup "nameAliasesWithTypes"
             [ bgroup' "nameAliasesWithTypes" "String"
@@ -165,6 +199,11 @@ benchmarks charRange charFilter = bgroup "All"
                 [ Bench "unicode-data" ByteString.nameAliasesWithTypes
                 ]
 #endif
+#ifdef HAS_TEXT
+            , bgroup' "nameAliasesWithTypes" "Text"
+                [ Bench "unicode-data" Text.nameAliasesWithTypes
+                ]
+#endif
             ]
         , bgroup "nameAliases"
             [ bgroup' "nameAliases" "String"
@@ -173,6 +212,11 @@ benchmarks charRange charFilter = bgroup "All"
 #ifdef HAS_BYTESTRING
             , bgroup' "nameAliases" "ByteString"
                 [ Bench "unicode-data" ByteString.nameAliases
+                ]
+#endif
+#ifdef HAS_TEXT
+            , bgroup' "nameAliases" "Text"
+                [ Bench "unicode-data" Text.nameAliases
                 ]
 #endif
             ]

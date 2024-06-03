@@ -23,6 +23,10 @@ import qualified ICU.Names as ICUString
 import qualified Data.ByteString.Char8 as B8
 import qualified Unicode.Char.General.Names.ByteString as ByteString
 #endif
+#ifdef HAS_TEXT
+import qualified Unicode.Char.General.Names.Text as Text
+import qualified ICU.Names.Text as ICUText
+#endif
 
 spec :: Spec
 spec = do
@@ -33,6 +37,10 @@ spec = do
         it "ByteString" do
             traverse_ (check ByteString.name (fmap B8.pack . ICUString.name)) [minBound..maxBound]
 #endif
+#ifdef HAS_TEXT
+        it "Text" do
+            traverse_ (check Text.name ICUText.name) [minBound..maxBound]
+#endif
     describe' "correctedName" do
         it "String" do
             traverse_
@@ -42,6 +50,12 @@ spec = do
         it "ByteString" do
             traverse_
                 (check ByteString.correctedName (fmap B8.pack . ICUString.correctedName))
+                [minBound..maxBound]
+#endif
+#ifdef HAS_TEXT
+        it "Text" do
+            traverse_
+                (check Text.correctedName ICUText.correctedName)
                 [minBound..maxBound]
 #endif
     where
