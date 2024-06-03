@@ -1,10 +1,11 @@
 module Main where
 
-import Test.Hspec
-import qualified Unicode.Char.General.NamesSpec as Names
+import Test.Hspec ( Spec, hspec, describe )
+import qualified Unicode.Char.General.NamesSpec as String
 
 main :: IO ()
 main = hspec spec
 
 spec :: Spec
-spec = describe "Unicode.Char.General.Names" Names.spec
+spec = do
+    describe "Unicode.Char.General.Names" String.spec

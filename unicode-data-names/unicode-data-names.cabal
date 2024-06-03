@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                unicode-data-names
-version:             0.2.0
+version:             0.3.0
 synopsis:            Unicode characters names and aliases
 description:
   @unicode-data-names@ provides Haskell APIs to access the Unicode
@@ -85,6 +85,10 @@ library
   hs-source-dirs: lib
   build-depends:
       base             >= 4.7   && < 4.20,
+  -- Support for raw string literals unpacking is included in base ≥ 4.15
+  if impl(ghc < 9.0.0)
+    build-depends:
+      ghc-prim >= 0.3.1 && < 1.0
 
 test-suite test
   import: default-extensions, compile-options
@@ -120,10 +124,11 @@ benchmark bench
   hs-source-dirs: bench
   main-is: Main.hs
   build-depends:
-    base        >= 4.7   && < 4.20,
-    deepseq     >= 1.1   && < 1.6,
-    tasty-bench >= 0.2.5 && < 0.4,
-    tasty       >= 1.4.1 && < 1.6,
+    base         >= 4.7   && < 4.20,
+    deepseq      >= 1.1   && < 1.6,
+    tasty-bench  >= 0.2.5 && < 0.4,
+    tasty        >= 1.4.1 && < 1.6,
+    unicode-data >= 0.4   && < 0.5,
     unicode-data-names
   -- [NOTE] Recommendation of tasty-bench to reduce garbage collection noisiness
   ghc-options: -O2 -fdicts-strict -rtsopts -with-rtsopts=-A32m
