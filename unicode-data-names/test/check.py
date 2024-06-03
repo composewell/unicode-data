@@ -70,7 +70,6 @@ if __name__ == "__main__":
         for row in reader:
             raw_code, name = row
             char = parse_codepoint(raw_code)
-            codepoint = f"U+{raw_code.upper():0>4}"
             has_warnings = check_name(char, name, args.verbosity) or has_warnings
 
         if has_warnings:

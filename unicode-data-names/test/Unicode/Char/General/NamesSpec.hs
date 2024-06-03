@@ -4,13 +4,27 @@ module Unicode.Char.General.NamesSpec
   ( spec
   ) where
 
+import GHC.Exts (Char(..), isTrue#, (<#), ord#, andI#)
 import Unicode.Char.General
+    ( generalCategory,
+      GeneralCategory(NotAssigned, Surrogate, PrivateUse) )
 import Unicode.Char.General.Names
+    ( NameAliasType (..), correctedName, name, nameOrAlias, nameAliasesWithTypes, nameAliases, nameAliasesByType )
+import qualified Unicode.Internal.Char.UnicodeData.DerivedName as DerivedName
 import Data.Foldable (traverse_)
-import Test.Hspec
+import Test.Hspec ( Spec, it, shouldBe, shouldSatisfy, describe )
 
 spec :: Spec
 spec = do
+    it "template hex code length is 4 or 5"
+        -- Ensure no padding is required for hexadecimal codepoints and
+        -- that we the allocation is correct for ByteString & Text APIs.
+        let {
+            check (C# c#) = case DerivedName.name c# of
+                (# _, len# #) ->
+                    isTrue# (len# <# DerivedName.CjkCompatibilityIdeograph) ||
+                    isTrue# ((0xFFF# <# ord# c#) `andI#` (ord# c# <# 0x100000#))
+        } in traverse_ (`shouldSatisfy` check) [minBound..maxBound]
     it "name: Test some characters" do
         name minBound  `shouldBe` Nothing
         name 'A'       `shouldBe` Just "LATIN CAPITAL LETTER A"
@@ -71,6 +85,44 @@ spec = do
         -- Last name defined, as of Unicode 15.0.0
         nameOrAlias '\xe01ef' `shouldBe` Just "VARIATION SELECTOR-256"
         nameOrAlias maxBound  `shouldBe` Nothing
+    it "nameAliasesWithTypes: test some characters" do
+        nameAliasesWithTypes '\0' `shouldBe`
+            [(Control, ["NULL"]), (Abbreviation, ["NUL"])]
+        nameAliasesWithTypes '\x0A' `shouldBe`
+            [(Control, ["LINE FEED", "NEW LINE", "END OF LINE"])
+            ,(Abbreviation, ["LF", "NL", "EOL"])]
+        nameAliasesWithTypes '\x80' `shouldBe`
+            [(Figment, ["PADDING CHARACTER"]), (Abbreviation, ["PAD"])]
+        nameAliasesWithTypes '\x01A2' `shouldBe`
+            [(Correction, ["LATIN CAPITAL LETTER GHA"])]
+        nameAliasesWithTypes '\xFEFF' `shouldBe`
+            [(Alternate, ["BYTE ORDER MARK"]), (Abbreviation, ["BOM", "ZWNBSP"])]
+        nameAliasesWithTypes '\xE01EF' `shouldBe`
+            [(Abbreviation, ["VS256"])]
+    it "nameAliasesByType" do
+        let f c = foldr
+                (\t -> case nameAliasesByType t c of {[] -> id;xs -> ((t,xs):)})
+                mempty
+                [minBound..maxBound]
+            check c = f c == nameAliasesWithTypes c
+        traverse_ (`shouldSatisfy` check) [minBound..maxBound]
+    describe "nameAliases" do
+        it "test some characters" do
+            nameAliases '\0' `shouldBe`
+                ["NULL", "NUL"]
+            nameAliases '\x0A' `shouldBe`
+                ["LINE FEED", "NEW LINE", "END OF LINE", "LF", "NL", "EOL"]
+            nameAliases '\x80' `shouldBe`
+                ["PADDING CHARACTER", "PAD"]
+            nameAliases '\x01A2' `shouldBe`
+                ["LATIN CAPITAL LETTER GHA"]
+            nameAliases '\xFEFF' `shouldBe`
+                ["BYTE ORDER MARK", "BOM", "ZWNBSP"]
+            nameAliases '\xE01EF' `shouldBe`
+                ["VS256"]
+        it "compare to nameAliasesWithTypes" do
+            let check c = nameAliases c == mconcat (snd <$> nameAliasesWithTypes c)
+            traverse_ (`shouldSatisfy` check) [minBound..maxBound]
     it "Every defined character has at least a name or an alias" do
         let checkName c = case nameOrAlias c of
                         Just _  -> True
@@ -79,5 +131,4 @@ spec = do
                             PrivateUse  -> True
                             NotAssigned -> True
                             _           -> False
-        traverse_ (`shouldSatisfy` checkName)
-            [minBound..maxBound]
+        traverse_ (`shouldSatisfy` checkName) [minBound..maxBound]
