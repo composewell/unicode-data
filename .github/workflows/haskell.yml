@@ -57,6 +57,7 @@ jobs:
           - 9.4.7
           - 9.6.2
           - 9.8.2
+          - 9.10.1
           - latest-nightly
           - hlint
         include:
@@ -136,6 +137,12 @@ jobs:
 
           - name: 9.8.2
             ghc_version: 9.8.2
+            runner: ubuntu-latest
+            cabal_version: latest
+            ignore_error: false
+
+          - name: 9.10.1
+            ghc_version: 9.10.1
             runner: ubuntu-latest
             cabal_version: latest
             ignore_error: false
