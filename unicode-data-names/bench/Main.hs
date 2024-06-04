@@ -17,6 +17,10 @@ import qualified Unicode.Char as UChar
 import qualified Unicode.Char.General.Names as String
 import qualified Unicode.Internal.Char.UnicodeData.DerivedName as DerivedName
 import qualified Unicode.Internal.Char.UnicodeData.NameAliases as NameAliases
+#ifdef HAS_BYTESTRING
+import qualified Unicode.Char.General.Names.ByteString as ByteString
+import Data.ByteString ()
+#endif
 #ifdef HAS_ICU
 import qualified ICU.Names as ICUString
 #endif
@@ -105,6 +109,14 @@ benchmarks charRange charFilter = bgroup "All"
                 , Bench "icu"          ICUString.name
 #endif
                 ]
+#ifdef HAS_BYTESTRING
+            , bgroup' "name" "ByteString"
+                [ Bench "unicode-data" ByteString.name
+-- #ifdef HAS_ICU
+--                 , Bench "icu"          ICUByteString.name
+-- #endif
+                ]
+#endif
             ]
         , bgroup "correctedName"
             [ bgroup' "correctedName" "String"
@@ -113,27 +125,56 @@ benchmarks charRange charFilter = bgroup "All"
                 , Bench "icu"          ICUString.correctedName
 #endif
                 ]
+#ifdef HAS_BYTESTRING
+            , bgroup' "name" "ByteString"
+                [ Bench "unicode-data" ByteString.correctedName
+-- #ifdef HAS_ICU
+--                 , Bench "icu"          ICUByteString.correctedName
+-- #endif
+                ]
+#endif
             ]
         , bgroup "nameOrAlias"
             [ bgroup' "nameOrAlias" "String"
                 [ Bench "unicode-data" String.nameOrAlias
                 ]
+#ifdef HAS_BYTESTRING
+            , bgroup' "nameOrAlias" "ByteString"
+                [ Bench "unicode-data" ByteString.nameOrAlias
+                ]
+#endif
             ]
         , bgroup "nameAliasesByType"
             [ bgroup' "nameAliasesByType" "String"
                 [ Bench "unicode-data"
                     (\c -> fold_ (`String.nameAliasesByType` c))
                 ]
+#ifdef HAS_BYTESTRING
+            , bgroup' "nameAliasesByType" "ByteString"
+                [ Bench "unicode-data"
+                    (\c -> fold_ (`String.nameAliasesByType` c))
+                ]
+#endif
             ]
         , bgroup "nameAliasesWithTypes"
             [ bgroup' "nameAliasesWithTypes" "String"
                 [ Bench "unicode-data" String.nameAliasesWithTypes
                 ]
+#ifdef HAS_BYTESTRING
+            , bgroup' "nameAliasesWithTypes" "ByteString"
+                [ Bench "unicode-data" ByteString.nameAliasesWithTypes
+                ]
+#endif
             ]
         , bgroup "nameAliases"
             [ bgroup' "nameAliases" "String"
                 [ Bench "unicode-data" String.nameAliases
                 ]
+#ifdef HAS_BYTESTRING
+            , bgroup' "nameAliases" "ByteString"
+                [ Bench "unicode-data" ByteString.nameAliases
+                ]
+#endif
             ]
         ]
     ]
