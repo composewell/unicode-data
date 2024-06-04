@@ -1,4 +1,4 @@
-{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE CPP, ExistentialQuantification #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 import Control.DeepSeq (NFData, deepseq, force)
@@ -17,6 +17,9 @@ import qualified Unicode.Char as UChar
 import qualified Unicode.Char.General.Names as String
 import qualified Unicode.Internal.Char.UnicodeData.DerivedName as DerivedName
 import qualified Unicode.Internal.Char.UnicodeData.NameAliases as NameAliases
+#ifdef HAS_ICU
+import qualified ICU.Names as ICUString
+#endif
 
 --------------------------------------------------------------------------------
 -- CLI options
@@ -98,11 +101,17 @@ benchmarks charRange charFilter = bgroup "All"
         [ bgroup "name"
             [ bgroup' "name" "String"
                 [ Bench "unicode-data" String.name
+#ifdef HAS_ICU
+                , Bench "icu"          ICUString.name
+#endif
                 ]
             ]
         , bgroup "correctedName"
             [ bgroup' "correctedName" "String"
                 [ Bench "unicode-data" String.correctedName
+#ifdef HAS_ICU
+                , Bench "icu"          ICUString.correctedName
+#endif
                 ]
             ]
         , bgroup "nameOrAlias"

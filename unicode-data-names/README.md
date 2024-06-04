@@ -13,6 +13,17 @@ Please see the
 [Haddock documentation](https://hackage.haskell.org/package/unicode-data-names)
 for reference documentation.
 
+## Comparing with ICU
+
+We can compare the implementation against ICU. This requires working with the
+source repository, as we need the _internal_ package `icu`.
+
+__Warning:__ An ICU version with the _exact same Unicode version_ is required.
+
+```bash
+cabal run -O2 --flag dev-has-icu unicode-data-names:tests -- -m ICU
+```
+
 ## Comparing with Python
 
 In order to check Unicode implementation in Haskell, we compare the results obtained
