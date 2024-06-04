@@ -3,6 +3,8 @@
 ## 0.3.0 TDB
 
 - Improve performance.
+- Added opional support for `ByteString` API.
+  Use the package flag `has-bytestring` to enable it.
 
 ## 0.2.0 (September 2022)
 

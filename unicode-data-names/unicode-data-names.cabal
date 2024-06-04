@@ -39,6 +39,11 @@ source-repository head
   type: git
   location: https://github.com/composewell/unicode-data
 
+flag has-bytestring
+  description: Expose an API using the bytestring package
+  manual: True
+  default: False
+
 flag dev-has-icu
   description:
     Use ICU for test and benchmark. Intended for development on the repository.
@@ -95,6 +100,11 @@ library
   if impl(ghc < 9.0.0)
     build-depends:
       ghc-prim >= 0.3.1 && < 1.0
+  if flag(has-bytestring)
+    exposed-modules:
+      Unicode.Char.General.Names.ByteString
+    build-depends:
+      bytestring >= 0.11.2 && < 0.13
 
 test-suite test
   import: default-extensions, compile-options
@@ -109,6 +119,12 @@ test-suite test
     , hspec            >= 2.0   && < 2.12
     , unicode-data     >= 0.4   && < 0.5
     , unicode-data-names
+  if flag(has-bytestring)
+    cpp-options: -DHAS_BYTESTRING
+    other-modules:
+        Unicode.Char.General.Names.ByteStringSpec
+    build-depends:
+      bytestring >= 0.11.2 && < 0.13
   if flag(dev-has-icu)
     cpp-options: -DHAS_ICU
     other-modules:
@@ -142,6 +158,10 @@ benchmark bench
     tasty        >= 1.4.1 && < 1.6,
     unicode-data >= 0.4   && < 0.5,
     unicode-data-names
+  if flag(has-bytestring)
+    cpp-options: -DHAS_BYTESTRING
+    build-depends:
+      bytestring >= 0.11.2 && < 0.13
   if flag(dev-has-icu)
     cpp-options: -DHAS_ICU
     build-depends:

@@ -4,6 +4,10 @@
 character names and aliases from the
 [Unicode character database](https://www.unicode.org/ucd/).
 
+There are 2 APIs:
+- `String` API: enabled by default.
+- `ByteString` API: enabled via the package flag `has-bytestring`.
+
 The Haskell data structures are generated programmatically from the
 Unicode character database (UCD) files. The latest Unicode version
 supported by this library is

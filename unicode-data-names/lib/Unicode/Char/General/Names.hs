@@ -8,6 +8,10 @@
 -- Unicode character names and name aliases with 'String' API.
 -- See Unicode standard 15.0.0, section 4.8.
 --
+-- There are also an optional API:
+--
+-- * @ByteString@ API, which requires using the package flag @has-bytestring@.
+--
 -- @since 0.1.0
 
 module Unicode.Char.General.Names
