@@ -63,7 +63,7 @@ library
     ICU.Names.Text
   hs-source-dirs: lib
   build-depends:
-      base             >= 4.7   && < 4.20
+      base             >= 4.7   && < 4.21
     , text             >= 2.0   && < 2.2
   include-dirs: cbits
   c-sources: cbits/icu.c

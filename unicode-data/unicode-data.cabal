@@ -108,7 +108,7 @@ library
   hs-source-dirs: lib
   ghc-options: -O2
   build-depends:
-      base >=4.7 && < 4.20
+      base >=4.7 && < 4.21
 
 test-suite test
   import: default-extensions, compile-options
@@ -119,7 +119,7 @@ test-suite test
   other-modules:
       Unicode.CharSpec
   build-depends:
-      base             >= 4.7   && < 4.20
+      base             >= 4.7   && < 4.21
     , hspec            >= 2.0   && < 2.12
     , unicode-data
   -- We need to match a GHC version with the same Unicode version.
@@ -144,7 +144,7 @@ benchmark bench
     Unicode.Char.NumericBench
     Unicode.Char.Numeric.CompatBench
   build-depends:
-    base        >= 4.7   && < 4.20,
+    base        >= 4.7   && < 4.21,
     deepseq     >= 1.1   && < 1.6,
     tasty-bench >= 0.2.5 && < 0.4,
     tasty       >= 1.4.1 && < 1.6,
