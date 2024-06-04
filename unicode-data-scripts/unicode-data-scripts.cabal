@@ -102,7 +102,7 @@ benchmark bench
     base        >= 4.7   && < 4.20,
     deepseq     >= 1.1   && < 1.6,
     tasty-bench >= 0.2.5 && < 0.4,
-    tasty       >= 1.4.1 && < 1.5,
+    tasty       >= 1.4.1 && < 1.6,
     unicode-data,
     unicode-data-scripts
   -- [NOTE] Recommendation of tasty-bench to reduce garbage collection noisiness
