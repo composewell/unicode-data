@@ -1,0 +1,73 @@
+cabal-version:       2.2
+name:                icu
+version:             0.1.0
+synopsis:            ICU binding
+description:
+    ICU binding to ICU for characters names and aliases (internal library).
+homepage:            http://github.com/composewell/unicode-data
+bug-reports:         https://github.com/composewell/unicode-data/issues
+license:             Apache-2.0
+license-file:        LICENSE
+author:              Composewell Technologies and Contributors
+maintainer:          dev@wismill.eu
+copyright:           2023 Composewell Technologies and Contributors
+category:            Data,Text,Unicode
+stability:           Experimental
+build-type:          Simple
+
+source-repository head
+  type: git
+  location: https://github.com/composewell/unicode-data
+
+flag has-icu
+  description: Use ICU for test and benchmark
+  manual: True
+  default: False
+
+common default-extensions
+  default-extensions:
+      BangPatterns
+      DeriveGeneric
+      MagicHash
+      RecordWildCards
+      ScopedTypeVariables
+      TupleSections
+      FlexibleContexts
+      LambdaCase
+      ForeignFunctionInterface
+      CApiFFI
+
+      -- Experimental, may lead to issues
+      UnboxedTuples
+
+common compile-options
+  ghc-options: -Wall
+               -fwarn-identities
+               -fwarn-incomplete-record-updates
+               -fwarn-incomplete-uni-patterns
+               -fwarn-tabs
+  default-language: Haskell2010
+
+extra-source-files:
+  cbits/icu.h
+
+library
+  import: default-extensions, compile-options
+  if flag(has-icu)
+    buildable: True
+  else
+    buildable: False
+  exposed-modules:
+    ICU.Char
+    ICU.Names
+    ICU.Names.Text
+  hs-source-dirs: lib
+  build-depends:
+      base             >= 4.7   && < 4.20
+    , text             >= 2.0   && < 2.2
+  include-dirs: cbits
+  c-sources: cbits/icu.c
+  cc-options: -Wall -Wextra -pedantic
+  extra-libraries: icuuc
+  pkgconfig-depends:
+    icu-uc >= 72.1
