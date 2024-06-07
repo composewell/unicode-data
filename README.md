@@ -63,6 +63,35 @@ than `base`.
 
 See `unicode-data`’s [guide](unicode-data/README.md#unicode-database-version-update).
 
+## Unicode version in some major libraries
+
+The following sections tracks the Unicode versions used in some major libraries.
+While `unicode-data` packages do not depend on the Unicode version used in these
+packages, there may be some mismatches when using them together.
+
+### GHC / [`base`](https://hackage.haskell.org/package/base)
+
+| GHC version   | `base` version | Unicode version |
+| ------------- | -------------- | --------------- |
+| 8.8           | 4.13           | 12.0            |
+| 8.10.\[1-4\]  | 4.14.\[0-1\]   | 12.0            |
+| 8.10.5+       | 4.14.2+        | 13.0            |
+| 9.0.\[1-2\]   | 4.15.0         | 12.1            |
+| 9.2.\[1-6\]   | 4.16.0         | 14.0            |
+| 9.4.\[1-4\]   | 4.17.0         | 14.0            |
+| 9.6.\[1-3\]   | 4.18.\[0-1\]   | 15.0            |
+| 9.6.4-5       | 4.18.2+        | 15.1            |
+| 9.8.1         | 4.19.0         | 15.1            |
+| 9.10.1        | 4.20.0         | 15.1            |
+
+### [`text`](https://hackage.haskell.org/package/text)
+
+| `text` version | Unicode version |
+| -------------- | --------------- |
+| 1.2.5.0        | 13.0            |
+| 2.0.\[0-2\]    | 14.0            |
+| 2.1.\[0-1\]    | 14.0            |
+
 ## Licensing
 
 `unicode-data*` packages are an [open source](https://github.com/composewell/unicode-data)

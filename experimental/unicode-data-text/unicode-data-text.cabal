@@ -82,11 +82,10 @@ test-suite test
     base             >= 4.7   && < 4.21,
     hspec            >= 2.0   && < 2.12,
     text             >= 1.2.4 && < 2.2,
+    unicode-data     >= 0.3   && < 0.5,
     unicode-data-text
   build-tool-depends:
     hspec-discover:hspec-discover >= 2.0 && < 2.12
-  if impl(ghc >= 9.5.1) && impl(ghc < 9.6.4)
-    cpp-options: -DCOMPATIBLE_GHC_UNICODE
 
 benchmark bench
   import: default-extensions, compile-options

@@ -58,7 +58,7 @@ does not match the version of this package.
 | 9.2.[1-6]   | 4.16.0         | 14.0            |
 | 9.4.[1-4]   | 4.17.0         | 14.0            |
 | 9.6.[1-3]   | 4.18.{0,1}     | 15.0            |
-| 9.6.4-5     | 4.18.2+        | 15.1            |
+| 9.6.[4-5]   | 4.18.2+        | 15.1            |
 | 9.8.1       | 4.19.0         | 15.1            |
 | 9.10.1      | 4.20.0         | 15.1            |
 +-------------+----------------+-----------------+
@@ -304,7 +304,7 @@ spec = do
         | h c = pure ()
         | not hasGhcUnicodeVersion = traceM . mconcat $
             [ "[WARNING] Cannot test ", show c
-            , ": incompatible Unicode version (too old). Expected "
+            , ": incompatible Unicode version (GHC too old). Expected "
             , showVersion UChar.unicodeVersion ]
         | isUnassigned c = traceM . mconcat $
             [ "[WARNING] Cannot test ", show c
