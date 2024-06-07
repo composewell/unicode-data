@@ -124,10 +124,6 @@ test-suite test
       base             >= 4.7   && < 4.21
     , hspec            >= 2.0   && < 2.12
     , unicode-data
-  -- We need to match a GHC version with the same Unicode version.
-  -- See: test/Unicode/CharSpec.hs for compatibility table.
-  if impl(ghc >= 9.6.0) && impl(ghc < 9.8.0)
-    cpp-options: -DCOMPATIBLE_GHC_UNICODE
 
 benchmark bench
   import: default-extensions, compile-options
