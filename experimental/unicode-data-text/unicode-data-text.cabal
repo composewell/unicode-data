@@ -85,7 +85,7 @@ test-suite test
     unicode-data-text
   build-tool-depends:
     hspec-discover:hspec-discover >= 2.0 && < 2.12
-  if impl(ghc >= 9.5.1) && impl(ghc < 9.8.0)
+  if impl(ghc >= 9.5.1) && impl(ghc < 9.6.4)
     cpp-options: -DCOMPATIBLE_GHC_UNICODE
 
 benchmark bench
