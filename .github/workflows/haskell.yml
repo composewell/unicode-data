@@ -50,14 +50,14 @@ jobs:
           - 8.4.4
           - 8.6.5
           - 8.8.4
-          - 8.8.4+macOS+exe
-          - 8.10.7+exe
+          - 8.8.4+macOS
+          - 8.10.7
           - 9.0.2
-          - 9.2.8+exe
-          - 9.4.7
-          - 9.6.2
+          - 9.2.8+ucd2haskell
+          - 9.4.8
+          - 9.6.5
           - 9.8.2
-          - 9.10.1
+          - 9.10.1+ucd2haskell
           - latest-nightly
           - hlint
         include:
@@ -95,16 +95,14 @@ jobs:
             cabal_version: 3.2
             ignore_error: false
 
-          - name: 8.8.4+macOS+exe
+          - name: 8.8.4+macOS
             ghc_version: 8.8.4
-            pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
             runner: macos-latest
             cabal_version: 3.2
             ignore_error: false
 
-          - name: 8.10.7+exe
+          - name: 8.10.7
             ghc_version: 8.10.7
-            pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
             runner: ubuntu-latest
             cabal_version: 3.2
             ignore_error: false
@@ -115,22 +113,22 @@ jobs:
             cabal_version: 3.2
             ignore_error: false
 
-            # [NOTE] Last GHC version that can build ucd2haskell
-          - name: 9.2.8+exe
+          - name: 9.2.8+ucd2haskell
             ghc_version: 9.2.8
+            # [NOTE] Oldest version supported by ucd2haskell
             pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
             runner: ubuntu-latest
             cabal_version: 3.6
             ignore_error: false
 
-          - name: 9.4.7
-            ghc_version: 9.4.7
+          - name: 9.4.8
+            ghc_version: 9.4.8
             runner: ubuntu-latest
             cabal_version: 3.8.1.0
             ignore_error: false
 
-          - name: 9.6.2
-            ghc_version: 9.6.2
+          - name: 9.6.5
+            ghc_version: 9.6.5
             runner: ubuntu-latest
             cabal_version: 3.10.1.0
             ignore_error: false
@@ -141,8 +139,9 @@ jobs:
             cabal_version: latest
             ignore_error: false
 
-          - name: 9.10.1
+          - name: 9.10.1+ucd2haskell
             ghc_version: 9.10.1
+            pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
             runner: ubuntu-latest
             cabal_version: latest
             ignore_error: false
