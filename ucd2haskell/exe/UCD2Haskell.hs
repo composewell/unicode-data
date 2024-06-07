@@ -8,9 +8,13 @@
 module Main where
 
 import GHC.Generics (Generic)
-import Parser.Text (genCoreModules, genNamesModules, genScriptsModules, genSecurityModules)
 import System.FilePath ((</>))
 import WithCli (HasArguments(..), withCli)
+
+import qualified UCD2Haskell.Generator.Core as Core
+import qualified UCD2Haskell.Generator.Names as Names
+import qualified UCD2Haskell.Generator.Scripts as Scripts
+import qualified UCD2Haskell.Generator.Security as Security
 
 data CLIOptions =
     CLIOptions
@@ -29,10 +33,10 @@ data CLIOptions =
 
 cliClient :: CLIOptions -> IO ()
 cliClient opts
-    = genCoreModules (input opts </> "ucd") (output_core opts) (core_prop opts)
-    *> genNamesModules (input opts </> "ucd") (output_names opts)
-    *> genScriptsModules (input opts </> "ucd") (output_scripts opts)
-    *> genSecurityModules (input opts </> "security") (output_security opts)
+    = Core.generateModules (input opts </> "ucd") (output_core opts) (core_prop opts)
+    *> Names.generateModules (input opts </> "ucd") (output_names opts)
+    *> Scripts.generateModules (input opts </> "ucd") (output_scripts opts)
+    *> Security.generateModules (input opts </> "security") (output_security opts)
 
 main :: IO ()
 main = withCli cliClient
