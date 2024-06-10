@@ -9,6 +9,7 @@ module UCD2Haskell.Generator.Scripts
     ) where
 
 import qualified Data.ByteString as B
+import Data.Version (Version)
 import System.FilePath ((</>))
 import qualified Unicode.CharacterDatabase.Parser.Properties.Single as Prop
 
@@ -16,8 +17,8 @@ import qualified UCD2Haskell.Modules.Scripts as Scripts
 import qualified UCD2Haskell.Modules.ScriptsExtensions as ScriptsExtensions
 import UCD2Haskell.Generator (runGenerator)
 
-generateModules :: FilePath -> FilePath -> IO ()
-generateModules indir outdir = do
+generateModules :: Version -> FilePath -> FilePath -> IO ()
+generateModules version indir outdir = do
     scriptAliases <- Scripts.parseScriptAliases
         <$> B.readFile (indir </> "PropertyValueAliases.txt")
 
@@ -25,6 +26,7 @@ generateModules indir outdir = do
         <$> B.readFile (indir </> "ScriptExtensions.txt")
 
     runGenerator
+        version
         indir
         "Scripts.txt"
         Prop.parse

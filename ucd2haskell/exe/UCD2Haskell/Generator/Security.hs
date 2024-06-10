@@ -8,6 +8,7 @@ module UCD2Haskell.Generator.Security
     ( generateModules
     ) where
 
+import Data.Version (Version)
 import qualified Unicode.CharacterDatabase.Parser.Properties.Single as Prop
 
 import qualified UCD2Haskell.Modules.Security.Confusables as Confusables
@@ -16,9 +17,10 @@ import qualified UCD2Haskell.Modules.Security.IdentifierType as IdentifierType
 import qualified UCD2Haskell.Modules.Security.IntentionalConfusables as IntentionalConfusables
 import UCD2Haskell.Generator (runGenerator)
 
-generateModules :: FilePath -> FilePath -> IO ()
-generateModules indir outdir = do
+generateModules :: Version -> FilePath -> FilePath -> IO ()
+generateModules version indir outdir = do
     runGenerator
+        version
         indir
         "IdentifierStatus.txt"
         Prop.parse
@@ -26,6 +28,7 @@ generateModules indir outdir = do
         [IdentifierStatus.recipe]
 
     runGenerator
+        version
         indir
         "IdentifierType.txt"
         Prop.parse
@@ -33,6 +36,7 @@ generateModules indir outdir = do
         [IdentifierType.recipe]
 
     runGenerator
+        version
         indir
         "confusables.txt"
         Prop.parseMultipleValues
@@ -40,6 +44,7 @@ generateModules indir outdir = do
         [Confusables.recipe]
 
     runGenerator
+        version
         indir
         "intentional.txt"
         Prop.parse

@@ -95,7 +95,8 @@ run_generator() {
           --core-prop XID_Start \
           --core-prop XID_Continue \
           --core-prop Pattern_Syntax \
-          --core-prop Pattern_White_Space
+          --core-prop Pattern_White_Space \
+          --unicode-version "$VERSION"
     # Update unicodeVersion in Unicode.Char
     VERSION_AS_LIST=$(echo "$VERSION" | sed "s/\./, /g")
     sed -ri "s/^(unicodeVersion = makeVersion \[)[^]]*\]/\1$VERSION_AS_LIST\]/" "unicode-data/lib/Unicode/Char.hs"
