@@ -15,6 +15,7 @@ import qualified Unicode.CharacterDatabase.Parser.Properties.Single as Prop
 
 import qualified UCD2Haskell.Modules.Scripts as Scripts
 import qualified UCD2Haskell.Modules.ScriptsExtensions as ScriptsExtensions
+import qualified UCD2Haskell.Modules.Version as Version
 import UCD2Haskell.Generator (runGenerator)
 
 generateModules :: Version -> FilePath -> FilePath -> IO ()
@@ -33,3 +34,9 @@ generateModules version indir outdir = do
         outdir
         [ Scripts.recipe scriptAliases
         , ScriptsExtensions.recipe scriptAliases extensions ]
+
+    Version.writeModule
+        version
+        outdir
+        "Unicode.Internal.Char.Scripts.Version"
+        "0.2.1"

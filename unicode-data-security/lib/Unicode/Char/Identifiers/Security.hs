@@ -11,8 +11,10 @@
 -- @since 0.1.0
 
 module Unicode.Char.Identifiers.Security
-    ( -- * Identifier status
-      isAllowedInIdentifier
+    ( -- * Unicode version
+      unicodeVersion
+      -- * Identifier status
+    , isAllowedInIdentifier
 
       -- * Identifier type
     , T.IdentifierType(..)
@@ -37,6 +39,7 @@ import qualified Unicode.Internal.Char.Security.Confusables as C
 import qualified Unicode.Internal.Char.Security.IdentifierStatus as S
 import qualified Unicode.Internal.Char.Security.IdentifierType as T
 import qualified Unicode.Internal.Char.Security.IntentionalConfusables as IC
+import Unicode.Internal.Char.Security.Version (unicodeVersion)
 
 -- | Returns 'True' if the given character is allowed in an identifier.
 --

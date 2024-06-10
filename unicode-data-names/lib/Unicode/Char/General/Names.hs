@@ -16,8 +16,10 @@
 -- @since 0.1.0
 
 module Unicode.Char.General.Names
-    ( -- * Name
-      name
+    ( -- Unicode version
+      unicodeVersion
+      -- * Name
+    , name
     , nameOrAlias
     , correctedName
       -- * Name Aliases
@@ -36,6 +38,7 @@ import GHC.Exts
 import Unicode.Internal.Bits.Names (unpackNBytes#)
 import qualified Unicode.Internal.Char.UnicodeData.DerivedName as DerivedName
 import qualified Unicode.Internal.Char.UnicodeData.NameAliases as NameAliases
+import Unicode.Internal.Char.Names.Version (unicodeVersion)
 
 -- | Name of a character, if defined.
 --
