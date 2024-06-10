@@ -106,6 +106,7 @@ library
       Unicode.Internal.Char.UnicodeData.SimpleLowerCaseMapping
       Unicode.Internal.Char.UnicodeData.SimpleTitleCaseMapping
       Unicode.Internal.Char.UnicodeData.SimpleUpperCaseMapping
+      Unicode.Internal.Char.Version
 
   hs-source-dirs: lib
   ghc-options: -O2

@@ -29,6 +29,7 @@ import qualified UCD2Haskell.Modules.UnicodeData.Composition as Composition
 import qualified UCD2Haskell.Modules.UnicodeData.Decomposition as Decomposition
 import qualified UCD2Haskell.Modules.UnicodeData.GeneralCategory as GeneralCategory
 import qualified UCD2Haskell.Modules.UnicodeData.SimpleCaseMappings as SimpleCaseMappings
+import qualified UCD2Haskell.Modules.Version as Version
 import UCD2Haskell.Generator (runGenerator)
 
 generateModules :: Version -> FilePath -> FilePath -> [String] -> IO ()
@@ -96,3 +97,9 @@ generateModules version indir outdir props = do
         CF.parse
         outdir
         [ CaseFoldings.recipe ]
+
+    Version.writeModule
+        version
+        outdir
+        "Unicode.Internal.Char.Version"
+        "0.3.0"
