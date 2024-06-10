@@ -26,14 +26,14 @@
 --
 
 module Unicode.Char
-    ( module Unicode.Char.General
+    ( unicodeVersion
+    , module Unicode.Char.General
     , module Unicode.Char.General.Compat
     , module Unicode.Char.Case
     , module Unicode.Char.Case.Compat
     , module Unicode.Char.Numeric
     , module Unicode.Char.Normalization
     , module Unicode.Char.Identifiers
-    , unicodeVersion
 
     -- * Re-export from @base@
     , ord
@@ -42,7 +42,6 @@ module Unicode.Char
 where
 
 import Data.Char (chr, ord)
-import Data.Version (Version, makeVersion)
 import Unicode.Char.Case hiding (Unfold(..), Step(..))
 import Unicode.Char.Case.Compat hiding (isLower, isUpper)
 import Unicode.Char.General
@@ -50,9 +49,4 @@ import Unicode.Char.General.Compat hiding (isLetter, isSpace)
 import Unicode.Char.Identifiers
 import Unicode.Char.Numeric
 import Unicode.Char.Normalization
-
--- | Version of Unicode standard used by @unicode-data@.
---
--- @since 0.3.0
-unicodeVersion :: Version
-unicodeVersion = makeVersion [15, 0, 0]
+import Unicode.Internal.Char.Version (unicodeVersion)

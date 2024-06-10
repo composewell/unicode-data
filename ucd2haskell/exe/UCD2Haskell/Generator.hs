@@ -10,6 +10,7 @@ module UCD2Haskell.Generator
       -- * Generator
     , runGenerator
     , moduleToFileName
+    , dirFromFileName
       -- * Bitmap
     , genBitmap
     , genEnumBitmap

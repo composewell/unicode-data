@@ -91,6 +91,7 @@ executable ucd2haskell
     UCD2Haskell.Modules.UnicodeData.GeneralCategory
     UCD2Haskell.Modules.UnicodeData.NameAliases
     UCD2Haskell.Modules.UnicodeData.SimpleCaseMappings
+    UCD2Haskell.Modules.Version
   if flag(ucd2haskell)
     buildable: True
     build-depends:
