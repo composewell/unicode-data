@@ -1,12 +1,13 @@
 # Changelog
 
-## 0.3.0 TDB
+## 0.3.0 TBD
 
 - Improve performance.
 - Added opional support for `ByteString` API.
   Use the package flag `has-bytestring` to enable it.
 - Added opional support for `Text` API.
   Use the package flag `has-text` to enable it.
+- Add `unicodeVersion` to `Unicode.Char.General.Names`.
 
 ## 0.2.0 (September 2022)
 

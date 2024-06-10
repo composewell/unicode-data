@@ -15,6 +15,7 @@ import qualified UCD2Haskell.Modules.Security.Confusables as Confusables
 import qualified UCD2Haskell.Modules.Security.IdentifierStatus as IdentifierStatus
 import qualified UCD2Haskell.Modules.Security.IdentifierType as IdentifierType
 import qualified UCD2Haskell.Modules.Security.IntentionalConfusables as IntentionalConfusables
+import qualified UCD2Haskell.Modules.Version as Version
 import UCD2Haskell.Generator (runGenerator)
 
 generateModules :: Version -> FilePath -> FilePath -> IO ()
@@ -50,3 +51,9 @@ generateModules version indir outdir = do
         Prop.parse
         outdir
         [IntentionalConfusables.recipe]
+
+    Version.writeModule
+        version
+        outdir
+        "Unicode.Internal.Char.Security.Version"
+        "0.2.1"

@@ -13,7 +13,10 @@
 --
 
 module Unicode.Char.General.Scripts
-    ( S.Script(..)
+    ( -- * Unicode version
+      unicodeVersion
+      -- * Scripts
+    , S.Script(..)
     , script
     , scriptExtensions
     , scriptDefinition
@@ -37,6 +40,7 @@ import GHC.Exts (byteSwap32#, narrow32Word#)
 
 import qualified Unicode.Internal.Char.Scripts as S
 import qualified Unicode.Internal.Char.ScriptExtensions as S
+import Unicode.Internal.Char.Scripts.Version (unicodeVersion)
 
 -- | Character [script](https://www.unicode.org/reports/tr24/).
 --

@@ -96,6 +96,7 @@ library
       -- the properties are generated.
       Unicode.Internal.Char.UnicodeData.DerivedName
       Unicode.Internal.Char.UnicodeData.NameAliases
+      Unicode.Internal.Char.Names.Version
   other-modules:
       -- Internal files
       Unicode.Internal.Bits.Names

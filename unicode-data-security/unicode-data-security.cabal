@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                unicode-data-security
-version:             0.2.0
+version:             0.2.1
 synopsis:            Unicode security mechanisms database
 description:
   @unicode-data-security@ provides Haskell APIs to access the
@@ -77,6 +77,7 @@ library
       Unicode.Internal.Char.Security.IdentifierStatus
       Unicode.Internal.Char.Security.IdentifierType
       Unicode.Internal.Char.Security.IntentionalConfusables
+      Unicode.Internal.Char.Security.Version
 
   hs-source-dirs: lib
   build-depends:
