@@ -35,11 +35,13 @@ module UCD2Haskell.Common
     , filterNonHangul
 
       -- * Miscellaneous
+    , Version(..)
     , allRange
     , mkHaskellConstructor
     ) where
 
 import Data.Foldable (Foldable(..))
+import qualified Data.Version as V
 import Numeric (showHex)
 import Data.Char (toUpper, ord, isAlphaNum)
 import qualified Data.ByteString.Builder as BB
@@ -47,6 +49,8 @@ import qualified Unicode.CharacterDatabase.Parser.UnicodeData as UD
 import qualified Unicode.CharacterDatabase.Parser.Common as U
 import qualified Data.ByteString.Short as BS
 import qualified Data.ByteString.Char8 as B8
+import qualified Text.ParserCombinators.ReadP as P
+import WithCli (Argument(..), HasArguments (..), atomicArgumentsParser)
 
 --------------------------------------------------------------------------------
 -- Fold that mimimc Streamly’s one
@@ -193,3 +197,16 @@ mkHaskellConstructor = fst . BS.foldl' convert (mempty, True)
     word82Char = toEnum . fromIntegral
     char2Word8 = fromIntegral . fromEnum
     toUpper' = char2Word8 . toUpper . word82Char
+
+-- | Used to parse Unicode version as CLI argument
+newtype Version = Version { unVersion :: V.Version }
+    deriving newtype Show
+
+instance Argument Version where
+    argumentType _ = "STRING"
+    parseArgument raw = case P.readP_to_S (V.parseVersion <* P.eof) raw of
+        [(v, "")] -> Just (Version v)
+        _ -> Nothing
+
+instance HasArguments Version where
+    argumentsParser = atomicArgumentsParser

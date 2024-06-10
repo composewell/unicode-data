@@ -11,6 +11,7 @@ module UCD2Haskell.Generator.Core
 import qualified Data.ByteString as B
 import qualified Data.Set as Set
 import Data.String (IsString(..))
+import Data.Version (Version)
 import System.FilePath ((</>))
 import qualified Unicode.CharacterDatabase.Parser.CaseFolding as CF
 import qualified Unicode.CharacterDatabase.Parser.Extracted.DerivedNumericValues as N
@@ -30,8 +31,8 @@ import qualified UCD2Haskell.Modules.UnicodeData.GeneralCategory as GeneralCateg
 import qualified UCD2Haskell.Modules.UnicodeData.SimpleCaseMappings as SimpleCaseMappings
 import UCD2Haskell.Generator (runGenerator)
 
-generateModules :: FilePath -> FilePath -> [String] -> IO ()
-generateModules indir outdir props = do
+generateModules :: Version -> FilePath -> FilePath -> [String] -> IO ()
+generateModules version indir outdir props = do
 
     fullCompositionExclusion <- Composition.parseFullCompositionExclusion
         <$> B.readFile (indir </> "DerivedNormalizationProps.txt")
@@ -42,15 +43,15 @@ generateModules indir outdir props = do
     specialCasings <- SpecialCasings.parse
         <$> B.readFile (indir </> "SpecialCasing.txt")
 
-    runGenerator
-        indir
+    let runGenerator' = runGenerator version indir
+
+    runGenerator'
         "Blocks.txt"
         Prop.parse
         outdir
         [ Blocks.recipe ]
 
-    runGenerator
-        indir
+    runGenerator'
         "UnicodeData.txt"
         UD.parse
         outdir
@@ -72,29 +73,25 @@ generateModules indir outdir props = do
 
     let propsSet = Set.fromList (fromString <$> props)
 
-    runGenerator
-        indir
+    runGenerator'
         "PropList.txt"
         Props.parse
         outdir
         [ Properties.propList propsSet ]
 
-    runGenerator
-        indir
+    runGenerator'
         "DerivedCoreProperties.txt"
         Props.parse
         outdir
         [ Properties.derivedCoreProperties propsSet ]
 
-    runGenerator
-        indir
+    runGenerator'
         "extracted/DerivedNumericValues.txt"
         N.parse
         outdir
         [ DerivedNumericValues.recipe ]
 
-    runGenerator
-        indir
+    runGenerator'
         "CaseFolding.txt"
         CF.parse
         outdir
