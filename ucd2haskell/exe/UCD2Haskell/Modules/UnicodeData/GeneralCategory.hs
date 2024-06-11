@@ -8,15 +8,22 @@ module UCD2Haskell.Modules.UnicodeData.GeneralCategory
     ( recipe
     ) where
 
-import qualified Data.ByteString.Short as BS
 import qualified Data.ByteString.Builder as BB
-import Data.Foldable (Foldable(..))
+import qualified Data.ByteString.Short as BS
+import Data.Foldable (Foldable (..))
+import qualified Data.List as L
+import qualified Data.List.NonEmpty as NE
 import qualified Unicode.CharacterDatabase.Parser.Common as U
 import qualified Unicode.CharacterDatabase.Parser.UnicodeData as UD
 
-import UCD2Haskell.Generator (FileRecipe (..), unlinesBB, apacheLicense, genEnumBitmap)
-import UCD2Haskell.Common (Fold (..), showHexCodepointB, showB)
-import qualified Data.List as L
+import UCD2Haskell.Common (Fold (..), showB, showHexCodepointB)
+import UCD2Haskell.Generator (
+    FileRecipe (..),
+    apacheLicense,
+    genEnumBitmapShamochu,
+    unlinesBB,
+ )
+import Control.Exception (assert)
 
 recipe :: FileRecipe UD.Entry
 recipe = ModuleRecipe
@@ -100,10 +107,12 @@ genGeneralCategoryModule moduleName = Fold step initial done
         , foldMapWithNewLine mkCharBoundPatternExport charBoundPatterns
         , ") where"
         , ""
+        , "import Data.Bits (Bits(..))"
         , "import Data.Char (ord)"
-        , "import Data.Word (Word8)"
+        , "import Data.Int (Int8)"
+        , "import Data.Word (Word8, Word16)"
         , "import GHC.Exts (Ptr(..))"
-        , "import Unicode.Internal.Bits (lookupWord8AsInt)"
+        , "import Unicode.Internal.Bits (lookupWord8AsInt, lookupWord16AsInt)"
         , ""
         , "--------------------------------------------------------------------------------"
         , "-- General category patterns"
@@ -122,19 +131,23 @@ genGeneralCategoryModule moduleName = Fold step initial done
         , "-- The caller of this function must ensure its parameter is \\< @0x40000@."
         , "{-# INLINE generalCategoryPlanes0To3 #-}"
         , "generalCategoryPlanes0To3 :: Int -> Int"
-        , "generalCategoryPlanes0To3 = lookupWord8AsInt bitmap#"
-        , "    where"
-        , "    !(Ptr bitmap#) = generalCategoryBitmap"
+        , "generalCategoryPlanes0To3 = lookupGeneralCategoryPlanes0To3BitMap"
         , ""
         , "-- | Return the general category of a character"
-        , genEnumBitmap
+        , genEnumBitmapShamochu
             "generalCategory"
+            (NE.singleton 3)
+            [5]
+            toWord8
             (UD.Co, generalCategoryConstructor UD.Co)
             (UD.Cn, generalCategoryConstructor UD.Cn)
             (reverse acc1)
             (reverse acc2)
         ]
         where
+        toWord8 =
+            assert (fromEnum (maxBound :: UD.GeneralCategory) < 0xff)
+            (fromIntegral . fromEnum)
         foldMapWithNewLine f = mconcat . L.intersperse "\n" . fmap f
         mkExport p = ", pattern " <> p
         mkGeneralCategoryPatternExport = mkExport . generalCategoryConstructor

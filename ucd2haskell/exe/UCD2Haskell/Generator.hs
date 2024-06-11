@@ -19,6 +19,8 @@ module UCD2Haskell.Generator
     , chunkAddrLiteral
     , word32ToWord8s
     , splitPlanes
+    , genEnumBitmapShamochu
+    , generateShamochuBitmaps
       -- * Helpers
     , printCpuTime
     , unlinesBB
@@ -30,18 +32,30 @@ import Data.Bits (Bits (..))
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Lazy as BL
+import Data.Char (toUpper)
 import Data.Fixed (Centi)
 import qualified Data.List as L
+import qualified Data.List.NonEmpty as NE
 import Data.Maybe (mapMaybe)
 import Data.Ratio ((%))
 import Data.Version (Version, showVersion)
 import Data.Word (Word32, Word8)
+import Debug.Trace (trace)
+import qualified GHC.Exts as Exts
 import GHC.Stack (HasCallStack)
+import qualified Shamochu
 import System.CPUTime (getCPUTime)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath ((<.>), (</>))
 
-import UCD2Haskell.Common (Fold, showPaddedHeXB, showB, distribute, runFold, rmapFold)
+import UCD2Haskell.Common (
+    Fold,
+    distribute,
+    rmapFold,
+    runFold,
+    showB,
+    showPaddedHeXB,
+ )
 
 --------------------------------------------------------------------------------
 -- Recipe
@@ -351,6 +365,38 @@ enumMapToAddrLiteral indentation chunkSize =
         then fromIntegral w
         else error $ "Cannot convert to Word8: " <> show a
 
+-- | Encode a list of values as a byte map, using their 'Enum' instance.
+enumMapToAddrLiteral'
+  :: forall a. (Bounded a, Enum a, Show a)
+  => Word8
+  -- ^ Indentation
+  -> Int
+  -- ^ Chunk size
+  -> Word
+  -- ^ Word per value
+  -> [a]
+  -- ^ Values to encode
+  -> BB.Builder
+  -- ^ String to append
+  -> BB.Builder
+enumMapToAddrLiteral' indentation chunkSize size =
+    chunkAddrLiteral indentation chunkSize addWords
+
+    where
+
+    upperBound = 1 `shiftL` (8 * fromIntegral size)
+
+    addWords :: a -> BB.Builder -> BB.Builder
+    addWords x acc = foldMap (\w -> BB.char7 '\\' <> BB.word8Dec w) (toWord8LEs x) <> acc
+
+    toWord8LEs :: a -> [Word8]
+    toWord8LEs a = let w = fromEnum a in if 0 <= w && w < upperBound
+        then go size w
+        else error $ "Cannot convert to Word8s: " <> show a <> " " <> show (size, upperBound)
+
+    go 0 _ = []
+    go k n = fromIntegral (n .&. 0xff) : go (k - 1) (n `shiftR` 8)
+
 chunkAddrLiteral
   :: forall a. Word8
   -- ^ Indentation
@@ -395,6 +441,238 @@ chunksOf i = go
 -- Encode Word32 to [Word8] little endian
 word32ToWord8s :: Word32 -> [Word8]
 word32ToWord8s n = (\k -> fromIntegral ((n `shiftR` k) .&. 0xff)) <$> [0,8..24]
+
+--------------------------------------------------------------------------------
+-- Bitmaps: Shamochu algorithm
+--------------------------------------------------------------------------------
+
+genEnumBitmapShamochu
+  :: forall a. (HasCallStack, Bounded a, Enum a, Eq a, Show a)
+  => String
+  -- ^ Function name
+  -> NE.NonEmpty Word
+  -- ^ Chunk size stage 1
+  -> [Word]
+  -- ^ Chunk size stage 2
+  -> (a -> Word8)
+  -- ^ Conversion
+  -> (a, BB.Builder)
+  -- ^ Value for planes 15-16
+  -> (a, BB.Builder)
+  -- ^ Default value
+  -> [a]
+  -- ^ List of values to encode for planes 0 to 3
+  -> [a]
+  -- ^ List of values to encode for plane 14
+  -> BB.Builder
+genEnumBitmapShamochu funcNameStr stage1 stage2 convert (defPUA, pPUA) (def, pDef) planes0To3 plane14 =
+    mconcat
+    [ "{-# INLINE ", funcName, " #-}\n"
+    , funcName, " :: Char -> Int\n"
+    , funcName, func
+    , "\n"
+    , generateShamochuBitmaps funcName03 stage1 stage2 convert bitmap03
+    , "\n"
+    , case mBitmap14 of
+        Nothing -> mempty
+        Just bitmap14 -> generateShamochuBitmaps funcName14 stage1 stage2 convert bitmap14 <> "\n"
+    ]
+    where
+    funcName = BB.string7 funcNameStr
+    funcName03 = funcNameStr <> "Planes0To3"
+    funcName14 = funcNameStr <> "Plane14"
+    lookup03 = toLookupBitMapName funcName03
+    lookup14 = toLookupBitMapName funcName14
+    planes0To3' = L.dropWhileEnd (== def) planes0To3
+    check = if length planes0To3 <= 0x40000
+        then ()
+        else error "genEnumBitmap: Cannot build"
+    (func, bitmap03, mBitmap14) = check `seq` if null plane14 && defPUA == def
+        -- Only planes 0-3
+        then
+            ( mconcat
+                [ " = \\c -> let cp = ord c in if cp >= 0x"
+                , showPaddedHeXB (length planes0To3')
+                , " then "
+                , pDef
+                , " else ", lookup03, " cp\n" ]
+            , planes0To3'
+            , Nothing )
+        -- All the planes
+        else
+            let plane14' = L.dropWhileEnd (== def) plane14
+                bound1 = length planes0To3'
+                bound2 = 0xE0000 + length plane14'
+            in ( mconcat
+                    [ " c\n"
+                    , "    -- Planes 0-3\n"
+                    , "    | cp < 0x", showPaddedHeXB bound1
+                                     , " = ", lookup03, " cp\n"
+                    , "    -- Planes 4-13: ", showB def, "\n"
+                    , "    | cp < 0xE0000 = " <> pDef, "\n"
+                    , "    -- Plane 14\n"
+                    , "    | cp < 0x", showPaddedHeXB bound2
+                                     , " = ", lookup14, " (cp - 0x"
+                                     , showPaddedHeXB 0xE0000
+                                     , ")\n"
+                    , if defPUA == def
+                        then ""
+                        else mconcat
+                            [ "    -- Plane 14: ", showB def, "\n"
+                            , "    | cp < 0xF0000 = ", pDef, "\n"
+                            , "    -- Plane 15: ", showB defPUA, "\n"
+                            , "    | cp < 0xFFFFE = ", pPUA, "\n"
+                            , "    -- Plane 15: ", showB def, "\n"
+                            , "    | cp < 0x100000 = ", pDef, "\n"
+                            , "    -- Plane 16: ", showB defPUA, "\n"
+                            , "    | cp < 0x10FFFE = ", pPUA, "\n" ]
+                    , "    -- Default: ", showB def, "\n"
+                    , "    | otherwise = " <> pDef, "\n"
+                    , "    where\n"
+                    , "    cp = ord c\n" ]
+                , planes0To3'
+                , Just plane14' )
+
+generateShamochuBitmaps ::
+    String -> NE.NonEmpty Word -> [Word] -> (a -> Word8) -> [a] -> BB.Builder
+generateShamochuBitmaps name powersStage1 powersStage2 convert xs =
+    case Shamochu.compress powersStage1 powersStage2 (Exts.fromList (convert <$> xs)) of
+        Shamochu.OneStage{..} -> trace' "OneStatege" stats $ mconcat
+            [ "{-# INLINE ", toLookupBitMapName name, " #-}\n"
+            , toLookupBitMapName name, " :: Int -> Int\n"
+            , toLookupBitMapName name, " n =\n"
+            -- Lookup:
+            --    mask = (1 << chunk_size_log2) - 1;
+            --    original[i] = data[offsets[i >> chunk_size_log2] + (i & mask)];
+            , mkLookup (Shamochu.dataIntSize stats) "data" 1 . mconcat $
+                [ mkLookup (Shamochu.offsets1IntSize stats) "offsets" 2 $
+                    mkIndent 3 <> mkShift "n" (Shamochu.dataChunkSizeLog2 stats)
+                , mkMask "n" "mask" ]
+            , "\n"
+            , "    where\n"
+            , "    mask = (1 `shiftL` ", BB.wordDec (Shamochu.dataChunkSizeLog2 stats), ") - 1\n"
+            , "    !(Ptr data#) = ", dataBitMap, "\n"
+            , "    !(Ptr offsets#) = ", offsetsBitMap, "\n"
+            , "\n"
+            , "{-# NOINLINE ", dataBitMap, " #-}\n"
+            , dataBitMap, " :: Ptr ", dataType, "\n"
+            , dataBitMap, " = Ptr\n"
+            , "    \"", enumMapToAddrLiteral'
+                            4
+                            50
+                            (Shamochu.dataIntSize stats `shiftR` 3)
+                            (Exts.toList array)
+                            "\"#\n"
+            , "\n"
+            , "{-# NOINLINE ", offsetsBitMap, " #-}\n"
+            , offsetsBitMap, " :: Ptr ", offsetType, "\n"
+            , offsetsBitMap, " = Ptr\n"
+            , "    \"", enumMapToAddrLiteral'
+                            4
+                            50
+                            (Shamochu.offsets1IntSize stats `shiftR` 3)
+                            (Exts.toList offsets)
+                            "\"#\n"
+            ]
+            where
+            Shamochu.CompressedArray{..} = array1
+            dataBitMap = nameBB <> "DataBitMap"
+            offsetsBitMap = nameBB <> "OffsetsBitMap"
+            dataType = "Int" <> BB.wordDec (Shamochu.dataIntSize stats)
+            offsetType = "Word" <> BB.wordDec (Shamochu.offsets1IntSize stats)
+        Shamochu.TwoStages{..} -> trace' "TwoStages" stats $ mconcat
+            [ "{-# INLINE ", toLookupBitMapName name, " #-}\n"
+            , toLookupBitMapName name, " :: Int -> Int\n"
+            , toLookupBitMapName name, " n =\n"
+            -- Lookup:
+            --    mask_data = (1 << data_chunk_size_log2) - 1
+            --    mask_offsets = (1 << offsets_chunk_size_log2) - 1
+            --    data[
+            --        offsets1[
+            --            offsets2[ks >> (data_chunk_size_log2 + offsets_chunk_size_log2)] +
+            --            ((ks >> data_chunk_size_log2) & mask_offsets)
+            --        ] +
+            --        (ks & mask_data)
+            --    ];
+            , mkLookup (Shamochu.dataIntSize stats) "data" 1 . mconcat $
+                [ mkLookup (Shamochu.offsets1IntSize stats) "offsets1" 2 . mconcat $
+                    [ mkLookup (Shamochu.offsets2IntSize stats) "offsets2" 3 $
+                        mkIndent 4 <>
+                        mkShift "n" (Shamochu.dataChunkSizeLog2 stats + Shamochu.offsets1ChunkSizeLog2 stats)
+                    , mkMask ("(" <> mkShift "n" (Shamochu.dataChunkSizeLog2 stats) <> ")") "maskOffsets"
+                    ]
+                , mkMask "n" "maskData" ]
+            , "\n"
+            , "    where\n"
+            , "    maskData = (1 `shiftL` ", BB.wordDec (Shamochu.dataChunkSizeLog2 stats), ") - 1\n"
+            , "    maskOffsets = (1 `shiftL` ", BB.wordDec (Shamochu.offsets1ChunkSizeLog2 stats), ") - 1\n"
+            , "    !(Ptr data#) = ", dataBitMap, "\n"
+            , "    !(Ptr offsets1#) = ", offsets1BitMap, "\n"
+            , "    !(Ptr offsets2#) = ", offsets2BitMap, "\n"
+            , "\n"
+            , "{-# NOINLINE ", dataBitMap, " #-}\n"
+            , dataBitMap, " :: Ptr ", dataType, "\n"
+            , dataBitMap, " = Ptr\n"
+            , "    \"", enumMapToAddrLiteral'
+                            4
+                            50
+                            (Shamochu.dataIntSize stats `shiftR` 3)
+                            (Exts.toList dataArray)
+                            "\"#\n"
+            , "\n"
+            , "{-# NOINLINE ", offsets1BitMap, " #-}\n"
+            , offsets1BitMap, " :: Ptr ", offset1Type, "\n"
+            , offsets1BitMap, " = Ptr\n"
+            , "    \"", enumMapToAddrLiteral'
+                            4
+                            50
+                            (Shamochu.offsets1IntSize stats `shiftR` 3)
+                            (Exts.toList offset1Array)
+                            "\"#\n"
+            , "\n"
+            , "{-# NOINLINE ", offsets2BitMap, " #-}\n"
+            , offsets2BitMap, " :: Ptr ", offset2Type, "\n"
+            , offsets2BitMap, " = Ptr\n"
+            , "    \"", enumMapToAddrLiteral'
+                            4
+                            50
+                            (Shamochu.offsets2IntSize stats `shiftR` 3)
+                            (Exts.toList offsets2Array)
+                             "\"#\n"
+            ]
+            where
+            Shamochu.CompressedArray{array=dataArray} = array1
+            Shamochu.CompressedArray{array=offset1Array, offsets=offsets2Array} = array2
+            dataBitMap = nameBB <> "DataBitMap"
+            offsets1BitMap = nameBB <> "Offsets1BitMap"
+            offsets2BitMap = nameBB <> "Offsets2BitMap"
+            dataType = "Int" <> BB.wordDec (Shamochu.dataIntSize stats)
+            offset1Type = "Word" <> BB.wordDec (Shamochu.offsets1IntSize stats)
+            offset2Type = "Word" <> BB.wordDec (Shamochu.offsets2IntSize stats)
+    where
+    trace' stages stats = trace $ mconcat
+        [ "* ", name, ": Shamochu: ", stages, "; savings: "
+        , show (fromRational (100 * (1 - 1 / toRational (Shamochu.ratio stats))) :: Centi)
+        , "%; "
+        , show stats ]
+    nameBB = BB.string7 name
+    mkIndent :: Word -> BB.Builder
+    mkIndent count = foldMap (const "    ") [1..count]
+    mkLookup dataSize addrName indent index = mconcat
+        [ mkIndent indent
+        , "lookupWord", BB.wordDec dataSize, "AsInt ", addrName, "# (\n"
+        , index, "\n"
+        , mkIndent indent, ")" ]
+    mkShift n count = mconcat [n, " `shiftR` ", BB.wordDec count]
+    mkMask n mask = mconcat [" + (", n, " .&. ", mask, ")"]
+
+toTitle :: String -> String
+toTitle = \case
+    c:cs -> toUpper c : cs
+    cs -> cs
+
+toLookupBitMapName :: String -> BB.Builder
+toLookupBitMapName name = "lookup" <> BB.string7 (toTitle name) <> "BitMap"
 
 --------------------------------------------------------------------------------
 -- Helpers
