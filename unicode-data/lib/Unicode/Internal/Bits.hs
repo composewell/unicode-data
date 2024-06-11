@@ -14,6 +14,7 @@
 module Unicode.Internal.Bits
     ( lookupBit64,
       lookupWord8AsInt,
+      lookupWord16AsInt,
       lookupWord32#
     ) where
 
@@ -22,14 +23,17 @@ module Unicode.Internal.Bits
 import Data.Bits (finiteBitSize, popCount)
 import GHC.Exts
        (Addr#, Int(..), Int#, Word(..), Word#,
-        indexWordOffAddr#, indexWord8OffAddr#, indexWord32OffAddr#,
+        indexWordOffAddr#, indexWord8OffAddr#,
+        indexWord16OffAddr#, indexWord32OffAddr#,
         andI#, uncheckedIShiftRL#,
         and#, word2Int#, uncheckedShiftL#)
 #if MIN_VERSION_base(4,16,0)
-import GHC.Exts (word8ToWord#, word32ToWord#)
+import GHC.Exts (word8ToWord#, word16ToWord#, word32ToWord#)
 #endif
 #ifdef WORDS_BIGENDIAN
-import GHC.Exts (byteSwap#, narrow32Word#, byteSwap32#)
+import GHC.Exts
+       (byteSwap#, narrow16Word#, narrow32Word#,
+        byteSwap16#, byteSwap32#)
 #endif
 
 -- | @lookup64 addr index@ looks up the bit stored at bit index @index@ using a
@@ -75,6 +79,24 @@ lookupWord8AsInt addr# (I# index#) = I# (word2Int# word##)
     word## = word8ToWord# (indexWord8OffAddr# addr# index#)
 #else
     word## = indexWord8OffAddr# addr# index#
+#endif
+
+lookupWord16AsInt
+  :: Addr# -- ^ Bitmap address
+  -> Int   -- ^ Word index
+  -> Int   -- ^ Resulting word as `Int`
+lookupWord16AsInt addr# (I# k#) = I# (word2Int# word##)
+    where
+#ifdef WORDS_BIGENDIAN
+#if MIN_VERSION_base(4,16,0)
+    word## = narrow16Word# (byteSwap16# (word16ToWord# (indexWord16OffAddr# addr# k#)))
+#else
+    word## = narrow16Word# (byteSwap16# (indexWord16OffAddr# addr# k#))
+#endif
+#elif MIN_VERSION_base(4,16,0)
+    word## = word16ToWord# (indexWord16OffAddr# addr# k#)
+#else
+    word## = indexWord16OffAddr# addr# k#
 #endif
 
 {-| @lookupWord32# addr index@ looks up for the @index@-th 32-bits word in

@@ -101,6 +101,7 @@ executable ucd2haskell
       , directory           >= 1.3.6 && < 1.4
       , filepath            >= 1.4.100 && < 1.5
       , getopt-generics     >= 0.13  && < 0.14
+      , shamochu            >= 0.1.0 && < 0.2
       , unicode-data-parser >= 0.3.0 && < 0.4
   else
     buildable: False
