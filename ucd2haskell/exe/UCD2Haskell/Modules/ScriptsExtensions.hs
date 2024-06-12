@@ -106,7 +106,7 @@ genScriptExtensionsModule moduleName aliases extensions = Fold step mempty done
         , "import Data.Word (Word8)"
         , "import GHC.Exts (Ptr(..))"
         , "import Unicode.Internal.Char.Scripts (Script(..))"
-        , "import Unicode.Internal.Bits (lookupIntN)"
+        , "import Unicode.Internal.Bits (lookupWord8AsInt)"
         , ""
         , "-- | Useful to decode the output of 'scriptExtensions'."
         , "decodeScriptExtensions :: Int -> NonEmpty Script"

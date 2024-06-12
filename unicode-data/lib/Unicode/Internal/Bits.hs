@@ -13,7 +13,7 @@
 
 module Unicode.Internal.Bits
     ( lookupBit64,
-      lookupIntN,
+      lookupWord8AsInt,
       lookupWord32#
     ) where
 
@@ -56,7 +56,7 @@ lookupBit64 addr# (I# index#) = W# (word## `and#` bitMask##) /= 0
     bitIndex# = index# `andI#` fbs#
     bitMask## = 1## `uncheckedShiftL#` bitIndex#
 
-{-| @lookupIntN addr index@ looks up for the @index@-th @8@-bits word in
+{-| @lookupWord8AsInt addr index@ looks up for the @index@-th @8@-bits word in
 the bitmap starting at @addr@, then convert it to an 'Int'.
 
 The caller must make sure that:
@@ -65,11 +65,11 @@ The caller must make sure that:
 
 @since 0.3.0
 -}
-lookupIntN
+lookupWord8AsInt
   :: Addr# -- ^ Bitmap address
   -> Int   -- ^ Word index
   -> Int   -- ^ Resulting word as 'Int'
-lookupIntN addr# (I# index#) = I# (word2Int# word##)
+lookupWord8AsInt addr# (I# index#) = I# (word2Int# word##)
   where
 #if MIN_VERSION_base(4,16,0)
     word## = word8ToWord# (indexWord8OffAddr# addr# index#)

@@ -150,7 +150,7 @@ genIdentifierTypeModule moduleName = Fold step mempty done
         , "import Data.List.NonEmpty (NonEmpty)"
         , "import Data.Word (Word8)"
         , "import GHC.Exts (Ptr(..))"
-        , "import Unicode.Internal.Bits (lookupIntN)"
+        , "import Unicode.Internal.Bits (lookupWord8AsInt)"
         , ""
         , "-- | Identifier type"
         , "--"

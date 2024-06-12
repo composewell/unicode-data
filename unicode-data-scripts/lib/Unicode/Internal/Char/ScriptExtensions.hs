@@ -18,7 +18,7 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.Word (Word8)
 import GHC.Exts (Ptr(..))
 import Unicode.Internal.Char.Scripts (Script(..))
-import Unicode.Internal.Bits (lookupIntN)
+import Unicode.Internal.Bits (lookupWord8AsInt)
 
 -- | Useful to decode the output of 'scriptExtensions'.
 decodeScriptExtensions :: Int -> NonEmpty Script
@@ -249,11 +249,11 @@ decodeScriptExtensions = \case
 scriptExtensions :: Char -> Int
 scriptExtensions c
     -- Planes 0-3
-    | cp < 0x323B0 = lookupIntN bitmap# cp
+    | cp < 0x323B0 = lookupWord8AsInt bitmap# cp
     -- Planes 4-13: 211
     | cp < 0xE0000 = 211
     -- Plane 14
-    | cp < 0xE01F0 = lookupIntN bitmap# (cp - 0xADC50)
+    | cp < 0xE01F0 = lookupWord8AsInt bitmap# (cp - 0xADC50)
     -- Default: 211
     | otherwise = 211
     where
