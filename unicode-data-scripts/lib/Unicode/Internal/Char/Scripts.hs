@@ -17,7 +17,7 @@ import Data.Int (Int32)
 import Data.Ix (Ix)
 import Data.Word (Word8)
 import GHC.Exts (Ptr(..))
-import Unicode.Internal.Bits (lookupIntN)
+import Unicode.Internal.Bits (lookupWord8AsInt)
 
 -- | Unicode [script](https://www.unicode.org/reports/tr24/).
 --
@@ -371,11 +371,11 @@ scriptDefinition b = case b of
 script :: Char -> Int
 script c
     -- Planes 0-3
-    | cp < 0x323B0 = lookupIntN bitmap# cp
+    | cp < 0x323B0 = lookupWord8AsInt bitmap# cp
     -- Planes 4-13: 156
     | cp < 0xE0000 = 156
     -- Plane 14
-    | cp < 0xE01F0 = lookupIntN bitmap# (cp - 0xADC50)
+    | cp < 0xE01F0 = lookupWord8AsInt bitmap# (cp - 0xADC50)
     -- Default: 156
     | otherwise = 156
     where

@@ -59,7 +59,7 @@ module Unicode.Internal.Char.UnicodeData.GeneralCategory
 import Data.Char (ord)
 import Data.Word (Word8)
 import GHC.Exts (Ptr(..))
-import Unicode.Internal.Bits (lookupIntN)
+import Unicode.Internal.Bits (lookupWord8AsInt)
 
 --------------------------------------------------------------------------------
 -- General category patterns
@@ -226,7 +226,7 @@ pattern MaxIsSeparator = 0x3000
 -- The caller of this function must ensure its parameter is \< @0x40000@.
 {-# INLINE generalCategoryPlanes0To3 #-}
 generalCategoryPlanes0To3 :: Int -> Int
-generalCategoryPlanes0To3 = lookupIntN bitmap#
+generalCategoryPlanes0To3 = lookupWord8AsInt bitmap#
     where
     !(Ptr bitmap#) = generalCategoryBitmap
 
@@ -235,11 +235,11 @@ generalCategoryPlanes0To3 = lookupIntN bitmap#
 generalCategory :: Char -> Int
 generalCategory c
     -- Planes 0-3
-    | cp < 0x323B0 = lookupIntN bitmap# cp
+    | cp < 0x323B0 = lookupWord8AsInt bitmap# cp
     -- Planes 4-13: Cn
     | cp < 0xE0000 = NotAssigned
     -- Plane 14
-    | cp < 0xE01F0 = lookupIntN bitmap# (cp - 0xADC50)
+    | cp < 0xE01F0 = lookupWord8AsInt bitmap# (cp - 0xADC50)
     -- Plane 14: Cn
     | cp < 0xF0000 = NotAssigned
     -- Plane 15: Co

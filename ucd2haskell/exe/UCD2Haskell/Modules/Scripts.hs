@@ -55,7 +55,7 @@ genScriptsModule moduleName aliases = Fold step mempty done
             , "import Data.Ix (Ix)"
             , "import Data.Word (Word8)"
             , "import GHC.Exts (Ptr(..))"
-            , "import Unicode.Internal.Bits (lookupIntN)"
+            , "import Unicode.Internal.Bits (lookupWord8AsInt)"
             , ""
             , "-- | Unicode [script](https://www.unicode.org/reports/tr24/)."
             , "--"

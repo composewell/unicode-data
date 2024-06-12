@@ -283,7 +283,7 @@ genEnumBitmap funcName (defPUA, pPUA) (def, pDef) planes0To3 plane14 =
                 , showPaddedHeXB (length planes0To3')
                 , " then "
                 , pDef
-                , " else lookupIntN bitmap# cp\n"
+                , " else lookupWord8AsInt bitmap# cp\n"
                 , "    where\n" ]
             , planes0To3' )
         -- All the planes
@@ -295,12 +295,12 @@ genEnumBitmap funcName (defPUA, pPUA) (def, pDef) planes0To3 plane14 =
                     [ " c\n"
                     , "    -- Planes 0-3\n"
                     , "    | cp < 0x", showPaddedHeXB bound1
-                                     , " = lookupIntN bitmap# cp\n"
+                                     , " = lookupWord8AsInt bitmap# cp\n"
                     , "    -- Planes 4-13: ", showB def, "\n"
                     , "    | cp < 0xE0000 = " <> pDef, "\n"
                     , "    -- Plane 14\n"
                     , "    | cp < 0x", showPaddedHeXB bound2
-                                     , " = lookupIntN bitmap# (cp - 0x"
+                                     , " = lookupWord8AsInt bitmap# (cp - 0x"
                                      , showPaddedHeXB (0xE0000 - bound1)
                                      , ")\n"
                     , if defPUA == def
