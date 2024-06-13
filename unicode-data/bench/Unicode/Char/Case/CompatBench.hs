@@ -2,32 +2,37 @@ module Unicode.Char.Case.CompatBench
     ( benchmarks
     ) where
 
-import Test.Tasty.Bench ( bgroup, Benchmark )
-
 import qualified Data.Char as Char
-import Unicode.Char.Bench (CharRange, Bench(..), bgroup')
+import Test.Tasty.Bench (Benchmark)
+
+import Unicode.Char.Bench (
+    Bench (..),
+    CharRange,
+    bgroupWithCharRange,
+    bgroupWithChars,
+ )
 import qualified Unicode.Char.Case.Compat as CC
 
 {-# NOINLINE benchmarks #-}
 benchmarks :: CharRange -> Benchmark
-benchmarks charRange = bgroup "Unicode.Char.Case.Compat"
-    [ bgroup' "isLower" charRange
+benchmarks r = bgroupWithCharRange "Unicode.Char.Case.Compat" r $ \chars ->
+    [ bgroupWithChars "isLower" chars
       [ Bench "base"         Char.isLower
       , Bench "unicode-data" CC.isLower
       ]
-    , bgroup' "isUpper" charRange
+    , bgroupWithChars "isUpper" chars
       [ Bench "base"         Char.isUpper
       , Bench "unicode-data" CC.isUpper
       ]
-    , bgroup' "toLower" charRange
+    , bgroupWithChars "toLower" chars
       [ Bench "base"         Char.toLower
       , Bench "unicode-data" CC.toLower
       ]
-    , bgroup' "toTitle" charRange
+    , bgroupWithChars "toTitle" chars
       [ Bench "base"         Char.toTitle
       , Bench "unicode-data" CC.toTitle
       ]
-    , bgroup' "toUpper" charRange
+    , bgroupWithChars "toUpper" chars
       [ Bench "base"         Char.toUpper
       , Bench "unicode-data" CC.toUpper
       ]

@@ -4,47 +4,51 @@ module Unicode.Char.CaseBench
     ( benchmarks
     ) where
 
-import Test.Tasty.Bench ( bgroup, Benchmark )
+import Test.Tasty.Bench (Benchmark)
 
-import Unicode.Char.Bench (benchChars, CharRange)
+import Unicode.Char.Bench (
+    Bench (..),
+    CharRange,
+    bgroupWithCharRange,
+    bgroupWithChars,
+ )
 import qualified Unicode.Char.Case as C
 
 #if MIN_VERSION_base(4,18,0)
 import qualified Data.Char as Char
-import Unicode.Char.Bench (Bench(..), bgroup')
 #endif
 
 {-# NOINLINE benchmarks #-}
 benchmarks :: CharRange -> Benchmark
-benchmarks charRange = bgroup "Unicode.Char.Case"
+benchmarks r = bgroupWithCharRange "Unicode.Char.Case" r $ \chars ->
     [
 #if MIN_VERSION_base(4,18,0)
-      bgroup' "isLowerCase" charRange
+      bgroupWithChars "isLowerCase" chars
       [ Bench "base"         Char.isLowerCase
       , Bench "unicode-data" C.isLowerCase
       ]
-    , bgroup' "isUpperCase" charRange
+    , bgroupWithChars "isUpperCase" chars
       [ Bench "base"         Char.isUpperCase
       , Bench "unicode-data" C.isUpperCase
       ]
 #else
-      bgroup "isLowerCase"
-      [ benchChars "unicode-data" charRange C.isLowerCase
+      bgroupWithChars "isLowerCase" chars
+      [ Bench "unicode-data" C.isLowerCase
       ]
-    , bgroup "isUpperCase"
-      [ benchChars "unicode-data" charRange C.isUpperCase
+    , bgroupWithChars "isUpperCase" chars
+      [ Bench "unicode-data" C.isUpperCase
       ]
 #endif
-    , bgroup "toCaseFoldString"
-      [ benchChars "unicode-data" charRange C.toCaseFoldString
+    , bgroupWithChars "toCaseFoldString" chars
+      [ Bench "unicode-data" C.toCaseFoldString
       ]
-    , bgroup "toLowerString"
-      [ benchChars "unicode-data" charRange C.toLowerString
+    , bgroupWithChars "toLowerString" chars
+      [ Bench "unicode-data" C.toLowerString
       ]
-    , bgroup "toTitleString"
-      [ benchChars "unicode-data" charRange C.toTitleString
+    , bgroupWithChars "toTitleString" chars
+      [ Bench "unicode-data" C.toTitleString
       ]
-    , bgroup "toUpperString"
-      [ benchChars "unicode-data" charRange C.toUpperString
+    , bgroupWithChars "toUpperString" chars
+      [ Bench "unicode-data" C.toUpperString
       ]
     ]

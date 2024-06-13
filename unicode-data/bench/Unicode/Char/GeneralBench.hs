@@ -2,71 +2,77 @@ module Unicode.Char.GeneralBench
     ( benchmarks
     ) where
 
-import Test.Tasty.Bench ( bgroup, Benchmark )
-
-import Unicode.Char.Bench (benchChars, bgroup', Bench(..), CharRange)
 import qualified Data.Char as Char
+import Test.Tasty.Bench (Benchmark)
+
+import Unicode.Char.Bench (
+    Bench (..),
+    CharRange,
+    bgroupWithCharRange,
+    bgroupWithChars,
+ )
 import qualified Unicode.Char.General as G
 
 {-# NOINLINE benchmarks #-}
 benchmarks :: CharRange -> Benchmark
-benchmarks charRange = bgroup "Unicode.Char.General"
+benchmarks r = bgroupWithCharRange "Unicode.Char.General" r $ \chars ->
     -- Character classification
-    [ bgroup' "generalCategory" charRange
-      [ Bench "base"          (fromEnum . Char.generalCategory)
-      , Bench "unicode-data"  (fromEnum . G.generalCategory)
+    [ bgroupWithChars "generalCategory" chars
+      -- We use `fromEnum` because of incompatible GeneralCategory types
+      [ Bench "base"         (fromEnum . Char.generalCategory)
+      , Bench "unicode-data" (fromEnum . G.generalCategory)
       ]
-    , bgroup "isAlphabetic"
-      [ benchChars "unicode-data" charRange  G.isAlphabetic
+    , bgroupWithChars "isAlphabetic" chars
+      [ Bench "unicode-data" G.isAlphabetic
       ]
-    , bgroup' "isAlphaNum" charRange
-      [ Bench "base"          Char.isAlphaNum
-      , Bench "unicode-data"  G.isAlphaNum
+    , bgroupWithChars "isAlphaNum" chars
+      [ Bench "base"         Char.isAlphaNum
+      , Bench "unicode-data" G.isAlphaNum
       ]
-    , bgroup' "isControl" charRange
-      [ Bench "base"          Char.isControl
-      , Bench "unicode-data"  G.isControl
+    , bgroupWithChars "isControl" chars
+      [ Bench "base"         Char.isControl
+      , Bench "unicode-data" G.isControl
       ]
-    , bgroup' "isMark" charRange
-      [ Bench "base"          Char.isMark
-      , Bench "unicode-data"  G.isMark
+    , bgroupWithChars "isMark" chars
+      [ Bench "base"         Char.isMark
+      , Bench "unicode-data" G.isMark
       ]
-    , bgroup' "isPrint" charRange
-      [ Bench "base"          Char.isPrint
-      , Bench "unicode-data"  G.isPrint
+    , bgroupWithChars "isPrint" chars
+      [ Bench "base"         Char.isPrint
+      , Bench "unicode-data" G.isPrint
       ]
-    , bgroup' "isPunctuation" charRange
-      [ Bench "base"          Char.isPunctuation
-      , Bench "unicode-data"  G.isPunctuation
+    , bgroupWithChars "isPunctuation" chars
+      [ Bench "base"         Char.isPunctuation
+      , Bench "unicode-data" G.isPunctuation
       ]
-    , bgroup' "isSeparator" charRange
-      [ Bench "base"          Char.isSeparator
-      , Bench "unicode-data"  G.isSeparator
+    , bgroupWithChars "isSeparator" chars
+      [ Bench "base"         Char.isSeparator
+      , Bench "unicode-data" G.isSeparator
       ]
-    , bgroup' "isSymbol" charRange
-      [ Bench "base"          Char.isSymbol
-      , Bench "unicode-data"  G.isSymbol
+    , bgroupWithChars "isSymbol" chars
+      [ Bench "base"         Char.isSymbol
+      , Bench "unicode-data" G.isSymbol
       ]
-    , bgroup "isWhiteSpace"
-      [ benchChars "unicode-data" charRange  G.isWhiteSpace
+    , bgroupWithChars "isWhiteSpace" chars
+      [ Bench "unicode-data" G.isWhiteSpace
       ]
     -- Korean Hangul Characters
-    , bgroup "isHangul"
-      [ benchChars "unicode-data" charRange  G.isHangul
+    , bgroupWithChars "isHangul" chars
+      [ Bench "unicode-data" G.isHangul
       ]
-    , bgroup "isHangulLV"
-      [ benchChars "unicode-data" charRange  G.isHangul
+    , bgroupWithChars "isHangulLV" chars
+      [ Bench "unicode-data" G.isHangul
       ]
-    , bgroup "isJamo"
-      [ benchChars "unicode-data" charRange  G.isJamo
+    , bgroupWithChars "isJamo" chars
+      [ Bench "unicode-data" G.isJamo
       ]
-    , bgroup "jamoLIndex"
-      [ benchChars "unicode-data" charRange  G.jamoLIndex
+    , bgroupWithChars "jamoLIndex" chars
+      [ Bench "unicode-data" G.jamoLIndex
       ]
-    , bgroup "jamoVIndex"
-      [ benchChars "unicode-data" charRange  G.jamoVIndex
+    , bgroupWithChars "jamoVIndex" chars
+      [ Bench "unicode-data" G.jamoVIndex
       ]
-    , bgroup "jamoTIndex"
-      [ benchChars "unicode-data" charRange  G.jamoTIndex
+    , bgroupWithChars "jamoTIndex" chars
+      [ Bench "unicode-data" G.jamoTIndex
       ]
     ]
