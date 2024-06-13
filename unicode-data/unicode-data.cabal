@@ -148,6 +148,9 @@ benchmark bench
     tasty-bench >= 0.2.5 && < 0.4,
     tasty       >= 1.4.1 && < 1.6,
     unicode-data
+  if impl(ghc < 9.0)
+    -- Required for noinline
+    build-depends: ghc-prim
   -- [NOTE] Recommendation of tasty-bench to reduce garbage collection noisiness
   ghc-options: -O2 -fdicts-strict -rtsopts -with-rtsopts=-A32m
   -- [NOTE] Recommendation of tasty-bench for comparison against baseline

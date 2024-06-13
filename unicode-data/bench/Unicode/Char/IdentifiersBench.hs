@@ -2,30 +2,35 @@ module Unicode.Char.IdentifiersBench
     ( benchmarks
     ) where
 
-import Test.Tasty.Bench ( bgroup, Benchmark )
+import Test.Tasty.Bench (Benchmark)
 
-import Unicode.Char.Bench (CharRange, benchChars)
+import Unicode.Char.Bench (
+    Bench (..),
+    CharRange,
+    bgroupWithCharRange,
+    bgroupWithChars,
+ )
 import qualified Unicode.Char.Identifiers as I
 
 {-# NOINLINE benchmarks #-}
 benchmarks :: CharRange -> Benchmark
-benchmarks charRange = bgroup "Unicode.Char.Identifiers"
-    [ bgroup "isIDContinue"
-      [ benchChars "unicode-data" charRange I.isIDContinue
+benchmarks r = bgroupWithCharRange "Unicode.Char.Identifiers" r $ \chars ->
+    [ bgroupWithChars "isIDContinue" chars
+      [ Bench "unicode-data" I.isIDContinue
       ]
-    , bgroup "isIDStart"
-      [ benchChars "unicode-data" charRange I.isIDStart
+    , bgroupWithChars "isIDStart" chars
+      [ Bench "unicode-data" I.isIDStart
       ]
-    , bgroup "isXIDContinue"
-      [ benchChars "unicode-data" charRange I.isXIDContinue
+    , bgroupWithChars "isXIDContinue" chars
+      [ Bench "unicode-data" I.isXIDContinue
       ]
-    , bgroup "isXIDStart"
-      [ benchChars "unicode-data" charRange I.isXIDStart
+    , bgroupWithChars "isXIDStart" chars
+      [ Bench "unicode-data" I.isXIDStart
       ]
-    , bgroup "isPatternSyntax"
-      [ benchChars "unicode-data" charRange I.isPatternSyntax
+    , bgroupWithChars "isPatternSyntax" chars
+      [ Bench "unicode-data" I.isPatternSyntax
       ]
-    , bgroup "isPatternWhitespace"
-      [ benchChars "unicode-data" charRange I.isPatternWhitespace
+    , bgroupWithChars "isPatternWhitespace" chars
+      [ Bench "unicode-data" I.isPatternWhitespace
       ]
     ]

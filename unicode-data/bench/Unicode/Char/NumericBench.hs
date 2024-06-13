@@ -2,22 +2,27 @@ module Unicode.Char.NumericBench
     ( benchmarks
     ) where
 
-import Test.Tasty.Bench ( bgroup, Benchmark )
+import Test.Tasty.Bench (Benchmark)
 
-import Unicode.Char.Bench (benchChars, CharRange)
+import Unicode.Char.Bench (
+    Bench (..),
+    CharRange,
+    bgroupWithCharRange,
+    bgroupWithChars,
+ )
 import qualified Unicode.Char.Numeric as Num
 
 {-# NOINLINE benchmarks #-}
 benchmarks :: CharRange -> Benchmark
-benchmarks charRange = bgroup "Unicode.Char.Numeric"
+benchmarks r = bgroupWithCharRange "Unicode.Char.Numeric" r $ \chars ->
   -- [TODO] Replace with 'isNumber' once the migration is done.
-  [ bgroup "isNumeric"
-    [ benchChars "unicode-data" charRange Num.isNumeric
+  [ bgroupWithChars "isNumeric" chars
+    [ Bench "unicode-data" Num.isNumeric
     ]
-  , bgroup "numericValue"
-    [ benchChars "unicode-data" charRange Num.numericValue
+  , bgroupWithChars "numericValue" chars
+    [ Bench "unicode-data" Num.numericValue
     ]
-  , bgroup "integerValue"
-    [ benchChars "unicode-data" charRange Num.integerValue
+  , bgroupWithChars "integerValue" chars
+    [ Bench "unicode-data" Num.integerValue
     ]
   ]
