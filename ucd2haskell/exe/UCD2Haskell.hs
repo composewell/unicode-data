@@ -16,6 +16,7 @@ import qualified UCD2Haskell.Generator.Names as Names
 import qualified UCD2Haskell.Generator.Scripts as Scripts
 import qualified UCD2Haskell.Generator.Security as Security
 import UCD2Haskell.Common (Version (..))
+import UCD2Haskell.Generator (printCpuTime)
 
 data CLIOptions =
     CLIOptions
@@ -37,12 +38,13 @@ data CLIOptions =
     deriving (Show, Generic, HasArguments)
 
 cliClient :: CLIOptions -> IO ()
-cliClient opts
-    = Core.generateModules version (inDir "ucd") (output_core opts) (core_prop opts)
-    *> Names.generateModules version (inDir "ucd") (output_names opts)
-    *> Scripts.generateModules version (inDir "ucd") (output_scripts opts)
-    *> Security.generateModules version (inDir "security") (output_security opts)
-    where
+cliClient opts = do
+    Core.generateModules version (inDir "ucd") (output_core opts) (core_prop opts)
+    Names.generateModules version (inDir "ucd") (output_names opts)
+    Scripts.generateModules version (inDir "ucd") (output_scripts opts)
+    Security.generateModules version (inDir "security") (output_security opts)
+    putChar '[' *> printCpuTime *> putStrLn "s] Finished"
+  where
     version = unVersion (unicode_version opts)
     inDir = (input opts </>)
 

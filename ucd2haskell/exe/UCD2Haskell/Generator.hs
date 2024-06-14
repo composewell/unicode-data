@@ -20,6 +20,7 @@ module UCD2Haskell.Generator
     , word32ToWord8s
     , splitPlanes
       -- * Helpers
+    , printCpuTime
     , unlinesBB
     , unwordsBB
     , apacheLicense
@@ -28,11 +29,14 @@ import Data.Bits (Bits(..))
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Lazy as BL
+import Data.Fixed (Centi)
 import Data.Functor ((<&>))
 import qualified Data.List as L
-import Data.Word (Word8, Word32)
+import Data.Ratio ((%))
 import Data.Version (Version, showVersion)
+import Data.Word (Word8, Word32)
 import GHC.Stack (HasCallStack)
+import System.CPUTime (getCPUTime)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath ((<.>), (</>))
 
@@ -89,8 +93,15 @@ moduleFileEmitter version unicodeSourceFile outdir (modName, fldGen) =
     outfile = outdir </> moduleToFileName modName <.> "hs"
     outfiledir = dirFromFileName outfile
     action c = do
+        putChar '[' *> printCpuTime *> putStr "s] Writing module: "
+        putStrLn modName
         createDirectoryIfMissing True outfiledir
         B.writeFile outfile (BL.toStrict (BB.toLazyByteString (pretext <> c)))
+
+printCpuTime :: IO ()
+printCpuTime = do
+    t <- getCPUTime
+    putStr (show (fromRational (t % 1000000000000) :: Centi))
 
 runGenerator ::
        Version
