@@ -32,8 +32,8 @@ import qualified UCD2Haskell.Modules.UnicodeData.SimpleCaseMappings as SimpleCas
 import qualified UCD2Haskell.Modules.Version as Version
 import UCD2Haskell.Generator (runGenerator)
 
-generateModules :: Version -> FilePath -> FilePath -> [String] -> IO ()
-generateModules version indir outdir props = do
+generateModules :: Version -> FilePath -> FilePath -> [String] -> [String] -> IO ()
+generateModules version indir outdir patterns props = do
 
     fullCompositionExclusion <- Composition.parseFullCompositionExclusion
         <$> B.readFile (indir </> "DerivedNormalizationProps.txt")
@@ -50,12 +50,14 @@ generateModules version indir outdir props = do
         "Blocks.txt"
         Prop.parse
         outdir
+        patterns
         [ Blocks.recipe ]
 
     runGenerator'
         "UnicodeData.txt"
         UD.parse
         outdir
+        patterns
         [ Composition.recipe fullCompositionExclusion combiningChars
         , CombiningClass.recipe
         , Decomposition.decomposable
@@ -78,24 +80,28 @@ generateModules version indir outdir props = do
         "PropList.txt"
         Props.parse
         outdir
+        patterns
         [ Properties.propList propsSet ]
 
     runGenerator'
         "DerivedCoreProperties.txt"
         Props.parse
         outdir
+        patterns
         [ Properties.derivedCoreProperties propsSet ]
 
     runGenerator'
         "extracted/DerivedNumericValues.txt"
         N.parse
         outdir
+        patterns
         [ DerivedNumericValues.recipe ]
 
     runGenerator'
         "CaseFolding.txt"
         CF.parse
         outdir
+        patterns
         [ CaseFoldings.recipe ]
 
     Version.writeModule

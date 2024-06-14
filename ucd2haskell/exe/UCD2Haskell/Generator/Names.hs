@@ -18,14 +18,15 @@ import qualified UCD2Haskell.Modules.UnicodeData.NameAliases as NameAliases
 import qualified UCD2Haskell.Modules.Version as Version
 import UCD2Haskell.Generator (runGenerator)
 
-generateModules :: Version -> FilePath -> FilePath -> IO ()
-generateModules version indir outdir = do
+generateModules :: Version -> FilePath -> FilePath -> [String] -> IO ()
+generateModules version indir outdir patterns = do
     runGenerator
         version
         indir
         ("extracted" </> "DerivedName.txt")
         N.parse
         outdir
+        patterns
         [ Names.recipe ]
 
     runGenerator
@@ -34,6 +35,7 @@ generateModules version indir outdir = do
         "NameAliases.txt"
         NA.parse
         outdir
+        patterns
         [ NameAliases.recipe ]
 
     Version.writeModule
