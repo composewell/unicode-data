@@ -19,8 +19,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: uraimo/run-on-arch-action@v2.3.0
+    - uses: actions/checkout@v4
+    - uses: uraimo/run-on-arch-action@v2.7.2
       timeout-minutes: 60
       with:
         arch: s390x

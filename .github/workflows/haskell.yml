@@ -50,11 +50,11 @@ jobs:
           - 8.4.4
           - 8.6.5
           - 8.8.4
-          - 8.8.4+macOS
           - 8.10.7
           - 9.0.2
           - 9.2.8+ucd2haskell
           - 9.4.8
+          - 9.4.8+macOS
           - 9.6.5
           - 9.8.2
           - 9.10.1+ucd2haskell
@@ -95,12 +95,6 @@ jobs:
             cabal_version: 3.2
             ignore_error: false
 
-          - name: 8.8.4+macOS
-            ghc_version: 8.8.4
-            runner: macos-latest
-            cabal_version: 3.2
-            ignore_error: false
-
           - name: 8.10.7
             ghc_version: 8.10.7
             runner: ubuntu-latest
@@ -125,6 +119,12 @@ jobs:
             ghc_version: 9.4.8
             runner: ubuntu-latest
             cabal_version: 3.8.1.0
+            ignore_error: false
+
+          - name: 9.4.8+macOS
+            ghc_version: 9.4.8
+            runner: macos-latest
+            cabal_version: latest
             ignore_error: false
 
           - name: 9.6.5
@@ -170,15 +170,15 @@ jobs:
             ignore_error: false
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - uses: haskell/actions/setup@v2
+    - uses: haskell-actions/setup@v2
       with:
         ghc-version: ${{ matrix.ghc_version }}
         ghcup-release-channel: ${{ matrix.ghcup_release_channel }}
         cabal-version: ${{ matrix.cabal_version }}
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       name: Cache ~/.cabal
       with:
         path: ~/.cabal
