@@ -65,7 +65,7 @@ jobs:
           - name: 8.0.2
             ghc_version: 8.0.2
             runner: ubuntu-latest
-            cabal_version: 3.2
+            cabal_version: latest
             pack_options: DISABLE_TEST=y
             ignore_error: false
 
