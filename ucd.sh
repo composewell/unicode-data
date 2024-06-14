@@ -1,5 +1,5 @@
 #!/bin/sh
-# shellcheck disable=SC3043
+# shellcheck disable=SC3043,SC3010,SC3030,SC3054
 
 # When reproducing the Haskell files we want to to be sure that the files that
 # we used to generate them earlier are exactly the same as the ones we are
@@ -47,8 +47,11 @@ download_file() {
     local directory="data/$VERSION/$1"
     local url="$2"
     local pair="$3"
-    local file="$(echo "$pair" | cut -f1 -d':')"
-    local checksum="$(echo "$pair" | cut -f2 -d':')"
+    local file
+    local checksum
+
+    file="$(echo "$pair" | cut -f1 -d':')"
+    checksum="$(echo "$pair" | cut -f2 -d':')"
 
     if test ! -e "$directory/$file"
     then
@@ -79,24 +82,42 @@ download_files() {
 
 # Generate the Haskell files.
 run_generator() {
+    # Get remaining arguments to pass to Cabal and ucd2haskell.
+    # Split them on “--” and store in arrays to avoid issues with empty strings.
+    local cabal_options=()
+    local cabal_options_end=false
+    local ucd2haskell_opts=()
+    for opt in "$@"
+    do
+        if [ "$cabal_options_end" = true ]; then
+            ucd2haskell_opts+=("$opt")
+        elif [ "$opt" = "--" ]; then
+            cabal_options_end=true
+        else
+            cabal_options+=("$opt")
+        fi
+    done
+
     # Compile and run ucd2haskell
-    cabal run --flag ucd2haskell ucd2haskell:ucd2haskell -- \
-          --input "./data/$VERSION" \
-          --output-core ./unicode-data/lib/ \
-          --output-names ./unicode-data-names/lib/ \
-          --output-scripts ./unicode-data-scripts/lib/ \
-          --output-security ./unicode-data-security/lib/ \
-          --core-prop Uppercase \
-          --core-prop Lowercase \
-          --core-prop Alphabetic \
-          --core-prop White_Space \
-          --core-prop ID_Start \
-          --core-prop ID_Continue \
-          --core-prop XID_Start \
-          --core-prop XID_Continue \
-          --core-prop Pattern_Syntax \
-          --core-prop Pattern_White_Space \
-          --unicode-version "$VERSION"
+    cabal run --flag ucd2haskell "${cabal_options[@]}" \
+        ucd2haskell:ucd2haskell -- \
+            --input "./data/$VERSION" \
+            --output-core ./unicode-data/lib/ \
+            --output-names ./unicode-data-names/lib/ \
+            --output-scripts ./unicode-data-scripts/lib/ \
+            --output-security ./unicode-data-security/lib/ \
+            --core-prop Uppercase \
+            --core-prop Lowercase \
+            --core-prop Alphabetic \
+            --core-prop White_Space \
+            --core-prop ID_Start \
+            --core-prop ID_Continue \
+            --core-prop XID_Start \
+            --core-prop XID_Continue \
+            --core-prop Pattern_Syntax \
+            --core-prop Pattern_White_Space \
+            --unicode-version "$VERSION" \
+            "${ucd2haskell_opts[@]}"
 }
 
 # Print help text
@@ -109,6 +130,10 @@ print_help() {
     echo
     echo "Example:"
     echo "$ ./ucd.sh download && ./ucd.sh generate"
+    echo
+    echo "Further arguments will be passed to cabal."
+    echo "The following compiles ucd2haskell with '-O2' and then displays its help."
+    echo "$ ./ucd.sh generate -O2 -- --help"
 }
 
 # Main program
@@ -122,6 +147,6 @@ case $1 in
     download)
         download_files "ucd" "$UCD_URL" "$UCD_FILES";
         download_files "security" "$SECURITY_URL" "$SECURITY_FILES";;
-    generate) run_generator;;
+    generate) run_generator "${@:2}";;
     *) echo "Unknown argument"; print_help;;
 esac
