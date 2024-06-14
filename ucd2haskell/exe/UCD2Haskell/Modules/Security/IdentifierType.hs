@@ -20,8 +20,14 @@ import qualified Data.Set as Set
 import qualified Unicode.CharacterDatabase.Parser.Common as U
 import qualified Unicode.CharacterDatabase.Parser.Properties.Single as Prop
 
-import UCD2Haskell.Generator (FileRecipe (..), unlinesBB, apacheLicense, genEnumBitmap, splitPlanes)
 import UCD2Haskell.Common (Fold (..))
+import UCD2Haskell.Generator (
+    FileRecipe (..),
+    apacheLicense,
+    genEnumBitmapShamochu,
+    splitPlanes,
+    unlinesBB,
+ )
 
 recipe :: FileRecipe Prop.Entry
 recipe = ModuleRecipe
@@ -146,11 +152,13 @@ genIdentifierTypeModule moduleName = Fold step mempty done
         , "(IdentifierType(..), identifierTypes, decodeIdentifierTypes)"
         , "where"
         , ""
+        , "import Data.Bits (Bits(..))"
         , "import Data.Char (ord)"
+        , "import Data.Int (Int8)"
         , "import Data.List.NonEmpty (NonEmpty)"
-        , "import Data.Word (Word8)"
+        , "import Data.Word (Word8, Word16)"
         , "import GHC.Exts (Ptr(..))"
-        , "import Unicode.Internal.Bits (lookupWord8AsInt)"
+        , "import Unicode.Internal.Bits (lookupWord8AsInt, lookupWord16AsInt)"
         , ""
         , "-- | Identifier type"
         , "--"
@@ -195,14 +203,20 @@ genIdentifierTypeModule moduleName = Fold step mempty done
         , "    _ -> " <> mkHaskellConstructorsList def
         , ""
         , "-- | Returns the 'IdentifierType's corresponding to a character."
-        , genEnumBitmap
+        , genEnumBitmapShamochu
             "identifierTypes"
+            (NE.singleton 3)
+            [5]
+            toWord8
             (defIdx, BB.intDec (fromEnum defIdx))
             (defIdx, BB.intDec (fromEnum defIdx))
             planes0To3
             plane14
         ]
         where
+        toWord8 =
+            assert (fromEnum (maxBound :: IdentifierType) < 0xff)
+            (fromIntegral . fromEnum)
         (planes0To3, plane14) = splitPlanes
             "Cannot generate: genIdentifierTypeModule"
             (== defIdx)
