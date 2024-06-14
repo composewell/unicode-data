@@ -25,16 +25,17 @@ module UCD2Haskell.Generator
     , unwordsBB
     , apacheLicense
     ) where
-import Data.Bits (Bits(..))
+
+import Data.Bits (Bits (..))
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Lazy as BL
 import Data.Fixed (Centi)
-import Data.Functor ((<&>))
 import qualified Data.List as L
+import Data.Maybe (mapMaybe)
 import Data.Ratio ((%))
 import Data.Version (Version, showVersion)
-import Data.Word (Word8, Word32)
+import Data.Word (Word32, Word8)
 import GHC.Stack (HasCallStack)
 import System.CPUTime (getCPUTime)
 import System.Directory (createDirectoryIfMissing)
@@ -109,16 +110,20 @@ runGenerator ::
     -> FilePath
     -> (B.ByteString -> [a])
     -> FilePath
+    -> [String]
     -> GeneratorRecipe a
     -> IO ()
-runGenerator version indir file transformLines outdir recipes = do
+runGenerator version indir file transformLines outdir patterns recipes = do
     raw <- B.readFile (indir </> file)
     sequence_ (runFold combinedFld (transformLines raw))
 
     where
 
-    generatedFolds = recipes <&> \case
-      ModuleRecipe     name f -> moduleFileEmitter version file outdir (name, f)
+    generatedFolds = mapMaybe toModuleEmitter recipes
+    toModuleEmitter = \case
+      ModuleRecipe name f -> if all (`L.isSubsequenceOf` name) patterns
+        then Just (moduleFileEmitter version file outdir (name, f))
+        else Nothing
     combinedFld = distribute generatedFolds
 
 --------------------------------------------------------------------------------

@@ -18,8 +18,8 @@ import qualified UCD2Haskell.Modules.ScriptsExtensions as ScriptsExtensions
 import qualified UCD2Haskell.Modules.Version as Version
 import UCD2Haskell.Generator (runGenerator)
 
-generateModules :: Version -> FilePath -> FilePath -> IO ()
-generateModules version indir outdir = do
+generateModules :: Version -> FilePath -> FilePath -> [String] -> IO ()
+generateModules version indir outdir patterns = do
     scriptAliases <- Scripts.parseScriptAliases
         <$> B.readFile (indir </> "PropertyValueAliases.txt")
 
@@ -32,6 +32,7 @@ generateModules version indir outdir = do
         "Scripts.txt"
         Prop.parse
         outdir
+        patterns
         [ Scripts.recipe scriptAliases
         , ScriptsExtensions.recipe scriptAliases extensions ]
 

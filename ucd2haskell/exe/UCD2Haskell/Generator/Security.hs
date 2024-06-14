@@ -18,14 +18,15 @@ import qualified UCD2Haskell.Modules.Security.IntentionalConfusables as Intentio
 import qualified UCD2Haskell.Modules.Version as Version
 import UCD2Haskell.Generator (runGenerator)
 
-generateModules :: Version -> FilePath -> FilePath -> IO ()
-generateModules version indir outdir = do
+generateModules :: Version -> FilePath -> FilePath -> [String] -> IO ()
+generateModules version indir outdir patterns = do
     runGenerator
         version
         indir
         "IdentifierStatus.txt"
         Prop.parse
         outdir
+        patterns
         [IdentifierStatus.recipe]
 
     runGenerator
@@ -34,6 +35,7 @@ generateModules version indir outdir = do
         "IdentifierType.txt"
         Prop.parse
         outdir
+        patterns
         [IdentifierType.recipe]
 
     runGenerator
@@ -42,6 +44,7 @@ generateModules version indir outdir = do
         "confusables.txt"
         Prop.parseMultipleValues
         outdir
+        patterns
         [Confusables.recipe]
 
     runGenerator
@@ -50,6 +53,7 @@ generateModules version indir outdir = do
         "intentional.txt"
         Prop.parse
         outdir
+        patterns
         [IntentionalConfusables.recipe]
 
     Version.writeModule
