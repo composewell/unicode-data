@@ -71,3 +71,5 @@ library
   extra-libraries: icuuc
   pkgconfig-depends:
     icu-uc >= 72.1
+  build-tool-depends:
+      c2hs:c2hs
