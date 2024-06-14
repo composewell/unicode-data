@@ -17,3 +17,7 @@ int32_t __hs_u_charName( UChar32 codepoint
 void __hs_u_charAge( UChar32 c, UVersionInfo versionArray ) {
     u_charAge(c, versionArray);
 }
+
+int8_t __hs_u_charType(UChar32 c) {
+    return u_charType(c);
+}
