@@ -205,6 +205,7 @@ genIdentifierTypeModule moduleName = Fold step mempty done
         , "-- | Returns the 'IdentifierType's corresponding to a character."
         , genEnumBitmapShamochu
             "identifierTypes"
+            False
             (NE.singleton 3)
             [5]
             toWord8
