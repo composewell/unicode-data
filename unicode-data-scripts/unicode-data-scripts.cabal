@@ -63,6 +63,11 @@ common compile-options
                -fwarn-tabs
   default-language: Haskell2010
 
+flag dev-has-icu
+  description: Use ICU for test and benchmark
+  manual: True
+  default: False
+
 library
   import: default-extensions, compile-options
   exposed-modules:
@@ -100,6 +105,12 @@ test-suite test
       base             >= 4.7   && < 4.21
     , hspec            >= 2.0   && < 2.12
     , unicode-data-scripts
+  if flag(dev-has-icu)
+    other-modules:
+        ICU.ScriptsSpec
+    build-depends:
+      icu
+    cpp-options: -DHAS_ICU
 
 benchmark bench
   import: default-extensions, compile-options

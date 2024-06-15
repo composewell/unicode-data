@@ -57,7 +57,6 @@ spec = do
 #endif
     where
     ourUnicodeVersion = versionBranch U.unicodeVersion
-    theirUnicodeVersion = versionBranch ICU.unicodeVersion
     showCodePoint c = ("U+" ++) . fmap U.toUpper . showHex (U.ord c)
 
     -- There is no feature to display warnings other than `trace`, so
@@ -85,8 +84,7 @@ spec = do
             | n == nRef = acc
             -- Unicode version mismatch: char is not mapped in one of the libs:
             -- add warning.
-            | age' > ourUnicodeVersion || age' > theirUnicodeVersion
-            = acc{warnings=c : warnings acc}
+            | ageMismatch c = acc{warnings=c : warnings acc}
             -- Error
             | otherwise =
                 let !msg = mconcat
@@ -97,8 +95,6 @@ spec = do
             where
             !n    = f c
             !nRef = fRef c
-            age = ICU.charAge c
-            age' = take 3 (versionBranch age)
         mkWarning c = it (showCodePoint c "") . pendingWith $ mconcat
             [ "Incompatible ICU Unicode version: expected "
             , showVersion U.unicodeVersion
@@ -107,5 +103,8 @@ spec = do
             , " (ICU character age is: "
             , showVersion (ICU.charAge c)
             , ")" ]
+        ageMismatch c =
+            let age = take 3 (versionBranch (ICU.charAge c))
+            in age > ourUnicodeVersion || age == [0, 0, 0]
 
 data Acc = Acc { warnings :: ![Char], firstError :: !(Maybe String) }
