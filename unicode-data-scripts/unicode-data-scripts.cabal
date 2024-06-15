@@ -70,6 +70,9 @@ library
       -- https://www.unicode.org/reports/tr44/#Property_Index_Table
       Unicode.Char.General.Scripts
 
+      -- Internal files
+      Unicode.Internal.Bits.Scripts
+
       -- Generated files
       -- This module structure is largely based on the UCD file names from which
       -- the properties are generated.
@@ -80,7 +83,10 @@ library
   hs-source-dirs: lib
   build-depends:
       base             >= 4.7   && < 4.21
-    , unicode-data     >= 0.4   && < 0.5
+  -- Support for raw string literals unpacking is included in base ≥ 4.15
+  if impl(ghc < 9.0.0)
+    build-depends:
+      ghc-prim >= 0.3.1 && < 1.0
 
 test-suite test
   import: default-extensions, compile-options
@@ -93,7 +99,6 @@ test-suite test
   build-depends:
       base             >= 4.7   && < 4.21
     , hspec            >= 2.0   && < 2.12
-    , unicode-data
     , unicode-data-scripts
 
 benchmark bench
@@ -106,8 +111,10 @@ benchmark bench
     deepseq     >= 1.1   && < 1.6,
     tasty-bench >= 0.2.5 && < 0.4,
     tasty       >= 1.4.1 && < 1.6,
-    unicode-data,
     unicode-data-scripts
+  if impl(ghc < 9.0)
+    -- Required for noinline
+    build-depends: ghc-prim
   -- [NOTE] Recommendation of tasty-bench to reduce garbage collection noisiness
   ghc-options: -O2 -fdicts-strict -rtsopts -with-rtsopts=-A32m
   -- [NOTE] Recommendation of tasty-bench for comparison against baseline

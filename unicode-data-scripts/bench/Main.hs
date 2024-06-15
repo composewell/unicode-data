@@ -4,6 +4,10 @@ import Data.Ix (Ix(..))
 import Test.Tasty.Bench
     (Benchmark, bgroup, bench, defaultMain, env, nf)
 
+#if MIN_VERSION_base(4,10,0) && !MIN_VERSION_base(4,15,0)
+import qualified GHC.Magic as Exts (noinline)
+#endif
+
 import qualified Unicode.Char.General as G
 import qualified Unicode.Char.General.Scripts as S
 
