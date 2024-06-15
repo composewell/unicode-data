@@ -1,28 +1,19 @@
-{-# LANGUAGE BlockArguments, CPP, OverloadedLists #-}
+{-# LANGUAGE BlockArguments, OverloadedLists #-}
 
 module Unicode.Char.General.ScriptsSpec
   ( spec
   ) where
 
-#include "MachDeps.h"
-
 import Data.Foldable (traverse_)
-import Test.Hspec
-import qualified Unicode.Char.General.Scripts as UScripts
-import qualified Unicode.Internal.Char.Scripts as S
-
 import GHC.Exts
-       (Ptr(..), Char(..), Int(..),
-        indexWord32OffAddr#, int2Word#,
-        and#, isTrue#, eqWord#, leWord#, neWord#,
-        andI#, (-#), (<#),
-        ord#)
-#if MIN_VERSION_base(4,16,0)
-import GHC.Exts (word32ToWord#)
-#endif
-#ifdef WORDS_BIGENDIAN
-import GHC.Exts (byteSwap32#, narrow32Word#)
-#endif
+    ( isTrue#, orI#, andI#, (-#), (<#), (<=#), (==#)
+    , Char (..), ord#
+    , plusAddr#, eqAddr#, nullAddr#, ltAddr# )
+import Test.Hspec
+    ( expectationFailure, shouldBe, shouldSatisfy, it, describe, Spec )
+import Unicode.Internal.Bits.Scripts (nextInt32#)
+import qualified Unicode.Char.General.Scripts as S
+import qualified Unicode.Internal.Char.Scripts as IS
 
 {- [NOTE]
 These tests may fail if the compiler’s Unicode version
@@ -46,92 +37,117 @@ spec = do
   describe "Unicode scripts" do
     describe "Examples" do
         it "script" do
-            let check s = (== s) . UScripts.script
-            minBound  `shouldSatisfy` check UScripts.Common
-            maxBound  `shouldSatisfy` check UScripts.Unknown
-            '.'       `shouldSatisfy` check UScripts.Common
-            '1'       `shouldSatisfy` check UScripts.Common
-            'A'       `shouldSatisfy` check UScripts.Latin
-            'Α'       `shouldSatisfy` check UScripts.Greek -- Greek capital
-            'α'       `shouldSatisfy` check UScripts.Greek
-            '\x0300'  `shouldSatisfy` check UScripts.Inherited
-            '\x0485'  `shouldSatisfy` check UScripts.Inherited
-            '\x0600'  `shouldSatisfy` check UScripts.Arabic
-            '\x060c'  `shouldSatisfy` check UScripts.Common
-            '\x0965'  `shouldSatisfy` check UScripts.Common
-            '\x1100'  `shouldSatisfy` check UScripts.Hangul
-            '\x3000'  `shouldSatisfy` check UScripts.Common
-            '\x4E00'  `shouldSatisfy` check UScripts.Han
-            '\x11FD0' `shouldSatisfy` check UScripts.Tamil
-            '\x1F600' `shouldSatisfy` check UScripts.Common
-            '\x20000' `shouldSatisfy` check UScripts.Han
+            let check s = (== s) . S.script
+            minBound  `shouldSatisfy` check S.Common
+            maxBound  `shouldSatisfy` check S.Unknown
+            '.'       `shouldSatisfy` check S.Common
+            '1'       `shouldSatisfy` check S.Common
+            'A'       `shouldSatisfy` check S.Latin
+            'Α'       `shouldSatisfy` check S.Greek -- Greek capital
+            'α'       `shouldSatisfy` check S.Greek
+            '\x0300'  `shouldSatisfy` check S.Inherited
+            '\x0485'  `shouldSatisfy` check S.Inherited
+            '\x0600'  `shouldSatisfy` check S.Arabic
+            '\x060c'  `shouldSatisfy` check S.Common
+            '\x0965'  `shouldSatisfy` check S.Common
+            '\x1100'  `shouldSatisfy` check S.Hangul
+            '\x3000'  `shouldSatisfy` check S.Common
+            '\x4E00'  `shouldSatisfy` check S.Han
+            '\x11FD0' `shouldSatisfy` check S.Tamil
+            '\x1F600' `shouldSatisfy` check S.Common
+            '\x20000' `shouldSatisfy` check S.Han
             -- BOM
-            '\xFEFF'  `shouldSatisfy` check UScripts.Common
-            '\xFFFF'  `shouldSatisfy` check UScripts.Unknown
+            '\xFEFF'  `shouldSatisfy` check S.Common
+            '\xFFFF'  `shouldSatisfy` check S.Unknown
             -- Private Use Areas
-            '\xE000'  `shouldSatisfy` check UScripts.Unknown
-            '\xF0000' `shouldSatisfy` check UScripts.Unknown
+            '\xE000'  `shouldSatisfy` check S.Unknown
+            '\xF0000' `shouldSatisfy` check S.Unknown
         it "scriptExtensions" do
-            let check s = (== s) . UScripts.scriptExtensions
-            minBound  `shouldSatisfy` check [ UScripts.Common]
-            maxBound  `shouldSatisfy` check [ UScripts.Unknown]
-            '.'       `shouldSatisfy` check [ UScripts.Common]
-            '1'       `shouldSatisfy` check [ UScripts.Common]
-            'A'       `shouldSatisfy` check [ UScripts.Latin]
-            'Α'       `shouldSatisfy` check [ UScripts.Greek]
-            'α'       `shouldSatisfy` check [ UScripts.Greek]
-            '\x0300'  `shouldSatisfy` check [ UScripts.Inherited]
-            '\x0485'  `shouldSatisfy` check [ UScripts.Cyrillic, UScripts.Latin]
-            '\x0600'  `shouldSatisfy` check [ UScripts.Arabic]
-            '\x060C'  `shouldSatisfy` check [ UScripts.Arabic
-                                            , UScripts.Nko
-                                            , UScripts.HanifiRohingya
-                                            , UScripts.Syriac
-                                            , UScripts.Thaana
-                                            , UScripts.Yezidi ]
-            '\x0965'  `shouldSatisfy` check [ UScripts.Bengali
-                                            , UScripts.Devanagari
-                                            , UScripts.Dogra
-                                            , UScripts.GunjalaGondi
-                                            , UScripts.MasaramGondi
-                                            , UScripts.Grantha
-                                            , UScripts.Gujarati
-                                            , UScripts.Gurmukhi
-                                            , UScripts.Kannada
-                                            , UScripts.Limbu
-                                            , UScripts.Mahajani
-                                            , UScripts.Malayalam
-                                            , UScripts.Nandinagari
-                                            , UScripts.Oriya
-                                            , UScripts.Khudawadi
-                                            , UScripts.Sinhala
-                                            , UScripts.SylotiNagri
-                                            , UScripts.Takri
-                                            , UScripts.Tamil
-                                            , UScripts.Telugu
-                                            , UScripts.Tirhuta ]
-            '\x1100'  `shouldSatisfy` check [ UScripts.Hangul]
-            '\x3001'  `shouldSatisfy` check [ UScripts.Bopomofo
-                                            , UScripts.Hangul
-                                            , UScripts.Han
-                                            , UScripts.Hiragana
-                                            , UScripts.Katakana
-                                            , UScripts.Yi ]
-            '\x4E00'  `shouldSatisfy` check [ UScripts.Han]
-            '\x11FD0' `shouldSatisfy` check [ UScripts.Grantha, UScripts.Tamil ]
-            '\x1F600' `shouldSatisfy` check [ UScripts.Common]
-            '\x20000' `shouldSatisfy` check [ UScripts.Han]
+            let check s = (== s) . S.scriptExtensions
+            minBound  `shouldSatisfy` check [ S.Common]
+            maxBound  `shouldSatisfy` check [ S.Unknown]
+            '.'       `shouldSatisfy` check [ S.Common]
+            '1'       `shouldSatisfy` check [ S.Common]
+            'A'       `shouldSatisfy` check [ S.Latin]
+            'Α'       `shouldSatisfy` check [ S.Greek]
+            'α'       `shouldSatisfy` check [ S.Greek]
+            '\x0300'  `shouldSatisfy` check [ S.Inherited]
+            '\x0485'  `shouldSatisfy` check [ S.Cyrillic, S.Latin]
+            '\x0600'  `shouldSatisfy` check [ S.Arabic]
+            '\x060C'  `shouldSatisfy` check [ S.Arabic
+                                            , S.HanifiRohingya
+                                            , S.Nko
+                                            , S.Syriac
+                                            , S.Thaana
+                                            , S.Yezidi ]
+            '\x0965'  `shouldSatisfy` check [ S.Bengali
+                                            , S.Devanagari
+                                            , S.Dogra
+                                            , S.Grantha
+                                            , S.Gujarati
+                                            , S.GunjalaGondi
+                                            , S.Gurmukhi
+                                            , S.Kannada
+                                            , S.Khudawadi
+                                            , S.Limbu
+                                            , S.Mahajani
+                                            , S.Malayalam
+                                            , S.MasaramGondi
+                                            , S.Nandinagari
+                                            , S.Oriya
+                                            , S.Sinhala
+                                            , S.SylotiNagri
+                                            , S.Takri
+                                            , S.Tamil
+                                            , S.Telugu
+                                            , S.Tirhuta ]
+            '\x1100'  `shouldSatisfy` check [ S.Hangul]
+            '\x3001'  `shouldSatisfy` check [ S.Bopomofo
+                                            , S.Han
+                                            , S.Hangul
+                                            , S.Hiragana
+                                            , S.Katakana
+                                            , S.Yi ]
+            '\x4E00'  `shouldSatisfy` check [ S.Han]
+            '\x11FD0' `shouldSatisfy` check [ S.Grantha, S.Tamil ]
+            '\x1F600' `shouldSatisfy` check [ S.Common]
+            '\x20000' `shouldSatisfy` check [ S.Han]
             -- BOM
-            '\xFEFF'  `shouldSatisfy` check [ UScripts.Common ]
-            '\xFFFF'  `shouldSatisfy` check [ UScripts.Unknown ]
+            '\xFEFF'  `shouldSatisfy` check [ S.Common ]
+            '\xFFFF'  `shouldSatisfy` check [ S.Unknown ]
             -- Private Use Areas
-            '\xE000'  `shouldSatisfy` check [ UScripts.Unknown ]
-            '\xF0000' `shouldSatisfy` check [ UScripts.Unknown ]
+            '\xE000'  `shouldSatisfy` check [ S.Unknown ]
+            '\xF0000' `shouldSatisfy` check [ S.Unknown ]
+        it "scriptDefinition" do
+            take 304 (S.scriptDefinition S.Latin) `shouldBe`
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzªºÀÁÂÃÄÅÆÇ\
+                \ÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿĀāĂăĄąĆć\
+                \ĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅ\
+                \ņŇňŉŊŋŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŦŧŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽžſƀƁƂƃ\
+                \ƄƅƆƇƈƉƊƋƌƍƎƏƐƑƒƓƔƕƖƗƘƙƚƛƜƝƞƟƠơƢƣƤƥƦƧƨƩƪƫƬƭƮƯưƱƲƳƴƵƶƷƸƹƺƻ"
+            S.scriptDefinition S.ZanabazarSquare `shouldBe`
+                ['\x11A00'..'\x11A47']
+            S.scriptDefinition S.Lydian `shouldBe`
+                (['\x10920'..'\x10939'] <> "\x1093F")
+    it "Smallest script definitions have at least one range in their bitmap"
+        let {
+            check s = case IS.scriptDefinition s of
+                (# _, _, addr#, n# #) -> case n# of
+                    0# -> isTrue# (addr# `eqAddr#` nullAddr#)
+                    4# ->
+                        let lower = nextInt32# addr#
+                            upper = nextInt32# (addr# `plusAddr#` 4#)
+                        -- Check we have a range
+                        in isTrue# ((lower <# IS.ScriptCharMask) `andI#`
+                                    (upper <# IS.ScriptCharMask) `andI#`
+                                    (1# <# (upper -# lower)) )
+                    _ -> True
+        } in traverse_ (`shouldSatisfy` check) (enumFromTo minBound maxBound)
     it "Characters are in the definition of their corresponding script"
         let {
             check c =
-                let s = UScripts.script c
-                in if s `inScript` c
+                let s = S.script c
+                in if c `inScript` s
                     then pure ()
                     else expectationFailure $ mconcat
                         [ "Char “", show c, "” in not in the definition of “"
@@ -139,65 +155,56 @@ spec = do
         } in traverse_ check (enumFromTo minBound maxBound)
     it "Characters in a script definition have the corresponding script"
         let {
-            checkChar s c = let s' = UScripts.script c in if s' == s
+            checkChar s c = let s' = S.script c in if s' == s
                 then pure ()
                 else expectationFailure $ mconcat
                     [ "Script is different for “", show c, "”. Expected: “"
                     , show s, "” but got: “", show s', "”." ];
-            check s = let chars = UScripts.scriptDefinition s
-                      in traverse_ (checkChar s) chars
+            check s = case S.scriptDefinition s of
+                        [] -> expectationFailure $ mconcat
+                              ["Script “", show s, "” has an empty definition"]
+                        chars -> traverse_ (checkChar s) chars
         } in traverse_ check (enumFromTo minBound maxBound)
     it "Characters in with a script extension different from its script"
         let {
             check c =
-                let script = UScripts.script c
-                    exts = UScripts.scriptExtensions c
+                let script = S.script c
+                    exts = S.scriptExtensions c
                 in if  exts == pure script
                     || (isSpecialScript script && script `notElem` exts)
                     || (script `elem` exts)
                     then pure ()
                     else expectationFailure (show (c, script, exts));
             isSpecialScript = \case
-                UScripts.Common    -> True
-                UScripts.Inherited -> True
+                S.Common    -> True
+                S.Inherited -> True
                 _                  -> False
         } in traverse_ check (enumFromTo minBound maxBound)
 
-{- HLINT ignore inScript "Eta reduce" -}
--- Check if a character is in a 'S.Script'.
--- This is faster than testing the string from UScripts.scriptDefinition
-inScript :: S.Script -> Char -> Bool
-inScript s (C# c#) = check (S.scriptDefinition s)
-    where
-    -- [NOTE] see 'scriptDefinition' for the description of the encoding.
-
-    scriptRangeMask# = 0x80000000## -- 1 << 31
-    maskComplement#  = 0x7fffffff## -- 1 << 31 ^ 0xffffffff
-    cp# = int2Word# (ord# c#)
-
-    check (Ptr addr#, I# n#) = let {
-        getRawCodePoint k# =
-#ifdef WORDS_BIGENDIAN
-#if MIN_VERSION_base(4,16,0)
-            narrow32Word# (byteSwap32# (word32ToWord# (indexWord32OffAddr# addr# k#)));
-#else
-            narrow32Word# (byteSwap32# (indexWord32OffAddr# addr# k#));
-#endif
-#elif MIN_VERSION_base(4,16,0)
-            word32ToWord# (indexWord32OffAddr# addr# k#);
-#else
-            indexWord32OffAddr# addr# k#;
-#endif
-        getCodePoint k# = and# maskComplement# k#;
-        find k# = not (isTrue# (k# <# 0#)) &&
-            let {
-                r1# = getRawCodePoint k#;
-                c1# = getCodePoint r1#;
-                isRange = isTrue# (and# r1# scriptRangeMask# `neWord#` 0##)
-            } in if isRange
-                then let {
-                    c2# = getCodePoint (getRawCodePoint (k# -# 1#));
-                    found = isTrue# ((c2# `leWord#` cp#) `andI#` (cp# `leWord#` c1#))
-                } in found || find (k# -# 2#)
-                else isTrue# (c1# `eqWord#` cp#) || find (k# -# 1#)
-    } in find (n# -# 1#)
+-- | Return 'True' if a character is in a script.
+-- Faster than checking scriptDefinition directly.
+inScript :: Char -> S.Script -> Bool
+inScript (C# c#) s = case IS.scriptDefinition s of
+    (# lower#, upper#, addr0#, offset# #) ->
+        case (cp# <# lower#) `orI#` (upper# <# cp#) of
+            1# -> False
+            _  -> case offset# of
+                0# -> True
+                _  -> isTrue# ((cp# ==# lower#) `orI#` (cp# ==# upper#))
+                   || check addr0#
+        where
+        cp# = ord# c#
+        addr1# = addr0# `plusAddr#` offset#
+        check addr# = case addr1# `ltAddr#` addr# of
+            1# -> False
+            _  -> case nextInt32# addr# of
+                cp1# -> case andI# cp1# IS.ScriptCharMask of
+                    -- Range
+                    0# ->
+                        isTrue# ((cp1# <=# cp#) `andI#`
+                                 (cp# <=# nextInt32# (addr# `plusAddr#` 4#)))
+                        || check (addr# `plusAddr#` 8#)
+                    -- Single char
+                    _ -> case andI# IS.ScriptCharMaskComplement cp1# -# cp# of
+                        0# -> True
+                        _  -> check (addr# `plusAddr#` 4#)
