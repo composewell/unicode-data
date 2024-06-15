@@ -9,23 +9,30 @@ module UCD2Haskell.Modules.ScriptsExtensions
     , parseScriptExtensions
     ) where
 
+import Control.Arrow (Arrow (..))
+import Control.Exception (assert)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Short as BS
-import Data.Foldable (Foldable(..))
-import Data.Function (on)
-import qualified Data.List as L
+import Data.Foldable (Foldable (..))
 import qualified Data.List.NonEmpty as NE
-import Data.Maybe (fromMaybe)
-import Data.Semigroup (Semigroup(..))
-import qualified Data.Set as Set
 import qualified Data.Map.Strict as Map
+import Data.Semigroup (Arg (..))
+import qualified Data.Set as Set
+import Data.Word (Word8)
 import qualified Unicode.CharacterDatabase.Parser.Common as U
 import qualified Unicode.CharacterDatabase.Parser.Properties.Defaults as Defaults
 import qualified Unicode.CharacterDatabase.Parser.Properties.Single as Prop
 
-import UCD2Haskell.Generator (FileRecipe (..), unlinesBB, apacheLicense, genEnumBitmap, splitPlanes)
 import UCD2Haskell.Common (Fold (..), mkHaskellConstructor)
+import UCD2Haskell.Generator (
+    FileRecipe (..),
+    apacheLicense,
+    enumMapToAddrLiteral,
+    genEnumBitmapShamochu,
+    splitPlanes,
+    unlinesBB,
+ )
 
 recipe :: PropertyValuesAliases -> ScriptExtensions -> FileRecipe Prop.Entry
 recipe aliases extensions = ModuleRecipe
@@ -34,126 +41,164 @@ recipe aliases extensions = ModuleRecipe
 
 type PropertyValuesAliases = Map.Map BS.ShortByteString (NE.NonEmpty BS.ShortByteString)
 
-genScriptExtensionsModule :: BB.Builder -> PropertyValuesAliases -> ScriptExtensions -> Fold Prop.Entry BB.Builder
-genScriptExtensionsModule moduleName aliases extensions = Fold step mempty done
+defaultScriptAbbr :: BS.ShortByteString
+defaultScriptAbbr = "Zzzz"
+
+data Acc = Acc
+    { usedScripts :: !(Set.Set BS.ShortByteString)
+    , usedExts :: !(Set.Set (NE.NonEmpty BS.ShortByteString))
+    , charsExts :: !(Map.Map Char (NE.NonEmpty BS.ShortByteString)) }
+
+genScriptExtensionsModule ::
+    BB.Builder ->
+    PropertyValuesAliases ->
+    ScriptExtensions ->
+    Fold Prop.Entry BB.Builder
+genScriptExtensionsModule moduleName aliases extensions = Fold step initial done
     where
     -- [NOTE] We rely on all the scripts having a short form
 
-    -- Map: abbreviation -> script
-    scripts = Map.foldlWithKey'
-        (\acc s as -> Map.insert (NE.head as) s acc)
-        mempty
-        aliases
+    initial = Acc
+        { usedScripts = Set.singleton Defaults.defaultScript
+        , usedExts = mempty
+        , charsExts = mempty }
 
     -- Map: script → short form
     getScriptAbbr :: BS.ShortByteString -> BS.ShortByteString
     getScriptAbbr = maybe (error "script not found") NE.head . (aliases Map.!?)
 
-    -- All possible values: extensions + scripts
-    extensionsSet :: Set.Set (NE.NonEmpty BS.ShortByteString)
-    extensionsSet = Set.fromList (Map.elems extensions)
-                  <> Set.map pure (Map.keysSet scripts)
-    extensionsList = L.sortBy
-        (compare `on` fmap (scripts Map.!))
-        (Set.toList extensionsSet)
-
-    encodeExtensions :: NE.NonEmpty BS.ShortByteString -> Int
-    encodeExtensions e = fromMaybe
-        (error ("extension not found: " <> show e))
-        (L.elemIndex e extensionsList)
-
-    encodedExtensions :: Map.Map (NE.NonEmpty BS.ShortByteString) Int
-    encodedExtensions =
-        let l = length extensionsSet
-        in if length extensionsSet > 0xff
-            then error ("Too many script extensions: " <> show l)
-            else Map.fromSet encodeExtensions extensionsSet
-
-    step
-        :: (Set.Set (NE.NonEmpty BS.ShortByteString), Map.Map Char Int) -- used exts, encoded char exts
-        -> Prop.Entry
-        -> (Set.Set (NE.NonEmpty BS.ShortByteString), Map.Map Char Int)
+    step :: Acc -> Prop.Entry -> Acc
     step acc (Prop.Entry range script) = case range of
         U.SingleChar c    -> addChar script c acc
         U.CharRange c1 c2 -> foldr (addChar script) acc [c1..c2]
 
     addChar
         :: BS.ShortByteString -- script
-        -> Char   -- processed char
-        -> (Set.Set (NE.NonEmpty BS.ShortByteString), Map.Map Char Int)
-        -> (Set.Set (NE.NonEmpty BS.ShortByteString), Map.Map Char Int)
-    addChar script c (extsAcc, charAcc) = case Map.lookup c extensions of
+        -> Char               -- processed char
+        -> Acc
+        -> Acc
+    addChar script c Acc{..} = case Map.lookup c extensions of
         -- Char has explicit extensions
-        Just exts -> ( Set.insert exts extsAcc
-                     , Map.insert c (encodedExtensions Map.! exts) charAcc)
+        Just exts -> Acc
+            { usedScripts = Set.insert script usedScripts
+            , usedExts = Set.insert exts usedExts
+            , charsExts = Map.insert c exts charsExts }
         -- Char has no explicit extensions: use its script
-        Nothing   ->
-            let exts = getScriptAbbr script NE.:| []
-            in ( Set.insert exts extsAcc
-               , Map.insert c (encodedExtensions Map.! exts) charAcc)
+        Nothing   -> Acc
+            { usedScripts = Set.insert script usedScripts
+            , usedExts = Set.insert exts usedExts
+            , charsExts = Map.insert c exts charsExts }
+            where exts = getScriptAbbr script NE.:| []
 
-    done (usedExts, exts) = unlinesBB
+    done Acc{..} = unlinesBB
         [ apacheLicense 2022 moduleName
-        , "{-# LANGUAGE OverloadedLists #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
-        , "(scriptExtensions, decodeScriptExtensions)"
+        , "(scriptExtensions)"
         , "where"
         , ""
         , "import Data.Char (ord)"
-        , "import Data.List.NonEmpty (NonEmpty)"
-        , "import Data.Word (Word8)"
-        , "import GHC.Exts (Ptr(..))"
-        , "import Unicode.Internal.Char.Scripts (Script(..))"
-        , "import Unicode.Internal.Bits (lookupWord8AsInt)"
-        , ""
-        , "-- | Useful to decode the output of 'scriptExtensions'."
-        , "decodeScriptExtensions :: Int -> NonEmpty Script"
-        , "decodeScriptExtensions = \\case" <> mkDecodeScriptExtensions usedExts
-        , "    _   -> [" <> mkHaskellConstructor Defaults.defaultScript <> "]"
+        , "import Data.Word (Word8, Word16)"
+        , "import Data.Int (Int8)"
+        , "import GHC.Exts"
+        , "  ( Addr#, Int#, Int(..), Ptr(..), nullAddr#"
+        , "  , negateInt#, andI#, iShiftL#, iShiftRL#, (+#), (-#) )"
+        , "import Unicode.Internal.Bits.Scripts (lookupWord8AsInt#, lookupWord16AsInt#)"
         , ""
         , "-- | Script extensions of a character."
         , "--"
+        , "-- Returns a pair:"
+        , "--"
+        , "-- * If first value is negative or zero, then its absolute value is a single script,"
+        , "--   encoded by its index."
+        , "-- * Else the first element is the length and the second is the list of scripts,"
+        , "--   encoded by their index."
+        , "--"
         , "-- @since 0.1.0"
-        , genEnumBitmap
-            "scriptExtensions"
+        -- NOTE: we could use Unboxed sums once we drop support for GHC 8.0
+        , "scriptExtensions :: Char -> (# Int#, Addr# #)"
+        , "scriptExtensions c = case encodedScriptExtensions c of"
+            <> mkDecodeScriptExtensions encodeExtensions encodeAbbr
+                    (usedExts Set.\\ singleScriptExtensionsSet)
+        , "    s    -> (# negateInt# s, nullAddr# #)"
+        , ""
+        , genEnumBitmapShamochu
+            "encodedScriptExtensions"
+            True
+            (NE.singleton 3)
+            [5]
+            toWord8
             (def, BB.intDec (fromEnum def))
             (def, BB.intDec (fromEnum def))
             planes0To3
             plane14
         ]
         where
-        scriptExtensions = mkScriptExtensions exts
+        -- List ordered by Haskell constructors
+        scripts
+            = fmap (\(Arg _ a) -> a)
+            . Set.toAscList
+            . Set.map (\s -> Arg (mkHaskellConstructor' s) s)
+            $ usedScripts
+        toWord8 =
+            assert (fromEnum (Map.size encodedExtensions) < 0xff)
+            (fromIntegral . fromEnum)
+
+        mkHaskellConstructor' = B.toStrict . BB.toLazyByteString . mkHaskellConstructor
+        encodedAbbr :: Map.Map BS.ShortByteString Word8
+        encodedAbbr = Map.fromList (first getScriptAbbr <$> zip scripts [0..])
+        encodeAbbr :: BS.ShortByteString -> Word8
+        encodeAbbr = (encodedAbbr Map.!)
+
+        singleScriptExtensions = pure . getScriptAbbr <$> scripts
+        singleScriptExtensionsSet = Set.fromList singleScriptExtensions
+        multiScriptExtensions :: Set.Set (NE.NonEmpty BS.ShortByteString)
+        multiScriptExtensions = Set.fromList (Map.elems extensions)
+                                Set.\\ singleScriptExtensionsSet
+        -- Encode single script as their script value
+        extensionsList = singleScriptExtensions
+                      <> Set.toList multiScriptExtensions
+
+        encodedExtensions :: Map.Map (NE.NonEmpty BS.ShortByteString) Word8
+        encodedExtensions = let len = length extensionsList in if len > 0xff
+            then error ("Too many script extensions: " <> show len)
+            else Map.fromList (zip extensionsList [0..])
+
+        encodeExtensions = (encodedExtensions Map.!)
+
+        def = encodeExtensions (NE.singleton defaultScriptAbbr)
+        scriptExtensions = mkScriptExtensions def (Map.map encodeExtensions charsExts)
         -- [TODO] simplify
         (planes0To3, plane14) = splitPlanes
             "Cannot generate: genScriptExtensionsModule"
             (== def)
             scriptExtensions
 
-    mkDecodeScriptExtensions :: Set.Set (NE.NonEmpty BS.ShortByteString) -> BB.Builder
     mkDecodeScriptExtensions
+        :: (NE.NonEmpty BS.ShortByteString -> Word8)
+        -> (BS.ShortByteString -> Word8)
+        -> Set.Set (NE.NonEmpty BS.ShortByteString)
+        -> BB.Builder
+    mkDecodeScriptExtensions encodeExtensions encodeAbbr
         = mkDecodeScriptExtensions'
-        . Set.map (\exts -> (encodedExtensions Map.! exts, exts))
-    mkDecodeScriptExtensions' = foldMap $ \(v, exts) -> mconcat
+        . Set.map (\exts -> Arg (encodeExtensions exts)
+                                (NE.sort (encodeAbbr <$> exts)))
+
+    mkDecodeScriptExtensions' = foldMap $ \(Arg v exts) -> mconcat
         [ "\n    "
-        , BB.intDec v
-        , " -> ["
-        , sconcat (NE.intersperse ", " (mkScript <$> exts))
-        , "]"
-        ]
-    mkScript :: BS.ShortByteString -> BB.Builder
-    mkScript = mkHaskellConstructor . (scripts Map.!)
+        , BB.word8Dec v
+        , "# -> (# "
+        , BB.intDec (length exts)
+        , "#, \""
+        , enumMapToAddrLiteral 0 0xff (NE.toList exts) "\"# #)" ]
 
-    def :: Int
-    def = encodedExtensions Map.! (getScriptAbbr Defaults.defaultScript NE.:| [])
-
-    mkScriptExtensions
+    mkScriptExtensions def
         = reverse
         . snd
-        . Map.foldlWithKey addCharExt ('\0', mempty)
-    addCharExt (expected, acc) c v = if expected < c
-        then addCharExt (succ expected, def : acc) c v
+        . Map.foldlWithKey (addCharExt def) ('\0', mempty)
+    addCharExt def (expected, acc) c v = if expected < c
+        then addCharExt def (succ expected, def : acc) c v
         else (succ c, v : acc)
 
 type ScriptExtensions = Map.Map Char (NE.NonEmpty BS.ShortByteString)

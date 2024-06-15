@@ -2,7 +2,8 @@
 
 ## 0.2.1 TBD
 
-* Add `unicodeVersion` to `Unicode.Char.General.Scripts`.
+- Add `unicodeVersion` and `scriptShortName` to `Unicode.Char.General.Scripts`.
+- Remove `unicode-data` dependency.
 
 ## 0.2.0.1 (December 2022)
 
