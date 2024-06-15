@@ -61,6 +61,7 @@ library
     ICU.Char
     ICU.Names
     ICU.Names.Text
+    ICU.Scripts
   hs-source-dirs: lib
   build-depends:
       base             >= 4.7   && < 4.21
