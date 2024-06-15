@@ -136,6 +136,7 @@ genGeneralCategoryModule moduleName = Fold step initial done
         , "-- | Return the general category of a character"
         , genEnumBitmapShamochu
             "generalCategory"
+            False
             (NE.singleton 3)
             [5]
             toWord8

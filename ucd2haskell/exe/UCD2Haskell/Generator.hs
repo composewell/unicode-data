@@ -21,6 +21,7 @@ module UCD2Haskell.Generator
     , splitPlanes
     , genEnumBitmapShamochu
     , generateShamochuBitmaps
+    , toLookupBitMapName
       -- * Helpers
     , printCpuTime
     , unlinesBB
@@ -264,6 +265,8 @@ genEnumBitmap
   :: forall a. (HasCallStack, Bounded a, Enum a, Eq a, Show a)
   => BB.Builder
   -- ^ Function name
+  -> Bool
+  -- ^ If true, use raw Int
   -> (a, BB.Builder)
   -- ^ Value for planes 15-16
   -> (a, BB.Builder)
@@ -273,10 +276,10 @@ genEnumBitmap
   -> [a]
   -- ^ List of values to encode for plane 14
   -> BB.Builder
-genEnumBitmap funcName (defPUA, pPUA) (def, pDef) planes0To3 plane14 =
+genEnumBitmap funcName rawInt (defPUA, pPUA) (def, pDef) planes0To3 plane14 =
     mconcat
     [ "{-# INLINE ", funcName, " #-}\n"
-    , funcName, " :: Char -> Int\n"
+    , funcName, " :: Char -> Int", rawSuffix, "\n"
     , funcName, func
     , "    !(Ptr bitmap#) = ", bitmapLookup, "\n\n"
     , bitmapLookup, " :: Ptr Word8\n"
@@ -284,6 +287,7 @@ genEnumBitmap funcName (defPUA, pPUA) (def, pDef) planes0To3 plane14 =
     , "    \"", enumMapToAddrLiteral 4 0xff bitmap "\"#"
     ]
     where
+    rawSuffix = if rawInt then "#" else ""
     bitmapLookup = funcName <> "Bitmap"
     planes0To3' = L.dropWhileEnd (== def) planes0To3
     check = if length planes0To3 <= 0x40000
@@ -296,8 +300,8 @@ genEnumBitmap funcName (defPUA, pPUA) (def, pDef) planes0To3 plane14 =
                 [ " = \\c -> let cp = ord c in if cp >= 0x"
                 , showPaddedHeXB (length planes0To3')
                 , " then "
-                , pDef
-                , " else lookupWord8AsInt bitmap# cp\n"
+                , pDef, rawSuffix
+                , " else lookupWord8AsInt", rawSuffix, " bitmap# cp\n"
                 , "    where\n" ]
             , planes0To3' )
         -- All the planes
@@ -309,27 +313,27 @@ genEnumBitmap funcName (defPUA, pPUA) (def, pDef) planes0To3 plane14 =
                     [ " c\n"
                     , "    -- Planes 0-3\n"
                     , "    | cp < 0x", showPaddedHeXB bound1
-                                     , " = lookupWord8AsInt bitmap# cp\n"
+                                     , " = lookupWord8AsInt", rawSuffix, " bitmap# cp\n"
                     , "    -- Planes 4-13: ", showB def, "\n"
-                    , "    | cp < 0xE0000 = " <> pDef, "\n"
+                    , "    | cp < 0xE0000 = " <> pDef, rawSuffix, "\n"
                     , "    -- Plane 14\n"
                     , "    | cp < 0x", showPaddedHeXB bound2
-                                     , " = lookupWord8AsInt bitmap# (cp - 0x"
+                                     , " = lookupWord8AsInt", rawSuffix, " bitmap# (cp - 0x"
                                      , showPaddedHeXB (0xE0000 - bound1)
                                      , ")\n"
                     , if defPUA == def
                         then ""
                         else mconcat
                             [ "    -- Plane 14: ", showB def, "\n"
-                            , "    | cp < 0xF0000 = ", pDef, "\n"
+                            , "    | cp < 0xF0000 = ", pDef, rawSuffix, "\n"
                             , "    -- Plane 15: ", showB defPUA, "\n"
-                            , "    | cp < 0xFFFFE = ", pPUA, "\n"
+                            , "    | cp < 0xFFFFE = ", pPUA, rawSuffix, "\n"
                             , "    -- Plane 15: ", showB def, "\n"
-                            , "    | cp < 0x100000 = ", pDef, "\n"
+                            , "    | cp < 0x100000 = ", pDef, rawSuffix, "\n"
                             , "    -- Plane 16: ", showB defPUA, "\n"
-                            , "    | cp < 0x10FFFE = ", pPUA, "\n" ]
+                            , "    | cp < 0x10FFFE = ", pPUA, rawSuffix, "\n" ]
                     , "    -- Default: ", showB def, "\n"
-                    , "    | otherwise = " <> pDef, "\n"
+                    , "    | otherwise = " <> pDef, rawSuffix, "\n"
                     , "    where\n"
                     , "    cp = ord c\n" ]
                 , planes0To3' <> plane14' )
@@ -450,6 +454,8 @@ genEnumBitmapShamochu
   :: forall a. (HasCallStack, Bounded a, Enum a, Eq a, Show a)
   => String
   -- ^ Function name
+  -> Bool
+  -- ^ If true, use raw Int
   -> NE.NonEmpty Word
   -- ^ Chunk size stage 1
   -> [Word]
@@ -465,19 +471,21 @@ genEnumBitmapShamochu
   -> [a]
   -- ^ List of values to encode for plane 14
   -> BB.Builder
-genEnumBitmapShamochu funcNameStr stage1 stage2 convert (defPUA, pPUA) (def, pDef) planes0To3 plane14 =
+genEnumBitmapShamochu funcNameStr rawInt stage1 stage2 convert (defPUA, pPUA) (def, pDef) planes0To3 plane14 =
     mconcat
     [ "{-# INLINE ", funcName, " #-}\n"
-    , funcName, " :: Char -> Int\n"
+    , funcName, " :: Char -> Int", rawSuffix, "\n"
     , funcName, func
     , "\n"
-    , generateShamochuBitmaps funcName03 stage1 stage2 convert bitmap03
+    , generateShamochuBitmaps funcName03 rawInt stage1 stage2 convert bitmap03
     , "\n"
     , case mBitmap14 of
         Nothing -> mempty
-        Just bitmap14 -> generateShamochuBitmaps funcName14 stage1 stage2 convert bitmap14 <> "\n"
+        Just bitmap14 -> generateShamochuBitmaps
+            funcName14 rawInt stage1 stage2 convert bitmap14 <> "\n"
     ]
     where
+    rawSuffix = if rawInt then "#" else ""
     funcName = BB.string7 funcNameStr
     funcName03 = funcNameStr <> "Planes0To3"
     funcName14 = funcNameStr <> "Plane14"
@@ -494,7 +502,7 @@ genEnumBitmapShamochu funcNameStr stage1 stage2 convert (defPUA, pPUA) (def, pDe
                 [ " = \\c -> let cp = ord c in if cp >= 0x"
                 , showPaddedHeXB (length planes0To3')
                 , " then "
-                , pDef
+                , pDef, rawSuffix
                 , " else ", lookup03, " cp\n" ]
             , planes0To3'
             , Nothing )
@@ -507,50 +515,52 @@ genEnumBitmapShamochu funcNameStr stage1 stage2 convert (defPUA, pPUA) (def, pDe
                     [ " c\n"
                     , "    -- Planes 0-3\n"
                     , "    | cp < 0x", showPaddedHeXB bound1
-                                     , " = ", lookup03, " cp\n"
+                                     , " = ", lookup03, " cp", rawSuffix, "\n"
                     , "    -- Planes 4-13: ", showB def, "\n"
-                    , "    | cp < 0xE0000 = " <> pDef, "\n"
+                    , "    | cp < 0xE0000 = " <> pDef, rawSuffix, "\n"
                     , "    -- Plane 14\n"
                     , "    | cp < 0x", showPaddedHeXB bound2
-                                     , " = ", lookup14, " (cp - 0x"
-                                     , showPaddedHeXB 0xE0000
+                                     , " = ", lookup14, " (cp", rawSuffix
+                                     , " -", rawSuffix, " 0x"
+                                     , showPaddedHeXB 0xE0000, rawSuffix
                                      , ")\n"
                     , if defPUA == def
                         then ""
                         else mconcat
                             [ "    -- Plane 14: ", showB def, "\n"
-                            , "    | cp < 0xF0000 = ", pDef, "\n"
+                            , "    | cp < 0xF0000 = ", pDef, rawSuffix, "\n"
                             , "    -- Plane 15: ", showB defPUA, "\n"
-                            , "    | cp < 0xFFFFE = ", pPUA, "\n"
+                            , "    | cp < 0xFFFFE = ", pPUA, rawSuffix, "\n"
                             , "    -- Plane 15: ", showB def, "\n"
-                            , "    | cp < 0x100000 = ", pDef, "\n"
+                            , "    | cp < 0x100000 = ", pDef, rawSuffix, "\n"
                             , "    -- Plane 16: ", showB defPUA, "\n"
-                            , "    | cp < 0x10FFFE = ", pPUA, "\n" ]
+                            , "    | cp < 0x10FFFE = ", pPUA, rawSuffix, "\n" ]
                     , "    -- Default: ", showB def, "\n"
-                    , "    | otherwise = " <> pDef, "\n"
+                    , "    | otherwise = " <> pDef, rawSuffix, "\n"
                     , "    where\n"
-                    , "    cp = ord c\n" ]
+                    , "    ", if rawInt then "!cp@(I# cp#)" else "cp", " = ord c\n" ]
                 , planes0To3'
                 , Just plane14' )
 
 generateShamochuBitmaps ::
-    String -> NE.NonEmpty Word -> [Word] -> (a -> Word8) -> [a] -> BB.Builder
-generateShamochuBitmaps name powersStage1 powersStage2 convert xs =
+    String -> Bool -> NE.NonEmpty Word -> [Word] -> (a -> Word8) -> [a] -> BB.Builder
+generateShamochuBitmaps name rawInt powersStage1 powersStage2 convert xs =
     case Shamochu.compress powersStage1 powersStage2 (Exts.fromList (convert <$> xs)) of
-        Shamochu.OneStage{..} -> trace' "OneStatege" stats $ mconcat
+        Shamochu.OneStage{..} -> trace' "OneStage" stats $ mconcat
             [ "{-# INLINE ", toLookupBitMapName name, " #-}\n"
-            , toLookupBitMapName name, " :: Int -> Int\n"
+            , toLookupBitMapName name, " :: Int", rawSuffix, " -> Int", rawSuffix, "\n"
             , toLookupBitMapName name, " n =\n"
             -- Lookup:
             --    mask = (1 << chunk_size_log2) - 1;
             --    original[i] = data[offsets[i >> chunk_size_log2] + (i & mask)];
             , mkLookup (Shamochu.dataIntSize stats) "data" 1 . mconcat $
                 [ mkLookup (Shamochu.offsets1IntSize stats) "offsets" 2 $
-                    mkIndent 3 <> mkShift "n" (Shamochu.dataChunkSizeLog2 stats)
-                , mkMask "n" "mask" ]
+                    mkIndent 3 <> mkShiftR "n" (Shamochu.dataChunkSizeLog2 stats)
+                , mkAnd "n" "mask" ]
             , "\n"
             , "    where\n"
-            , "    mask = (1 `shiftL` ", BB.wordDec (Shamochu.dataChunkSizeLog2 stats), ") - 1\n"
+            -- , "    mask = (1 `shiftL` ", BB.wordDec (Shamochu.dataChunkSizeLog2 stats), ") - 1\n"
+            , "    ", mkMask "mask" (Shamochu.dataChunkSizeLog2 stats)
             , "    !(Ptr data#) = ", dataBitMap, "\n"
             , "    !(Ptr offsets#) = ", offsetsBitMap, "\n"
             , "\n"
@@ -582,7 +592,7 @@ generateShamochuBitmaps name powersStage1 powersStage2 convert xs =
             offsetType = "Word" <> BB.wordDec (Shamochu.offsets1IntSize stats)
         Shamochu.TwoStages{..} -> trace' "TwoStages" stats $ mconcat
             [ "{-# INLINE ", toLookupBitMapName name, " #-}\n"
-            , toLookupBitMapName name, " :: Int -> Int\n"
+            , toLookupBitMapName name, " :: Int", rawSuffix, " -> Int", rawSuffix, "\n"
             , toLookupBitMapName name, " n =\n"
             -- Lookup:
             --    mask_data = (1 << data_chunk_size_log2) - 1
@@ -598,14 +608,16 @@ generateShamochuBitmaps name powersStage1 powersStage2 convert xs =
                 [ mkLookup (Shamochu.offsets1IntSize stats) "offsets1" 2 . mconcat $
                     [ mkLookup (Shamochu.offsets2IntSize stats) "offsets2" 3 $
                         mkIndent 4 <>
-                        mkShift "n" (Shamochu.dataChunkSizeLog2 stats + Shamochu.offsets1ChunkSizeLog2 stats)
-                    , mkMask ("(" <> mkShift "n" (Shamochu.dataChunkSizeLog2 stats) <> ")") "maskOffsets"
+                        mkShiftR "n" (Shamochu.dataChunkSizeLog2 stats + Shamochu.offsets1ChunkSizeLog2 stats)
+                    , mkAnd ("(" <> mkShiftR "n" (Shamochu.dataChunkSizeLog2 stats) <> ")") "maskOffsets"
                     ]
-                , mkMask "n" "maskData" ]
+                , mkAnd "n" "maskData" ]
             , "\n"
             , "    where\n"
-            , "    maskData = (1 `shiftL` ", BB.wordDec (Shamochu.dataChunkSizeLog2 stats), ") - 1\n"
-            , "    maskOffsets = (1 `shiftL` ", BB.wordDec (Shamochu.offsets1ChunkSizeLog2 stats), ") - 1\n"
+            -- , "    maskData = (1 `shiftL` ", BB.wordDec (Shamochu.dataChunkSizeLog2 stats), ") - 1\n"
+            -- , "    maskOffsets = (1 `shiftL` ", BB.wordDec (Shamochu.offsets1ChunkSizeLog2 stats), ") - 1\n"
+            , "    ", mkMask "maskData" (Shamochu.dataChunkSizeLog2 stats)
+            , "    ", mkMask "maskOffsets" (Shamochu.offsets1ChunkSizeLog2 stats)
             , "    !(Ptr data#) = ", dataBitMap, "\n"
             , "    !(Ptr offsets1#) = ", offsets1BitMap, "\n"
             , "    !(Ptr offsets2#) = ", offsets2BitMap, "\n"
@@ -650,6 +662,7 @@ generateShamochuBitmaps name powersStage1 powersStage2 convert xs =
             offset1Type = "Word" <> BB.wordDec (Shamochu.offsets1IntSize stats)
             offset2Type = "Word" <> BB.wordDec (Shamochu.offsets2IntSize stats)
     where
+    rawSuffix = if rawInt then "#" else ""
     trace' stages stats = trace $ mconcat
         [ "* ", name, ": Shamochu: ", stages, "; savings: "
         , show (fromRational (100 * (1 - 1 / toRational (Shamochu.ratio stats))) :: Centi)
@@ -660,11 +673,18 @@ generateShamochuBitmaps name powersStage1 powersStage2 convert xs =
     mkIndent count = foldMap (const "    ") [1..count]
     mkLookup dataSize addrName indent index = mconcat
         [ mkIndent indent
-        , "lookupWord", BB.wordDec dataSize, "AsInt ", addrName, "# (\n"
+        , "lookupWord", BB.wordDec dataSize, "AsInt", rawSuffix, " ", addrName, "# (\n"
         , index, "\n"
         , mkIndent indent, ")" ]
-    mkShift n count = mconcat [n, " `shiftR` ", BB.wordDec count]
-    mkMask n mask = mconcat [" + (", n, " .&. ", mask, ")"]
+    mkMask mask count = if rawInt
+        then mconcat [mask, " = (1# `iShiftL#` ", BB.wordDec count, "#) -# 1#\n"]
+        else mconcat [mask, " = (1 `shiftL` ", BB.wordDec count, ") - 1\n"]
+    mkShiftR n count = if rawInt
+        then mconcat [n, " `iShiftRL#` ", BB.wordDec count, "#"]
+        else mconcat [n, " `shiftR` ", BB.wordDec count]
+    mkAnd n mask = if rawInt
+        then mconcat [" +# (", n, " `andI#` ", mask, ")"]
+        else mconcat [" + (", n, " .&. ", mask, ")"]
 
 toTitle :: String -> String
 toTitle = \case
