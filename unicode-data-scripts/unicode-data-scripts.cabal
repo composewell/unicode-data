@@ -131,3 +131,7 @@ benchmark bench
   -- [NOTE] Recommendation of tasty-bench for comparison against baseline
   if impl(ghc >= 8.6)
     ghc-options: -fproc-alignment=64
+  if flag(dev-has-icu)
+    build-depends:
+      icu
+    cpp-options: -DHAS_ICU
