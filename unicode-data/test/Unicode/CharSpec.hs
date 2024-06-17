@@ -72,6 +72,10 @@ spec = do
             Just  _ -> pure ()
             Nothing -> UChar.generalCategory c `shouldBe` UChar.NotAssigned
         } in traverse_ check [minBound..maxBound]
+    it "Examples" do
+        let blockDef = UBlocks.blockDefinition UBlocks.Latin1Supplement
+        UBlocks.blockRange blockDef `shouldBe` (0x0080, 0x00ff)
+        UBlocks.blockName  blockDef `shouldBe` "Latin-1 Supplement"
     it "Characters are in the definition of their corresponding block"
         let {
             check c = case UBlocks.block c of

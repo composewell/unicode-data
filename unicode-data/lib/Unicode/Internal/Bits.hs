@@ -12,10 +12,13 @@
 -- Fast, static bitmap lookup utilities
 
 module Unicode.Internal.Bits
-    ( lookupBit64,
+    ( -- * Bitmap lookup
+      lookupBit64,
       lookupWord8AsInt,
       lookupWord16AsInt,
-      lookupWord32#
+      lookupWord32#,
+      -- * CString
+      unpackCString#
     ) where
 
 #include "MachDeps.h"
@@ -34,6 +37,12 @@ import GHC.Exts (word8ToWord#, word16ToWord#, word32ToWord#)
 import GHC.Exts
        (byteSwap#, narrow16Word#, narrow32Word#,
         byteSwap16#, byteSwap32#)
+#endif
+
+#if MIN_VERSION_base(4,15,0)
+import GHC.Exts (unpackCString#)
+#else
+import GHC.CString (unpackCString#)
 #endif
 
 -- | @lookup64 addr index@ looks up the bit stored at bit index @index@ using a
