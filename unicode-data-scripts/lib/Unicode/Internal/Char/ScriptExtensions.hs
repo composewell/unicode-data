@@ -119,7 +119,6 @@ lookupEncodedScriptExtensionsPlanes0To3BitMap n =
     !(Ptr offsets1#) = encodedScriptExtensionsPlanes0To3Offsets1BitMap
     !(Ptr offsets2#) = encodedScriptExtensionsPlanes0To3Offsets2BitMap
 
-{-# NOINLINE encodedScriptExtensionsPlanes0To3DataBitMap #-}
 encodedScriptExtensionsPlanes0To3DataBitMap :: Ptr Int8
 encodedScriptExtensionsPlanes0To3DataBitMap = Ptr
     "\70\70\24\24\156\156\156\156\82\82\82\82\82\216\82\82\82\82\156\123\123\123\123\123\123\123\123\156\156\156\156\156\156\180\31\180\199\31\175\175\204\202\31\204\204\31\31\203\175\31\
@@ -200,7 +199,6 @@ encodedScriptExtensionsPlanes0To3DataBitMap = Ptr
     \\119\119\119\119\119\119\119\119\89\89\89\89\89\89\89\89\112\112\112\112\112\112\112\112\108\108\108\108\108\108\108\108\111\111\111\111\111\111\111\111\128\128\128\128\128\128\128\128\163\163\
     \\163\163\163\163\163\163"#
 
-{-# NOINLINE encodedScriptExtensionsPlanes0To3Offsets1BitMap #-}
 encodedScriptExtensionsPlanes0To3Offsets1BitMap :: Ptr Word16
 encodedScriptExtensionsPlanes0To3Offsets1BitMap = Ptr
     "\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\79\14\117\1\79\14\149\2\117\1\117\1\117\1\117\1\117\1\117\1\117\1\117\1\117\1\117\1\117\1\117\1\117\1\117\1\117\1\
@@ -297,7 +295,6 @@ encodedScriptExtensionsPlanes0To3Offsets1BitMap = Ptr
     \\40\9\40\9\40\9\181\5\39\9\36\9\142\5\186\5\34\7\181\5\32\7\181\5\36\9\36\9\137\5\40\9\37\9\40\9\6\4\38\7\37\9\40\9\6\4\117\1\117\1\117\1\117\1\117\1\117\1\8\4\117\1\6\11\117\1\163\4\163\4\163\4\163\4\163\4\99\0\163\4\92\1\129\5\117\1\97\0\117\1\117\1\117\1\117\1\117\1\117\1\
     \\117\1\117\1\117\1\117\1\117\1\117\1\117\1\117\1\117\1\117\1\117\1\117\1\117\1\163\4\163\4\163\4\163\4\163\4\163\4\163\4\163\4\163\4\163\4\163\4\163\4\163\4\163\4\163\4\163\4\163\4\163\4\79\8\163\4\163\4\163\4\163\4\163\4\163\4\90\1\117\1\117\1\117\1\117\1\163\4\91\1"#
 
-{-# NOINLINE encodedScriptExtensionsPlanes0To3Offsets2BitMap #-}
 encodedScriptExtensionsPlanes0To3Offsets2BitMap :: Ptr Word16
 encodedScriptExtensionsPlanes0To3Offsets2BitMap = Ptr
     "\141\0\19\1\28\1\229\9\135\7\161\7\164\6\5\10\37\10\69\10\101\10\133\10\165\10\197\10\229\10\5\11\37\11\69\11\234\8\8\9\122\3\122\3\138\3\101\11\133\11\165\11\197\11\229\11\5\12\172\0\19\1\37\12\71\9\238\3\174\1\174\1\162\1\174\1\174\1\174\1\69\12\174\1\174\1\212\4\101\12\107\7\166\5\100\1\133\12\165\12\
@@ -331,12 +328,10 @@ lookupEncodedScriptExtensionsPlane14BitMap n =
     !(Ptr data#) = encodedScriptExtensionsPlane14DataBitMap
     !(Ptr offsets#) = encodedScriptExtensionsPlane14OffsetsBitMap
 
-{-# NOINLINE encodedScriptExtensionsPlane14DataBitMap #-}
 encodedScriptExtensionsPlane14DataBitMap :: Ptr Int8
 encodedScriptExtensionsPlane14DataBitMap = Ptr
     "\156\24\156\156\156\156\156\156\156\156\24\24\24\24\24\24\24\24\55\55\55\55\55\55\55\55"#
 
-{-# NOINLINE encodedScriptExtensionsPlane14OffsetsBitMap #-}
 encodedScriptExtensionsPlane14OffsetsBitMap :: Ptr Word8
 encodedScriptExtensionsPlane14OffsetsBitMap = Ptr
     "\0\2\2\2\10\10\10\10\10\10\10\10\10\10\10\10\2\2\2\2\2\2\2\2\2\2\2\2\2\2\2\2\18\18\18\18\18\18\18\18\18\18\18\18\18\18\18\18\18\18\
