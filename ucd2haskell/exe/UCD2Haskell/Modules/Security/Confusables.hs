@@ -36,9 +36,9 @@ genConfusablesModule moduleName = Fold step mempty done
     mkConfusable c s = mconcat
         [ "\n    "
         , showB c
-        , " -> Just (Ptr \""
+        , " -> \""
         , stringToAddrLiteral s
-        , "\\0\"#)"
+        , "\\0\"#"
         ]
 
     -- Encode string with UTF-8
@@ -55,15 +55,14 @@ genConfusablesModule moduleName = Fold step mempty done
         , "(confusablePrototype)"
         , "where"
         , ""
-        , "import Foreign.C.String (CString)"
-        , "import GHC.Exts (Ptr(..))"
+        , "import GHC.Exts (Addr#)"
         , ""
         , "-- | Returns the /prototype/ of a character, if it is confusable."
         , "--"
         , "-- The resulting 'CString' is null-terminated and encoded in UTF-8."
         , "--"
         , "-- @since 0.1.0"
-        , "confusablePrototype :: Char -> Maybe CString"
+        , "confusablePrototype :: Char -> Addr#"
         , "confusablePrototype = \\case" <> Map.foldMapWithKey mkConfusable confusables
-        , "    _ -> Nothing"
+        , "    _ -> \"\\0\"#"
         ]
