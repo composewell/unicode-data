@@ -122,7 +122,6 @@ lookupIdentifierTypesPlanes0To3BitMap n =
     !(Ptr offsets1#) = identifierTypesPlanes0To3Offsets1BitMap
     !(Ptr offsets2#) = identifierTypesPlanes0To3Offsets2BitMap
 
-{-# NOINLINE identifierTypesPlanes0To3DataBitMap #-}
 identifierTypesPlanes0To3DataBitMap :: Ptr Int8
 identifierTypesPlanes0To3DataBitMap = Ptr
     "\14\7\12\12\14\14\12\7\7\14\14\14\14\14\14\27\14\14\14\14\14\14\4\14\14\14\14\14\14\27\27\14\9\14\27\14\9\9\9\9\9\9\9\7\7\7\7\7\7\4\
@@ -172,7 +171,6 @@ identifierTypesPlanes0To3DataBitMap = Ptr
     \\8\8\8\4\21\21\0\0\0\0\22\22\22\22\22\22\0\23\10\10\10\10\10\10\20\20\20\20\20\20\20\20\14\14\14\14\0\14\14\0\0\27\0\0\0\0\0\20\20\20\
     \\20\20\20\20\20\10\10\0\0\0\0\0"#
 
-{-# NOINLINE identifierTypesPlanes0To3Offsets1BitMap #-}
 identifierTypesPlanes0To3Offsets1BitMap :: Ptr Word16
 identifierTypesPlanes0To3Offsets1BitMap = Ptr
     "\147\5\36\7\148\5\148\5\159\1\159\1\159\1\151\5\43\7\177\4\222\5\159\1\159\1\159\1\159\1\159\1\159\1\159\1\159\1\159\1\159\1\159\1\159\1\159\1\159\1\159\1\159\1\159\1\159\1\159\1\159\1\159\1\148\5\159\1\159\1\159\1\159\1\159\1\159\1\159\1\159\1\148\5\226\0\153\5\159\1\46\7\149\5\159\1\159\1\159\1\
@@ -266,7 +264,6 @@ identifierTypesPlanes0To3Offsets1BitMap = Ptr
     \\185\4\184\4\112\4\248\4\112\4\112\4\112\4\112\4\112\4\112\4\112\4\112\4\112\4\112\4\112\4\112\4\112\4\112\4\112\4\112\4\112\4\112\4\112\4\169\6\169\6\169\6\169\6\169\6\169\6\169\6\169\6\169\6\169\6\169\6\169\6\169\6\169\6\98\6\175\3\169\6\169\6\169\6\169\6\169\6\169\6\169\6\169\6\169\6\169\6\169\6\
     \\252\4\169\6\250\4\253\4\112\4\169\6\169\6\169\6\169\6\169\6\169\6\169\6\169\6\169\6\169\6\250\4\112\4\169\6\248\4\169\6\249\4\169\6\253\4\169\6\169\6\169\6\169\6\169\6\99\6\248\4\187\4\169\6\250\4\169\6\253\4\169\6\253\4"#
 
-{-# NOINLINE identifierTypesPlanes0To3Offsets2BitMap #-}
 identifierTypesPlanes0To3Offsets2BitMap :: Ptr Word16
 identifierTypesPlanes0To3Offsets2BitMap = Ptr
     "\139\7\170\7\234\5\103\8\209\1\135\8\156\6\167\8\199\8\231\8\7\9\39\9\71\9\103\9\135\9\167\9\201\7\216\6\55\1\199\9\129\0\130\0\158\4\231\9\7\10\127\5\39\10\71\10\103\10\135\10\167\10\199\10\231\10\122\1\155\5\182\5\36\6\188\5\188\5\188\5\21\1\188\5\98\6\126\6\7\11\188\6\39\11\96\3\71\11\179\2\
@@ -300,12 +297,10 @@ lookupIdentifierTypesPlane14BitMap n =
     !(Ptr data#) = identifierTypesPlane14DataBitMap
     !(Ptr offsets#) = identifierTypesPlane14OffsetsBitMap
 
-{-# NOINLINE identifierTypesPlane14DataBitMap #-}
 identifierTypesPlane14DataBitMap :: Ptr Int8
 identifierTypesPlane14DataBitMap = Ptr
     "\0\1\0\0\0\0\0\0\0\0\2\2\2\2\2\2\2\2"#
 
-{-# NOINLINE identifierTypesPlane14OffsetsBitMap #-}
 identifierTypesPlane14OffsetsBitMap :: Ptr Word8
 identifierTypesPlane14OffsetsBitMap = Ptr
     "\0\2\2\2\10\10\10\10\10\10\10\10\10\10\10\10\2\2\2\2\2\2\2\2\2\2\2\2\2\2\2\2\10\10\10\10\10\10\10\10\10\10\10\10\10\10\10\10\10\10\

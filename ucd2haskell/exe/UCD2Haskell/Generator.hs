@@ -559,12 +559,10 @@ generateShamochuBitmaps name rawInt powersStage1 powersStage2 convert xs =
                 , mkAnd "n" "mask" ]
             , "\n"
             , "    where\n"
-            -- , "    mask = (1 `shiftL` ", BB.wordDec (Shamochu.dataChunkSizeLog2 stats), ") - 1\n"
             , "    ", mkMask "mask" (Shamochu.dataChunkSizeLog2 stats)
             , "    !(Ptr data#) = ", dataBitMap, "\n"
             , "    !(Ptr offsets#) = ", offsetsBitMap, "\n"
             , "\n"
-            , "{-# NOINLINE ", dataBitMap, " #-}\n"
             , dataBitMap, " :: Ptr ", dataType, "\n"
             , dataBitMap, " = Ptr\n"
             , "    \"", enumMapToAddrLiteral'
@@ -574,7 +572,6 @@ generateShamochuBitmaps name rawInt powersStage1 powersStage2 convert xs =
                             (Exts.toList array)
                             "\"#\n"
             , "\n"
-            , "{-# NOINLINE ", offsetsBitMap, " #-}\n"
             , offsetsBitMap, " :: Ptr ", offsetType, "\n"
             , offsetsBitMap, " = Ptr\n"
             , "    \"", enumMapToAddrLiteral'
@@ -614,15 +611,12 @@ generateShamochuBitmaps name rawInt powersStage1 powersStage2 convert xs =
                 , mkAnd "n" "maskData" ]
             , "\n"
             , "    where\n"
-            -- , "    maskData = (1 `shiftL` ", BB.wordDec (Shamochu.dataChunkSizeLog2 stats), ") - 1\n"
-            -- , "    maskOffsets = (1 `shiftL` ", BB.wordDec (Shamochu.offsets1ChunkSizeLog2 stats), ") - 1\n"
             , "    ", mkMask "maskData" (Shamochu.dataChunkSizeLog2 stats)
             , "    ", mkMask "maskOffsets" (Shamochu.offsets1ChunkSizeLog2 stats)
             , "    !(Ptr data#) = ", dataBitMap, "\n"
             , "    !(Ptr offsets1#) = ", offsets1BitMap, "\n"
             , "    !(Ptr offsets2#) = ", offsets2BitMap, "\n"
             , "\n"
-            , "{-# NOINLINE ", dataBitMap, " #-}\n"
             , dataBitMap, " :: Ptr ", dataType, "\n"
             , dataBitMap, " = Ptr\n"
             , "    \"", enumMapToAddrLiteral'
@@ -632,7 +626,6 @@ generateShamochuBitmaps name rawInt powersStage1 powersStage2 convert xs =
                             (Exts.toList dataArray)
                             "\"#\n"
             , "\n"
-            , "{-# NOINLINE ", offsets1BitMap, " #-}\n"
             , offsets1BitMap, " :: Ptr ", offset1Type, "\n"
             , offsets1BitMap, " = Ptr\n"
             , "    \"", enumMapToAddrLiteral'
@@ -642,7 +635,6 @@ generateShamochuBitmaps name rawInt powersStage1 powersStage2 convert xs =
                             (Exts.toList offset1Array)
                             "\"#\n"
             , "\n"
-            , "{-# NOINLINE ", offsets2BitMap, " #-}\n"
             , offsets2BitMap, " :: Ptr ", offset2Type, "\n"
             , offsets2BitMap, " = Ptr\n"
             , "    \"", enumMapToAddrLiteral'

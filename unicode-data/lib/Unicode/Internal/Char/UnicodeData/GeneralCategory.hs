@@ -270,7 +270,6 @@ lookupGeneralCategoryPlanes0To3BitMap n =
     !(Ptr offsets1#) = generalCategoryPlanes0To3Offsets1BitMap
     !(Ptr offsets2#) = generalCategoryPlanes0To3Offsets2BitMap
 
-{-# NOINLINE generalCategoryPlanes0To3DataBitMap #-}
 generalCategoryPlanes0To3DataBitMap :: Ptr Int8
 generalCategoryPlanes0To3DataBitMap = Ptr
     "\1\0\0\1\0\1\0\0\0\0\0\1\0\1\0\1\1\0\1\1\0\1\0\0\0\1\1\0\0\0\1\1\1\13\18\14\18\13\14\17\17\17\17\17\3\3\3\3\29\3\
@@ -337,7 +336,6 @@ generalCategoryPlanes0To3DataBitMap = Ptr
     \\0\0\29\1\17\5\5\17\5\5\17\5\5\5\5\5\5\12\5\5\5\5\5\17\29\29\9\9\9\0\1\9\9\9\10\21\21\29\29\29\29\13\14\13\14\21\21\21\21\0\
     \\1\0\1\5\5\0\1\29\29\29\29\5\5\6\6\29\4\4\4\17\29\29\29\29\29\29\2\2\2\2\2\2\2\2\27\27\27\27\27\27\27\27\28\28\28\28\28\28\28\28"#
 
-{-# NOINLINE generalCategoryPlanes0To3Offsets1BitMap #-}
 generalCategoryPlanes0To3Offsets1BitMap :: Ptr Word16
 generalCategoryPlanes0To3Offsets1BitMap = Ptr
     "\237\5\126\4\74\3\74\3\74\3\74\3\235\5\101\1\240\9\119\3\150\6\127\1\74\3\74\3\74\3\74\3\74\3\236\5\120\1\138\11\164\6\119\3\74\3\74\3\74\3\74\3\74\3\74\3\74\3\74\3\74\3\118\3\119\3\119\3\119\3\119\3\119\3\119\3\119\3\119\3\119\3\119\3\119\3\119\3\119\3\119\3\119\3\119\3\119\3\119\3\
@@ -433,7 +431,6 @@ generalCategoryPlanes0To3Offsets1BitMap = Ptr
     \\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\29\4\76\2\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\34\4\28\4\32\4\35\4\119\3\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\32\4\119\3\28\4\30\4\28\4\31\4\28\4\35\4\28\4\28\4\28\4\28\4\28\4\
     \\162\7\30\4\216\4\28\4\32\4\28\4\35\4\28\4\35\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\28\4\165\7\28\4\28\4\28\4\28\4\28\4\28\4\33\4\119\3\119\3\119\3\119\3\44\10\202\11"#
 
-{-# NOINLINE generalCategoryPlanes0To3Offsets2BitMap #-}
 generalCategoryPlanes0To3Offsets2BitMap :: Ptr Word16
 generalCategoryPlanes0To3Offsets2BitMap = Ptr
     "\175\8\212\7\243\7\207\8\111\6\137\6\239\8\15\9\47\9\79\9\111\9\143\9\175\9\207\9\239\9\15\10\47\10\76\1\188\0\155\7\240\3\76\1\3\4\79\10\111\10\201\1\143\10\175\10\207\10\239\10\187\7\15\11\47\11\79\11\108\4\228\6\1\7\6\2\248\1\78\4\156\4\124\4\108\4\229\1\111\11\143\11\175\11\126\0\207\11\64\0\
@@ -467,12 +464,10 @@ lookupGeneralCategoryPlane14BitMap n =
     !(Ptr data#) = generalCategoryPlane14DataBitMap
     !(Ptr offsets#) = generalCategoryPlane14OffsetsBitMap
 
-{-# NOINLINE generalCategoryPlane14DataBitMap #-}
 generalCategoryPlane14DataBitMap :: Ptr Int8
 generalCategoryPlane14DataBitMap = Ptr
     "\29\26\29\29\29\29\29\29\29\29\26\26\26\26\26\26\26\26\5\5\5\5\5\5\5\5"#
 
-{-# NOINLINE generalCategoryPlane14OffsetsBitMap #-}
 generalCategoryPlane14OffsetsBitMap :: Ptr Word8
 generalCategoryPlane14OffsetsBitMap = Ptr
     "\0\2\2\2\10\10\10\10\10\10\10\10\10\10\10\10\2\2\2\2\2\2\2\2\2\2\2\2\2\2\2\2\18\18\18\18\18\18\18\18\18\18\18\18\18\18\18\18\18\18\
