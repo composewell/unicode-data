@@ -1,5 +1,9 @@
 # Changelog
 
+## TBD
+
+- Changed `integerValue` from `Char -> Maybe Int` to `(Integral a) => Char -> Maybe a`.
+
 ## 0.4.0.1 (December 2022)
 
 - Fix [Unicode blocks handling on big-endian architectures](https://github.com/composewell/unicode-data/issues/97).
