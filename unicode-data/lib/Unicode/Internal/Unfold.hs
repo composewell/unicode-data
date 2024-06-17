@@ -1,6 +1,5 @@
 {-# LANGUAGE CPP                       #-}
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE LambdaCase                #-}
 
 -- |
 -- Module      : Unicode.Internal.Unfold
@@ -18,6 +17,8 @@ module Unicode.Internal.Unfold
     , Step(..)
     , toList
     ) where
+
+import GHC.Base (build)
 
 -- | An @Unfold a b@ is a generator of a stream of values of type @b@ from a
 -- seed of type @a@.
@@ -57,8 +58,10 @@ toList :: Unfold a a -> a -> [a]
 toList (Unfold step inject) input =
     case inject input of
         Stop -> [input]
-        Yield b s -> b : go (step s)
-    where
-    go = \case
-        Yield b s -> let !s' = step s in b : go s'
-        Stop      -> []
+        Yield b s0 -> b : build
+                        ( \c n ->
+                            let go s = case step s of
+                                    Yield a s' -> a `c` go s'
+                                    Stop -> n
+                            in go s0
+                        )
