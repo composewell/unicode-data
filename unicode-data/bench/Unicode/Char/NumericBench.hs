@@ -2,7 +2,8 @@ module Unicode.Char.NumericBench
     ( benchmarks
     ) where
 
-import Test.Tasty.Bench (Benchmark)
+import Data.Int (Int64)
+import Test.Tasty.Bench (Benchmark, bgroup)
 
 import Unicode.Char.Bench (
     Bench (..),
@@ -22,7 +23,15 @@ benchmarks r = bgroupWithCharRange "Unicode.Char.Numeric" r $ \chars ->
   , bgroupWithChars "numericValue" chars
     [ Bench "unicode-data" Num.numericValue
     ]
-  , bgroupWithChars "integerValue" chars
-    [ Bench "unicode-data" Num.integerValue
-    ]
+  , bgroup "integerValue"
+        [ bgroupWithChars "Integer" chars
+            [ Bench "unicode-data" (Num.integerValue :: Char -> Maybe Integer)
+            ]
+        , bgroupWithChars "Int64" chars
+            [ Bench "unicode-data" (Num.integerValue :: Char -> Maybe Int64)
+            ]
+        , bgroupWithChars "Int" chars
+            [ Bench "unicode-data" (Num.integerValue :: Char -> Maybe Int)
+            ]
+        ]
   ]

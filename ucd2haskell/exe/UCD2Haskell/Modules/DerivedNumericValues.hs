@@ -53,6 +53,7 @@ genNumericValuesModule moduleName = Fold step mempty done
         , ""
         , "import Data.Ratio ((%))"
         , ""
+        , "{-# NOINLINE numericValue #-}"
         , "numericValue :: Char -> Maybe Rational"
         , "numericValue = \\case" <> mkEntries values
         , "  _ -> Nothing"
