@@ -118,6 +118,9 @@ library
   ghc-options: -O2
   build-depends:
       base >=4.7 && < 4.21
+  if impl(ghc < 9.0)
+    -- Required for unpackCString#
+    build-depends: ghc-prim
 
 test-suite test
   import: default-extensions, compile-options
