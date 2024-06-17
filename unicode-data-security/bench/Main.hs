@@ -1,8 +1,9 @@
 {-# LANGUAGE ExistentialQuantification #-}
 
 import Control.DeepSeq (NFData, deepseq)
-import Data.Ix (Ix(..))
-import Test.Tasty.Bench (Benchmark, bgroup, bcompare, bench, nf, defaultMain)
+import Data.Ix (Ix (..))
+import GHC.Exts (Ptr (..))
+import Test.Tasty.Bench (Benchmark, bcompare, bench, bgroup, defaultMain, nf)
 
 import qualified Unicode.Char.Identifiers.Security as Security
 import qualified Unicode.Internal.Char.Security.Confusables as Confusables
@@ -18,19 +19,19 @@ main :: IO ()
 main = defaultMain
     [ bgroup "Unicode.Char.Identifiers.Security"
         [ bgroup "Identifier Status"
-            [ benchNF "isAllowedInIdentifier" (show . Security.isAllowedInIdentifier)
+            [ benchNF "isAllowedInIdentifier" Security.isAllowedInIdentifier
             ]
         , bgroup "Identifier Types"
-            [ benchNF "identifierTypes"     (show . Security.identifierTypes)
+            [ benchNF "identifierTypes"     (fmap fromEnum . Security.identifierTypes)
             ]
         , bgroup "Confusables"
             [ bgroup' "confusablePrototype"
-                [ Bench "CString" Confusables.confusablePrototype
+                [ Bench "CString" (\c -> Ptr (Confusables.confusablePrototype c))
                 , Bench "String"  Security.confusablePrototype
                 ]
             -- , benchNF "prototype" Security.prototype
             , bgroup' "intentionalConfusables"
-                [ Bench "CString" Confusables.intentionalConfusables
+                [ Bench "CString" (\c -> Ptr (Confusables.intentionalConfusables c))
                 , Bench "String"  Security.intentionalConfusables
                 ]
             , benchNF "isIntentionallyConfusable" Security.intentionalConfusables

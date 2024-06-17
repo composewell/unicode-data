@@ -36,9 +36,9 @@ generate moduleName = Fold step mempty done
     mkConfusable c cs = mconcat
         [ "\n    "
         , showB c
-        , " -> Just (Ptr \""
+        , " -> \""
         , stringToAddrLiteral (Set.toList cs)
-        , "\\0\"#)"
+        , "\\0\"#"
         ]
 
     -- Encode string with UTF-8
@@ -55,15 +55,14 @@ generate moduleName = Fold step mempty done
         , "(intentionalConfusables)"
         , "where"
         , ""
-        , "import Foreign.C.String (CString)"
-        , "import GHC.Exts (Ptr(..))"
+        , "import GHC.Exts (Addr#)"
         , ""
         , "-- | Returns the /intentional/ confusables of a character, if any."
         , "--"
         , "-- The resulting 'CString' is null-terminated and encoded in UTF-8."
         , "--"
         , "-- @since 0.1.0"
-        , "intentionalConfusables :: Char -> Maybe CString"
+        , "intentionalConfusables :: Char -> Addr#"
         , "intentionalConfusables = \\case" <> Map.foldMapWithKey mkConfusable confusables
-        , "    _ -> Nothing"
+        , "    _ -> \"\\0\"#"
         ]

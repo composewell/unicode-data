@@ -2,6 +2,8 @@
 
 ## 0.2.1 TBD
 
+- Changed the type of `confusablePrototype` and `intentionalConfusables` from
+  `Char -> Maybe String` to `Char -> String`.
 - Add `unicodeVersion` to `Unicode.Char.Identifiers.Security`.
 
 ## 0.2.0 (September 2022)
