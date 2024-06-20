@@ -477,35 +477,26 @@ genEnumBitmapShamochu funcNameStr rawInt stage1 stage2 convert (defPUA, pPUA) (d
     , funcName, " :: Char -> Int", rawSuffix, "\n"
     , funcName, func
     , "\n"
-    , generateShamochuBitmaps funcName03 rawInt stage1 stage2 convert bitmap03
-    , "\n"
-    , case mBitmap14 of
-        Nothing -> mempty
-        Just bitmap14 -> generateShamochuBitmaps
-            funcName14 rawInt stage1 stage2 convert bitmap14 <> "\n"
+    , generateShamochuBitmaps funcNameStr rawInt stage1 stage2 convert bitmap
     ]
     where
     rawSuffix = if rawInt then "#" else ""
     funcName = BB.string7 funcNameStr
-    funcName03 = funcNameStr <> "Planes0To3"
-    funcName14 = funcNameStr <> "Plane14"
-    lookup03 = toLookupBitMapName funcName03
-    lookup14 = toLookupBitMapName funcName14
+    lookupFunc = toLookupBitMapName funcNameStr
     planes0To3' = L.dropWhileEnd (== def) planes0To3
     check = if length planes0To3 <= 0x40000
         then ()
         else error "genEnumBitmap: Cannot build"
-    (func, bitmap03, mBitmap14) = check `seq` if null plane14 && defPUA == def
+    (func, bitmap) = check `seq` if null plane14 && defPUA == def
         -- Only planes 0-3
         then
             ( mconcat
-                [ " = \\c -> let cp = ord c in if cp >= 0x"
+                [ " = \\c -> if c >= '\\x"
                 , showPaddedHeXB (length planes0To3')
-                , " then "
+                , "' then "
                 , pDef, rawSuffix
-                , " else ", lookup03, " cp\n" ]
-            , planes0To3'
-            , Nothing )
+                , " else ", lookupFunc, " (ord c)\n" ]
+            , planes0To3' )
         -- All the planes
         else
             let plane14' = L.dropWhileEnd (== def) plane14
@@ -515,14 +506,14 @@ genEnumBitmapShamochu funcNameStr rawInt stage1 stage2 convert (defPUA, pPUA) (d
                     [ " c\n"
                     , "    -- Planes 0-3\n"
                     , "    | cp < 0x", showPaddedHeXB bound1
-                                     , " = ", lookup03, " cp", rawSuffix, "\n"
+                                     , " = ", lookupFunc, " cp", rawSuffix, "\n"
                     , "    -- Planes 4-13: ", showB def, "\n"
                     , "    | cp < 0xE0000 = " <> pDef, rawSuffix, "\n"
                     , "    -- Plane 14\n"
                     , "    | cp < 0x", showPaddedHeXB bound2
-                                     , " = ", lookup14, " (cp", rawSuffix
+                                     , " = ", lookupFunc, " (cp", rawSuffix
                                      , " -", rawSuffix, " 0x"
-                                     , showPaddedHeXB 0xE0000, rawSuffix
+                                     , showPaddedHeXB (0xE0000 - bound1), rawSuffix
                                      , ")\n"
                     , if defPUA == def
                         then ""
@@ -539,8 +530,7 @@ genEnumBitmapShamochu funcNameStr rawInt stage1 stage2 convert (defPUA, pPUA) (d
                     , "    | otherwise = " <> pDef, rawSuffix, "\n"
                     , "    where\n"
                     , "    ", if rawInt then "!cp@(I# cp#)" else "cp", " = ord c\n" ]
-                , planes0To3'
-                , Just plane14' )
+                , planes0To3' <> plane14' )
 
 generateShamochuBitmaps ::
     String -> Bool -> NE.NonEmpty Word -> [Word] -> (a -> Word8) -> [a] -> BB.Builder

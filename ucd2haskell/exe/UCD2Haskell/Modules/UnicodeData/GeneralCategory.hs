@@ -131,7 +131,7 @@ genGeneralCategoryModule moduleName = Fold step initial done
         , "-- The caller of this function must ensure its parameter is \\< @0x40000@."
         , "{-# INLINE generalCategoryPlanes0To3 #-}"
         , "generalCategoryPlanes0To3 :: Int -> Int"
-        , "generalCategoryPlanes0To3 = lookupGeneralCategoryPlanes0To3BitMap"
+        , "generalCategoryPlanes0To3 = lookupGeneralCategoryBitMap"
         , ""
         , "-- | Return the general category of a character"
         , genEnumBitmapShamochu
