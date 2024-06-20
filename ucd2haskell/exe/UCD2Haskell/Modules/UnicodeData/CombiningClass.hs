@@ -8,17 +8,23 @@ module UCD2Haskell.Modules.UnicodeData.CombiningClass
     ( recipe
     , parseCombining) where
 
-import qualified Data.ByteString.Builder as BB
-import qualified Unicode.CharacterDatabase.Parser.Common as U
-import qualified Unicode.CharacterDatabase.Parser.UnicodeData as UD
-import qualified Unicode.CharacterDatabase.Parser.Properties.Single as Props
-
-import UCD2Haskell.Generator (FileRecipe (..), unlinesBB, apacheLicense, genBitmap)
-import UCD2Haskell.Common (Fold (..), showB)
-import Data.Char (ord)
-import Data.Foldable (Foldable(..))
 import qualified Data.ByteString as B
+import qualified Data.ByteString.Builder as BB
+import Data.Char (ord)
+import Data.Foldable (Foldable (..))
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Set as Set
+import qualified Unicode.CharacterDatabase.Parser.Common as U
+import qualified Unicode.CharacterDatabase.Parser.Properties.Single as Props
+import qualified Unicode.CharacterDatabase.Parser.UnicodeData as UD
+
+import UCD2Haskell.Common (Fold (..), showB)
+import UCD2Haskell.Generator (
+    FileRecipe (..),
+    apacheLicense,
+    genBitmapShamochu,
+    unlinesBB,
+ )
 
 recipe :: FileRecipe UD.Entry
 recipe = ModuleRecipe
@@ -55,17 +61,23 @@ genCombiningClassModule moduleName = Fold step initial done
             , "(combiningClass, isCombining)"
             , "where"
             , ""
+            , "import Data.Bits (Bits(..))"
             , "import Data.Char (ord)"
-            , "import Data.Word (Word8)"
+            , "import Data.Int (Int8)"
+            , "import Data.Word (Word8, Word16)"
             , "import GHC.Exts (Ptr(..))"
-            , "import Unicode.Internal.Bits (lookupBit64)"
+            , "import Unicode.Internal.Bits (lookupBit, lookupWord8AsInt, lookupWord16AsInt)"
             , ""
             , "combiningClass :: Char -> Int"
             , "combiningClass = \\case"
             , unlinesBB (reverse combiningClasses)
             , "  _ -> 0\n"
             , ""
-            , genBitmap "isCombining" (reverse combiningCodePoints)
+            , genBitmapShamochu
+                    "isCombining"
+                    (NE.singleton 6)
+                    [2,3,4,5,6]
+                    (reverse combiningCodePoints)
             ]
 
     genCombiningClassDef c cc = mconcat

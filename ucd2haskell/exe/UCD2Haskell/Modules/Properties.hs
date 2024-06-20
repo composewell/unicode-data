@@ -12,17 +12,23 @@ module UCD2Haskell.Modules.Properties
 import Control.Exception (assert)
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Short as BS
-import Data.Char (ord)
+import Data.Char (chr, ord)
+import qualified Data.IntSet as IntSet
 import qualified Data.List as L
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
 import Data.Maybe (isNothing)
-import qualified Data.IntSet as IntSet
 import qualified Data.Set as Set
 import qualified Unicode.CharacterDatabase.Parser.Common as U
 import qualified Unicode.CharacterDatabase.Parser.Properties.Multiple as Props
 
-import UCD2Haskell.Generator (FileRecipe (..), unlinesBB, apacheLicense, genBitmap, unwordsBB)
 import UCD2Haskell.Common (Fold (..))
+import UCD2Haskell.Generator (
+    FileRecipe (..),
+    apacheLicense,
+    genBitmapShamochu,
+    unlinesBB,
+ )
 
 propList :: Set.Set BS.ShortByteString -> FileRecipe Props.Entry
 propList props = ModuleRecipe
@@ -43,6 +49,7 @@ genCorePropertiesModule moduleName isProp = Fold step initial done
     where
 
     prop2FuncName = ("is" <>) . BB.shortByteString
+    prop2FuncNameStr = ("is" <>) . fmap (chr . fromIntegral) . BS.unpack
 
     initial = Acc mempty mempty
 
@@ -75,21 +82,31 @@ genCorePropertiesModule moduleName isProp = Fold step initial done
 
     genBitmaps values = foldr addBitMap mempty
         where
-            addBitMap property = (:)
-                (genBitmap (prop2FuncName property)
-                           (IntSet.toAscList (values Map.! property)))
+        addBitMap property =
+            (:)
+            (genBitmapShamochu
+                (prop2FuncNameStr property)
+                (5 NE.:| [6, 7])
+                -- [2,3,4,5,6]
+                []
+                (IntSet.toAscList (values Map.! property)))
 
     header exports =
         [ apacheLicense 2020 moduleName
         , "{-# OPTIONS_HADDOCK hide #-}"
+        , "{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}"
+        , "{-# HLINT ignore \"Use camelCase\" #-}"
         , ""
         , "module " <> moduleName
-        , "(" <> unwordsBB (L.intersperse "," (map prop2FuncName exports)) <> ")"
-        , "where"
+        , "    ( "
+            <> mconcat (L.intersperse "\n    , " (map prop2FuncName exports))
+        , "    ) where"
         , ""
+        , "import Data.Bits (Bits(..))"
         , "import Data.Char (ord)"
-        , "import Data.Word (Word8)"
+        , "import Data.Int (Int8)"
+        , "import Data.Word (Word8, Word16)"
         , "import GHC.Exts (Ptr(..))"
-        , "import Unicode.Internal.Bits (lookupBit64)"
+        , "import Unicode.Internal.Bits (lookupBit, lookupWord16AsInt, lookupWord8AsInt)"
         , ""
         ]

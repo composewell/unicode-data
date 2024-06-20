@@ -8,12 +8,18 @@ module UCD2Haskell.Modules.Security.IdentifierStatus (recipe) where
 
 import qualified Data.ByteString.Builder as BB
 import Data.Char (ord)
-import Data.Foldable (Foldable(..))
+import Data.Foldable (Foldable (..))
+import qualified Data.List.NonEmpty as NE
 import qualified Unicode.CharacterDatabase.Parser.Common as U
 import qualified Unicode.CharacterDatabase.Parser.Properties.Single as Prop
 
-import UCD2Haskell.Generator (FileRecipe (..), unlinesBB, apacheLicense, genBitmap)
 import UCD2Haskell.Common (Fold (..))
+import UCD2Haskell.Generator (
+    FileRecipe (..),
+    apacheLicense,
+    genBitmapShamochu,
+    unlinesBB,
+ )
 
 recipe :: FileRecipe Prop.Entry
 recipe = ModuleRecipe
@@ -44,7 +50,11 @@ genIdentifierStatusModule moduleName = Fold step mempty done
         , "import Data.Char (ord)"
         , "import Data.Word (Word8)"
         , "import GHC.Exts (Ptr(..))"
-        , "import Unicode.Internal.Bits (lookupBit64)"
+        , "import Unicode.Internal.Bits (lookupBit)"
         , ""
-        , genBitmap "isAllowedInIdentifier" (reverse values)
+        , genBitmapShamochu
+                "isAllowedInIdentifier"
+                (NE.singleton 6)
+                [2,3,4,5,6]
+                (reverse values)
         ]
