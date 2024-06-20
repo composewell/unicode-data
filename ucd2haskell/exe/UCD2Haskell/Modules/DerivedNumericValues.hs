@@ -44,7 +44,6 @@ genNumericValuesModule moduleName = Fold step mempty done
 
     done values = unlinesBB
         [ apacheLicense 2022 moduleName
-        , "{-# LANGUAGE LambdaCase #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName

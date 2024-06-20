@@ -6,7 +6,7 @@
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 
-{-# LANGUAGE LambdaCase, OverloadedLists #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# OPTIONS_HADDOCK hide #-}
 
 module Unicode.Internal.Char.Security.IdentifierType

@@ -34,7 +34,6 @@ genCaseFolding moduleName = Fold step mempty done
 
     done acc = unlinesBB
         [ apacheLicense 2022 moduleName
-        , "{-# LANGUAGE LambdaCase #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName

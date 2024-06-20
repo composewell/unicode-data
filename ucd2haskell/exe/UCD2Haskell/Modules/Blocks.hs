@@ -34,7 +34,6 @@ genBlocksModule moduleName = Fold step initial done
 
     done Acc{..} = let ranges' = reverse ranges in unlinesBB
         [ apacheLicense 2022 moduleName
-        , "{-# LANGUAGE LambdaCase #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName

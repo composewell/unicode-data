@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, CPP #-}
+{-# LANGUAGE CPP #-}
 
 module Unicode.Text.Case
     ( toUpperFusion

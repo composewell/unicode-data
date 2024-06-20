@@ -145,7 +145,7 @@ genIdentifierTypeModule moduleName = Fold step mempty done
 
     done acc = unlinesBB
         [ apacheLicense 2022 moduleName
-        , "{-# LANGUAGE LambdaCase, OverloadedLists #-}"
+        , "{-# LANGUAGE OverloadedLists #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName

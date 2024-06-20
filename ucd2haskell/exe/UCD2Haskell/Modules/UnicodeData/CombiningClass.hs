@@ -55,7 +55,6 @@ genCombiningClassModule moduleName = Fold step initial done
     done Acc{..} =
         unlinesBB
             [ apacheLicense 2020 moduleName
-            , "{-# LANGUAGE LambdaCase #-}"
             , "{-# OPTIONS_HADDOCK hide #-}"
             , "module " <> moduleName
             , "(combiningClass, isCombining)"
