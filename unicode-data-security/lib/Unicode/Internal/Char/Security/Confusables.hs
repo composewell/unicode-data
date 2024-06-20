@@ -6,7 +6,6 @@
 -- Maintainer  : streamly@composewell.com
 -- Stability   : experimental
 
-{-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_HADDOCK hide #-}
 
 module Unicode.Internal.Char.Security.Confusables

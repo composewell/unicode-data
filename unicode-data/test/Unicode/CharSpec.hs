@@ -1,6 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE LambdaCase #-}
 
 module Unicode.CharSpec
   ( spec

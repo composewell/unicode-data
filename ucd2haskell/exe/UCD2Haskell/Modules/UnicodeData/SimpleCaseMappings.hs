@@ -45,7 +45,6 @@ genSimpleCaseMappingModule moduleName funcName field =
 
     genHeader =
         [ apacheLicense 2020 moduleName
-        , "{-# LANGUAGE LambdaCase #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName

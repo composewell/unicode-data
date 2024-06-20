@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 -- |
 -- Module      : Unicode.Char.Case
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors

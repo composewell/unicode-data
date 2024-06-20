@@ -48,7 +48,6 @@ generate moduleName = Fold step mempty done
 
     done confusables = unlinesBB
         [ apacheLicense 2022 moduleName
-        , "{-# LANGUAGE LambdaCase #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName

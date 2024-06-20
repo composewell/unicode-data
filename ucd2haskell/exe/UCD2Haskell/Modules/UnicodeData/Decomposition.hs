@@ -150,7 +150,6 @@ genDecomposeDefModule moduleName before after dtype predicate
 
     genHeader =
         [ apacheLicense 2020 moduleName
-        , "{-# LANGUAGE LambdaCase #-}"
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
         , "module " <> moduleName
