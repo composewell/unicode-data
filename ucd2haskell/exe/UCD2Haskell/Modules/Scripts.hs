@@ -33,6 +33,7 @@ import UCD2Haskell.Common (
     showPaddedHeXB,
  )
 import UCD2Haskell.Generator (
+    BitmapType (..),
     FileRecipe (..),
     apacheLicense,
     generateShamochuBitmaps,
@@ -340,6 +341,7 @@ genScriptsModule moduleName aliases = Fold step mempty done
             , generateShamochuBitmaps
                 bitmap0To1
                 True
+                ByteMap
                 (NE.singleton 3)
                 [5]
                 toWord8

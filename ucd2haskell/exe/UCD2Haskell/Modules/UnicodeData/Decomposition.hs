@@ -17,13 +17,20 @@ module UCD2Haskell.Modules.UnicodeData.Decomposition
     ) where
 
 import qualified Data.ByteString.Builder as BB
+import Data.Char (ord)
+import Data.Foldable (Foldable (..))
+import qualified Data.List.NonEmpty as NE
 import qualified Unicode.CharacterDatabase.Parser.Common as U
 import qualified Unicode.CharacterDatabase.Parser.UnicodeData as UD
 
-import UCD2Haskell.Generator (FileRecipe (..), unlinesBB, apacheLicense, genBitmap, unwordsBB)
-import UCD2Haskell.Common (Fold (..), filterFold, filterNonHangul, showB, allRange)
-import Data.Char (ord)
-import Data.Foldable (Foldable(..))
+import UCD2Haskell.Common (Fold (..), allRange, filterFold, filterNonHangul, showB)
+import UCD2Haskell.Generator (
+    FileRecipe (..),
+    apacheLicense,
+    genBitmapShamochu,
+    unlinesBB,
+    unwordsBB,
+ )
 
 data DType = Canonical | Kompat
 
@@ -69,12 +76,18 @@ genDecomposableModule moduleName dtype
             , "(isDecomposable)"
             , "where"
             , ""
+            , "import Data.Bits (Bits(..))"
             , "import Data.Char (ord)"
-            , "import Data.Word (Word8)"
+            , "import Data.Int (Int8)"
+            , "import Data.Word (Word8, Word16)"
             , "import GHC.Exts (Ptr(..))"
-            , "import Unicode.Internal.Bits (lookupBit64)"
+            , "import Unicode.Internal.Bits (lookupBit, lookupWord8AsInt, lookupWord16AsInt)"
             , ""
-            , genBitmap "isDecomposable" (reverse st)
+            , genBitmapShamochu
+                    "isDecomposable"
+                    (NE.singleton 6)
+                    [2,3,4,5,6]
+                    (reverse st)
             ]
 
 filterDecomposableType :: DType -> Fold UD.Entry a -> Fold UD.Entry a

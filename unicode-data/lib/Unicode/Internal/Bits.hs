@@ -13,9 +13,11 @@
 
 module Unicode.Internal.Bits
     ( -- * Bitmap lookup
-      lookupBit64,
+      lookupBit,
       lookupWord8AsInt,
+      lookupWord8AsInt#,
       lookupWord16AsInt,
+      lookupWord16AsInt#,
       lookupWord32#,
       -- * CString
       unpackCString#
@@ -23,19 +25,16 @@ module Unicode.Internal.Bits
 
 #include "MachDeps.h"
 
-import Data.Bits (finiteBitSize, popCount)
 import GHC.Exts
-       (Addr#, Int(..), Int#, Word(..), Word#,
-        indexWordOffAddr#, indexWord8OffAddr#,
+       (Addr#, Int(..), Int#, Word(..), Word#, indexWord8OffAddr#,
         indexWord16OffAddr#, indexWord32OffAddr#,
-        andI#, uncheckedIShiftRL#,
         and#, word2Int#, uncheckedShiftL#)
 #if MIN_VERSION_base(4,16,0)
 import GHC.Exts (word8ToWord#, word16ToWord#, word32ToWord#)
 #endif
 #ifdef WORDS_BIGENDIAN
 import GHC.Exts
-       (byteSwap#, narrow16Word#, narrow32Word#,
+       (narrow16Word#, narrow32Word#,
         byteSwap16#, byteSwap32#)
 #endif
 
@@ -45,28 +44,46 @@ import GHC.Exts (unpackCString#)
 import GHC.CString (unpackCString#)
 #endif
 
--- | @lookup64 addr index@ looks up the bit stored at bit index @index@ using a
--- bitmap starting at the address @addr@. Looks up the 64-bit word containing
--- the bit and then the bit in that word. The caller must make sure that the
--- 64-bit word at the byte address (addr + index / 64) * 8 is legally
--- accessible memory.
---
-lookupBit64 :: Addr# -> Int -> Bool
-lookupBit64 addr# (I# index#) = W# (word## `and#` bitMask##) /= 0
-  where
-    !fbs@(I# fbs#) = finiteBitSize (0 :: Word) - 1
-    !(I# logFbs#) = case fbs of
-      31 -> 5
-      63 -> 6
-      _  -> popCount fbs -- this is a really weird architecture
+-- TODO: remove?
+-- {- | @lookupBit addr index@ looks up the bit stored at bit index @index@ using
+-- a bitmap starting at the address @addr@. Looks up the word containing the bit
+-- and then the bit in that word. The caller must make sure that the word at the
+-- byte address @(addr + index / wfbs)@, where @wfbs@ is the finite bit size of a
+-- word, is legally accessible memory.
+-- -}
+-- lookupBit :: Addr# -> Int -> Bool
+-- lookupBit addr# (I# index#) = W# (word## `and#` bitMask##) /= 0
+--   where
+--     !fbs@(I# fbs#) = finiteBitSize (0 :: Word) - 1
+--     !(I# log2Fbs) = case fbs of
+--       31 -> 5
+--       63 -> 6
+--       _  -> popCount fbs -- this is a really weird architecture
 
-    wordIndex# = index# `uncheckedIShiftRL#` logFbs#
-#ifdef WORDS_BIGENDIAN
-    word## = byteSwap# (indexWordOffAddr# addr# wordIndex#)
+--     wordIndex# = index# `uncheckedIShiftRL#` log2Fbs
+-- #ifdef WORDS_BIGENDIAN
+--     word## = byteSwap# (indexWordOffAddr# addr# wordIndex#)
+-- #else
+--     word## = indexWordOffAddr# addr# wordIndex#
+-- #endif
+--     -- x % 2^n = x & (2^n - 1)
+--     bitIndex# = index# `andI#` fbs#
+--     bitMask## = 1## `uncheckedShiftL#` bitIndex#
+
+{- | @lookupBit addr byteIndex bitIndex@ looks up the bit stored in the byte
+at index @byteIndex@ at the bit index @bitIndex@ using a bitmap starting at the
+address @addr@. The caller must make sure that the byte at address
+@(addr + byteIndex)@ is legally accessible memory.
+-}
+lookupBit :: Addr# -> Int -> Int -> Bool
+lookupBit addr# (I# byteIndex#) (I# bitIndex#) =
+    W# (word## `and#` bitMask##) /= 0
+  where
+#if MIN_VERSION_base(4,16,0)
+    word## = word8ToWord# (indexWord8OffAddr# addr# byteIndex#)
 #else
-    word## = indexWordOffAddr# addr# wordIndex#
+    word## = indexWord8OffAddr# addr# byteIndex#
 #endif
-    bitIndex# = index# `andI#` fbs#
     bitMask## = 1## `uncheckedShiftL#` bitIndex#
 
 {-| @lookupWord8AsInt addr index@ looks up for the @index@-th @8@-bits word in
@@ -82,7 +99,13 @@ lookupWord8AsInt
   :: Addr# -- ^ Bitmap address
   -> Int   -- ^ Word index
   -> Int   -- ^ Resulting word as 'Int'
-lookupWord8AsInt addr# (I# index#) = I# (word2Int# word##)
+lookupWord8AsInt addr# (I# index#) = I# (lookupWord8AsInt# addr# index#)
+
+lookupWord8AsInt#
+  :: Addr# -- ^ Bitmap address
+  -> Int#  -- ^ Word index
+  -> Int#  -- ^ Resulting word as 'Int'
+lookupWord8AsInt# addr# index# = word2Int# word##
   where
 #if MIN_VERSION_base(4,16,0)
     word## = word8ToWord# (indexWord8OffAddr# addr# index#)
@@ -94,7 +117,13 @@ lookupWord16AsInt
   :: Addr# -- ^ Bitmap address
   -> Int   -- ^ Word index
   -> Int   -- ^ Resulting word as `Int`
-lookupWord16AsInt addr# (I# k#) = I# (word2Int# word##)
+lookupWord16AsInt addr# (I# k#) = I# (lookupWord16AsInt# addr# k#)
+
+lookupWord16AsInt#
+  :: Addr# -- ^ Bitmap address
+  -> Int#  -- ^ Word index
+  -> Int#  -- ^ Resulting word as `Int`
+lookupWord16AsInt# addr# k# = word2Int# word##
     where
 #ifdef WORDS_BIGENDIAN
 #if MIN_VERSION_base(4,16,0)
