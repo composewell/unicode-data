@@ -16,8 +16,10 @@ import qualified Unicode.CharacterDatabase.Parser.Properties.Single as Prop
 import UCD2Haskell.Common (Fold (..))
 import UCD2Haskell.Generator (
     FileRecipe (..),
+    ShamochuCode (..),
     apacheLicense,
     genBitmapShamochu,
+    mkImports,
     unlinesBB,
  )
 
@@ -46,14 +48,12 @@ genIdentifierStatusModule moduleName = Fold step mempty done
         , "(isAllowedInIdentifier)"
         , "where"
         , ""
-        , "import Data.Char (ord)"
-        , "import Data.Word (Word8)"
-        , "import GHC.Exts (Ptr(..))"
-        , "import Unicode.Internal.Bits (lookupBit)"
-        , ""
-        , genBitmapShamochu
-                "isAllowedInIdentifier"
-                (NE.singleton 6)
-                [2,3,4,5,6]
-                (reverse values)
+        , mkImports imports
+        , code
         ]
+        where
+        ShamochuCode{..} = genBitmapShamochu
+            "isAllowedInIdentifier"
+            (NE.singleton 6)
+            [2,3,4,5,6]
+            (reverse values)

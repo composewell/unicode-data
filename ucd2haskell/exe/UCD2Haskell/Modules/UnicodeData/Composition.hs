@@ -21,8 +21,10 @@ import qualified Unicode.CharacterDatabase.Parser.UnicodeData as UD
 import UCD2Haskell.Common (Fold (..), allRange, isHangulRange, showB)
 import UCD2Haskell.Generator (
     FileRecipe (..),
+    ShamochuCode (..),
     apacheLicense,
     genBitmapShamochu,
+    mkImports,
     unlinesBB,
  )
 
@@ -92,7 +94,7 @@ genCompositionsModule moduleName excluded combiningChars =
             then Set.insert secondCP secondStarters
             else secondStarters
 
-    header =
+    header imports =
         [ apacheLicense 2020 moduleName
         , "{-# OPTIONS_HADDOCK hide #-}"
         , ""
@@ -100,13 +102,7 @@ genCompositionsModule moduleName excluded combiningChars =
         , "(compose, composeStarters, isSecondStarter)"
         , "where"
         , ""
-        , "import Data.Bits (Bits(..))"
-        , "import Data.Char (ord)"
-        , "import Data.Int (Int8)"
-        , "import Data.Word (Word8, Word16)"
-        , "import GHC.Exts (Ptr(..))"
-        , "import Unicode.Internal.Bits (lookupBit, lookupWord8AsInt, lookupWord16AsInt)"
-        , ""
+        , mkImports imports
         ]
 
     composePair decomps =
@@ -125,17 +121,19 @@ genCompositionsModule moduleName excluded combiningChars =
         ]
 
     isSecondStarter secondStarters =
-        [ genBitmapShamochu
-                "isSecondStarter"
-                (NE.singleton 6)
-                [2,3,4,5,6]
-                (Set.toAscList secondStarters) ]
+        genBitmapShamochu
+            "isSecondStarter"
+            (NE.singleton 6)
+            [2,3,4,5,6]
+            (Set.toAscList secondStarters)
 
     done Acc{..} = unlinesBB . mconcat $
-        [ header
+        [ header imports
         , composePair (reverse decompositions)
         , composeStarterPair (reverse starters)
-        , isSecondStarter secondStarters ]
+        , [code] ]
+        where
+        ShamochuCode{..} = isSecondStarter secondStarters
 
 parseFullCompositionExclusion :: B.ByteString -> Set.Set Char
 parseFullCompositionExclusion = foldr addExcluded mempty . Props.parse

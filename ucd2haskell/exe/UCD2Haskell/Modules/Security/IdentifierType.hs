@@ -23,10 +23,13 @@ import qualified Unicode.CharacterDatabase.Parser.Properties.Single as Prop
 import UCD2Haskell.Common (Fold (..))
 import UCD2Haskell.Generator (
     FileRecipe (..),
+    ShamochuCode (..),
     apacheLicense,
     genEnumBitmapShamochu,
+    mkImports,
     splitPlanes,
     unlinesBB,
+    (<+>),
  )
 
 recipe :: FileRecipe Prop.Entry
@@ -152,14 +155,7 @@ genIdentifierTypeModule moduleName = Fold step mempty done
         , "(IdentifierType(..), identifierTypes, decodeIdentifierTypes)"
         , "where"
         , ""
-        , "import Data.Bits (Bits(..))"
-        , "import Data.Char (ord)"
-        , "import Data.Int (Int8)"
-        , "import Data.List.NonEmpty (NonEmpty)"
-        , "import Data.Word (Word8, Word16)"
-        , "import GHC.Exts (Ptr(..))"
-        , "import Unicode.Internal.Bits (lookupWord8AsInt, lookupWord16AsInt)"
-        , ""
+        , mkImports (imports <+> Map.singleton "Data.List.NonEmpty" (Set.singleton "NonEmpty"))
         , "-- | Identifier type"
         , "--"
         , "-- @since 0.1.0"
@@ -203,16 +199,7 @@ genIdentifierTypeModule moduleName = Fold step mempty done
         , "    _ -> " <> mkHaskellConstructorsList def
         , ""
         , "-- | Returns the 'IdentifierType's corresponding to a character."
-        , genEnumBitmapShamochu
-            "identifierTypes"
-            False
-            (NE.singleton 3)
-            [5]
-            toWord8
-            (defIdx, BB.intDec (fromEnum defIdx))
-            (defIdx, BB.intDec (fromEnum defIdx))
-            planes0To3
-            plane14
+        , code
         ]
         where
         toWord8 =
@@ -223,3 +210,13 @@ genIdentifierTypeModule moduleName = Fold step mempty done
             (== defIdx)
             (reverse identifiersTypes)
         (encoding, identifiersTypes, defIdx) = mkIdentifiersTypes acc
+        ShamochuCode{..} = genEnumBitmapShamochu
+            "identifierTypes"
+            False
+            (NE.singleton 3)
+            [5]
+            toWord8
+            (defIdx, BB.intDec (fromEnum defIdx))
+            (defIdx, BB.intDec (fromEnum defIdx))
+            planes0To3
+            plane14

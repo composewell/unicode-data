@@ -59,9 +59,9 @@ module Unicode.Internal.Char.UnicodeData.GeneralCategory
 import Data.Bits (Bits(..))
 import Data.Char (ord)
 import Data.Int (Int8)
-import Data.Word (Word8, Word16)
+import Data.Word (Word16)
 import GHC.Exts (Ptr(..))
-import Unicode.Internal.Bits (lookupWord8AsInt, lookupWord16AsInt)
+import Unicode.Internal.Bits (lookupWord16AsInt, lookupWord8AsInt)
 
 --------------------------------------------------------------------------------
 -- General category patterns

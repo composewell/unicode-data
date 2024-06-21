@@ -26,8 +26,10 @@ import qualified Unicode.CharacterDatabase.Parser.UnicodeData as UD
 import UCD2Haskell.Common (Fold (..), allRange, filterFold, filterNonHangul, showB)
 import UCD2Haskell.Generator (
     FileRecipe (..),
+    ShamochuCode (..),
     apacheLicense,
     genBitmapShamochu,
+    mkImports,
     unlinesBB,
     unwordsBB,
  )
@@ -76,19 +78,15 @@ genDecomposableModule moduleName dtype
             , "(isDecomposable)"
             , "where"
             , ""
-            , "import Data.Bits (Bits(..))"
-            , "import Data.Char (ord)"
-            , "import Data.Int (Int8)"
-            , "import Data.Word (Word8, Word16)"
-            , "import GHC.Exts (Ptr(..))"
-            , "import Unicode.Internal.Bits (lookupBit, lookupWord8AsInt, lookupWord16AsInt)"
-            , ""
-            , genBitmapShamochu
-                    "isDecomposable"
-                    (NE.singleton 6)
-                    [2,3,4,5,6]
-                    (reverse st)
+            , mkImports imports
+            , code
             ]
+        where
+        ShamochuCode{..} = genBitmapShamochu
+            "isDecomposable"
+            (NE.singleton 6)
+            [2,3,4,5,6]
+            (reverse st)
 
 filterDecomposableType :: DType -> Fold UD.Entry a -> Fold UD.Entry a
 filterDecomposableType dtype =

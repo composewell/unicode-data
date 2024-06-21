@@ -21,7 +21,7 @@ import UCD2Haskell.Generator (
     FileRecipe (..),
     apacheLicense,
     genEnumBitmapShamochu,
-    unlinesBB,
+    unlinesBB, ShamochuCode (..), mkImports,
  )
 import Control.Exception (assert)
 
@@ -107,13 +107,7 @@ genGeneralCategoryModule moduleName = Fold step initial done
         , foldMapWithNewLine mkCharBoundPatternExport charBoundPatterns
         , ") where"
         , ""
-        , "import Data.Bits (Bits(..))"
-        , "import Data.Char (ord)"
-        , "import Data.Int (Int8)"
-        , "import Data.Word (Word8, Word16)"
-        , "import GHC.Exts (Ptr(..))"
-        , "import Unicode.Internal.Bits (lookupWord8AsInt, lookupWord16AsInt)"
-        , ""
+        , mkImports imports
         , "--------------------------------------------------------------------------------"
         , "-- General category patterns"
         , "--------------------------------------------------------------------------------"
@@ -134,16 +128,7 @@ genGeneralCategoryModule moduleName = Fold step initial done
         , "generalCategoryPlanes0To3 = lookupGeneralCategoryBitMap"
         , ""
         , "-- | Return the general category of a character"
-        , genEnumBitmapShamochu
-            "generalCategory"
-            False
-            (NE.singleton 3)
-            [5]
-            toWord8
-            (UD.Co, generalCategoryConstructor UD.Co)
-            (UD.Cn, generalCategoryConstructor UD.Cn)
-            (reverse acc1)
-            (reverse acc2)
+        , code
         ]
         where
         toWord8 =
@@ -173,6 +158,16 @@ genGeneralCategoryModule moduleName = Fold step initial done
             , ("MaxIsNumber"   , maxIsNumber   )
             , ("MaxIsSpace"    , maxIsSpace    )
             , ("MaxIsSeparator", maxIsSeparator) ]
+        ShamochuCode{..} = genEnumBitmapShamochu
+            "generalCategory"
+            False
+            (NE.singleton 3)
+            [5]
+            toWord8
+            (UD.Co, generalCategoryConstructor UD.Co)
+            (UD.Cn, generalCategoryConstructor UD.Cn)
+            (reverse acc1)
+            (reverse acc2)
 
 data CharBounds = CharBounds
     { maxIsLetter    :: !Char

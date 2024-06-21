@@ -12,10 +12,12 @@ module Unicode.Internal.Char.Security.IdentifierStatus
 (isAllowedInIdentifier)
 where
 
+import Data.Bits (Bits(..))
 import Data.Char (ord)
-import Data.Word (Word8)
+import Data.Int (Int8)
+import Data.Word (Word16, Word8)
 import GHC.Exts (Ptr(..))
-import Unicode.Internal.Bits (lookupBit)
+import Unicode.Internal.Bits (lookupBit, lookupWord16AsInt, lookupWord8AsInt)
 
 {-# INLINE isAllowedInIdentifier #-}
 isAllowedInIdentifier :: Char -> Bool

@@ -35,11 +35,14 @@ import UCD2Haskell.Common (
 import UCD2Haskell.Generator (
     BitmapType (..),
     FileRecipe (..),
+    ShamochuCode (..),
     apacheLicense,
     generateShamochuBitmaps,
+    mkImports',
     toLookupBitMapName,
     unlinesBB,
     word32ToWord8s,
+    (<+>),
  )
 
 recipe :: PropertyValuesAliases -> FileRecipe Prop.Entry
@@ -56,6 +59,13 @@ genScriptsModule moduleName aliases = Fold step mempty done
     done ranges =
         let scripts = Set.toList
                         (foldr addScript (Set.singleton Defaults.defaultScript) ranges)
+            ShamochuCode{..} = if length scripts <= 0xff
+                then mkCharScripts scripts ranges
+                else error "Cannot encode scripts"
+            imports' = imports <+> Map.fromList
+                [ ( "GHC.Exts"
+                  , Set.fromList ["Addr#", "Int(..)", "nullAddr#"] )
+                , ( "Data.Ix", Set.singleton "Ix" )]
         in unlinesBB
             [ "{-# LANGUAGE PatternSynonyms #-}"
             , "{-# OPTIONS_HADDOCK hide #-}"
@@ -71,13 +81,7 @@ genScriptsModule moduleName aliases = Fold step mempty done
             , "  , pattern ScriptCharMaskComplement )"
             , "where"
             , ""
-            , "import Data.Char (ord)"
-            , "import Data.Int (Int8)"
-            , "import Data.Ix (Ix)"
-            , "import Data.Word (Word16)"
-            , "import GHC.Exts (Addr#, Int#, Int(..), Ptr(..), nullAddr#, andI#, iShiftL#, iShiftRL#, (+#), (-#))"
-            , "import Unicode.Internal.Bits.Scripts (lookupWord8AsInt#, lookupWord16AsInt#)"
-            , ""
+            , mkImports' "Scripts" imports'
             , "-- | Unicode [script](https://www.unicode.org/reports/tr24/)."
             , "--"
             , "-- The constructors descriptions are the original Unicode values"
@@ -127,9 +131,7 @@ genScriptsModule moduleName aliases = Fold step mempty done
             , "-- | Script of a character."
             , "--"
             , "-- @since 0.1.0"
-            , if length scripts <= 0xff
-                then mkCharScripts scripts ranges
-                else error "Cannot encode scripts"
+            , code
             , ""
             ]
 
@@ -297,7 +299,7 @@ genScriptsModule moduleName aliases = Fold step mempty done
     encodeBytes = foldr addByte "" . word32ToWord8s
     addByte n acc = BB.char7 '\\' <> BB.word8Dec n <> acc
 
-    mkCharScripts :: [BS.ShortByteString] -> [Prop.Entry] -> BB.Builder
+    mkCharScripts :: [BS.ShortByteString] -> [Prop.Entry] -> ShamochuCode
     mkCharScripts scripts scriptsRanges =
         let charScripts = L.sort (foldMap (rangeToCharScripts getScript) scriptsRanges)
             charScripts' = reverse (fst (foldl' addMissing (mempty, '\0') charScripts))
@@ -325,28 +327,32 @@ genScriptsModule moduleName aliases = Fold step mempty done
                 assert (fromEnum (length scripts) < 0xff)
                 (fromIntegral . fromEnum)
             bitmap0To1 = "scriptPlanes0To1"
-        in mconcat
-            [ "{-# INLINE script #-}\n"
-            , "script :: Char -> Int#\n"
-            , "script c\n"
-            , "    -- Planes 0-1\n"
-            , "    | cp < 0x", showPaddedHeXB boundPlanes0To1
-            , " = ", toLookupBitMapName bitmap0To1, " cp#\n"
-            , mkScriptsBounds def (scripts !!) otherPlanes
-            , "    -- Default: ", BB.shortByteString Defaults.defaultScript, "\n"
-            , "    | otherwise = ", BB.intDec def, "#\n"
-            , "    where\n"
-            , "    !cp@(I# cp#) = ord c\n"
-            , "\n"
-            , generateShamochuBitmaps
-                bitmap0To1
-                True
-                ByteMap
-                (NE.singleton 3)
-                [5]
-                toWord8
-                planes0To1
-            ]
+            ShamochuCode{..} = generateShamochuBitmaps
+                                bitmap0To1
+                                True
+                                ByteMap
+                                (NE.singleton 3)
+                                [5]
+                                toWord8
+                                planes0To1
+        in ShamochuCode
+            { code = mconcat
+                [ "{-# INLINE script #-}\n"
+                , "script :: Char -> Int#\n"
+                , "script c\n"
+                , "    -- Planes 0-1\n"
+                , "    | cp < 0x", showPaddedHeXB boundPlanes0To1
+                , " = ", toLookupBitMapName bitmap0To1, " cp#\n"
+                , mkScriptsBounds def (scripts !!) otherPlanes
+                , "    -- Default: ", BB.shortByteString Defaults.defaultScript, "\n"
+                , "    | otherwise = ", BB.intDec def, "#\n"
+                , "    where\n"
+                , "    !cp@(I# cp#) = ord c\n"
+                , "\n"
+                , code
+                ]
+            , imports = imports }
+
 
     mkScriptsBounds :: Int -> (Int -> BS.ShortByteString) -> [(Int,Char)] -> BB.Builder
     mkScriptsBounds def getScriptName
