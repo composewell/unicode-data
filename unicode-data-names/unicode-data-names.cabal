@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                unicode-data-names
-version:             0.3.0
+version:             0.4.0
 synopsis:            Unicode characters names and aliases
 description:
   @unicode-data-names@ provides Haskell APIs to access the Unicode
@@ -9,7 +9,7 @@ description:
   .
   The Haskell data structures are generated programmatically from the UCD files.
   The latest Unicode version supported by this library is
-  @<https://www.unicode.org/versions/Unicode15.0.0/ 15.0.0>@.
+  @<https://www.unicode.org/versions/Unicode15.1.0/ 15.1.0>@.
 homepage:            http://github.com/composewell/unicode-data
 bug-reports:         https://github.com/composewell/unicode-data/issues
 license:             Apache-2.0
@@ -130,7 +130,7 @@ test-suite test
   build-depends:
       base             >= 4.7   && < 4.21
     , hspec            >= 2.0   && < 2.12
-    , unicode-data     >= 0.5   && < 0.6
+    , unicode-data     >= 0.6   && < 0.7
     , unicode-data-names
   if flag(has-text)
     cpp-options: -DHAS_TEXT
@@ -175,7 +175,7 @@ benchmark bench
     deepseq      >= 1.1   && < 1.6,
     tasty-bench  >= 0.2.5 && < 0.4,
     tasty        >= 1.4.1 && < 1.6,
-    unicode-data >= 0.5   && < 0.6,
+    unicode-data >= 0.6   && < 0.7,
     unicode-data-names
   if flag(has-text)
     cpp-options: -DHAS_TEXT

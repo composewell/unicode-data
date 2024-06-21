@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.0 (July 2024)
+
+- Update to [Unicode 15.1.0](https://www.unicode.org/versions/Unicode15.1.0/).
+
 ## 0.5.0 (July 2024)
 
 - Fix the inlining of `Addr#` literals and reduce their size. This results in
