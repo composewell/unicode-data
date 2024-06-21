@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                unicode-data-text
-version:             0.1.0
+version:             0.2.0
 synopsis:            Unicode features for “text” package
 description:
   @unicode-data-text@ provides Unicode features from
@@ -68,7 +68,7 @@ library
   build-depends:
     base             >= 4.7   && < 4.21,
     text             >= 1.2.4 && < 2.2,
-    unicode-data     >= 0.3   && < 0.5
+    unicode-data     >= 0.5   && < 0.6
 
 test-suite test
   import: default-extensions, compile-options
@@ -82,7 +82,7 @@ test-suite test
     base             >= 4.7   && < 4.21,
     hspec            >= 2.0   && < 2.12,
     text             >= 1.2.4 && < 2.2,
-    unicode-data     >= 0.3   && < 0.5,
+    unicode-data     >= 0.5   && < 0.6,
     unicode-data-text
   build-tool-depends:
     hspec-discover:hspec-discover >= 2.0 && < 2.12
@@ -98,7 +98,7 @@ benchmark bench
     tasty-bench      >= 0.2.5 && < 0.4,
     tasty            >= 1.4.1 && < 1.6,
     text             >= 1.2.4 && < 2.2,
-    unicode-data     >= 0.3   && < 0.5,
+    unicode-data     >= 0.5   && < 0.6,
     unicode-data-text
   -- [NOTE] Recommendation of tasty-bench to reduce garbage collection noisiness
   ghc-options: -O2 -fdicts-strict -rtsopts -with-rtsopts=-A32m
