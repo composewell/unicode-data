@@ -13,12 +13,10 @@ module Unicode.Internal.Char.ScriptExtensions
 where
 
 import Data.Char (ord)
-import Data.Word (Word8, Word16)
 import Data.Int (Int8)
-import GHC.Exts
-  ( Addr#, Int#, Int(..), Ptr(..), nullAddr#
-  , negateInt#, andI#, iShiftL#, iShiftRL#, (+#), (-#) )
-import Unicode.Internal.Bits.Scripts (lookupWord8AsInt#, lookupWord16AsInt#)
+import Data.Word (Word16)
+import GHC.Exts (Addr#, Int#, Int(..), Ptr(..), andI#, iShiftL#, iShiftRL#, negateInt#, nullAddr#, (+#), (-#))
+import Unicode.Internal.Bits.Scripts (lookupWord16AsInt#, lookupWord8AsInt#)
 
 -- | Script extensions of a character.
 --

@@ -23,9 +23,9 @@ module Unicode.Internal.Char.DerivedCoreProperties
 import Data.Bits (Bits(..))
 import Data.Char (ord)
 import Data.Int (Int8)
-import Data.Word (Word8, Word16)
+import Data.Word (Word16)
 import GHC.Exts (Ptr(..))
-import Unicode.Internal.Bits (lookupBit, lookupWord16AsInt, lookupWord8AsInt)
+import Unicode.Internal.Bits (lookupBit, lookupWord16AsInt)
 
 {-# INLINE isXID_Continue #-}
 isXID_Continue :: Char -> Bool

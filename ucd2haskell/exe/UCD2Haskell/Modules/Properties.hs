@@ -25,8 +25,10 @@ import qualified Unicode.CharacterDatabase.Parser.Properties.Multiple as Props
 import UCD2Haskell.Common (Fold (..))
 import UCD2Haskell.Generator (
     FileRecipe (..),
+    ShamochuCode (..),
     apacheLicense,
     genBitmapShamochu,
+    mkImports,
     unlinesBB,
  )
 
@@ -78,20 +80,21 @@ genCorePropertiesModule moduleName isProp = Fold step initial done
         Nothing -> Just xs
         Just ys -> Just (xs <> ys)
 
-    done Acc{..} = unlinesBB (header properties <> genBitmaps values properties)
+    done Acc{..} = header imports properties <> code
+        where
+        ShamochuCode{..} = genBitmaps values properties
 
-    genBitmaps values = foldr addBitMap mempty
+    genBitmaps values = foldMap addBitMap
         where
         addBitMap property =
-            (:)
-            (genBitmapShamochu
+            genBitmapShamochu
                 (prop2FuncNameStr property)
                 (5 NE.:| [6, 7])
                 -- [2,3,4,5,6]
                 []
-                (IntSet.toAscList (values Map.! property)))
+                (IntSet.toAscList (values Map.! property))
 
-    header exports =
+    header imports exports = unlinesBB
         [ apacheLicense 2020 moduleName
         , "{-# OPTIONS_HADDOCK hide #-}"
         , "{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}"
@@ -102,11 +105,5 @@ genCorePropertiesModule moduleName isProp = Fold step initial done
             <> mconcat (L.intersperse "\n    , " (map prop2FuncName exports))
         , "    ) where"
         , ""
-        , "import Data.Bits (Bits(..))"
-        , "import Data.Char (ord)"
-        , "import Data.Int (Int8)"
-        , "import Data.Word (Word8, Word16)"
-        , "import GHC.Exts (Ptr(..))"
-        , "import Unicode.Internal.Bits (lookupBit, lookupWord16AsInt, lookupWord8AsInt)"
-        , ""
+        , mkImports imports
         ]

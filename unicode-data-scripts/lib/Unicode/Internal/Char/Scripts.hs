@@ -23,8 +23,8 @@ import Data.Char (ord)
 import Data.Int (Int8)
 import Data.Ix (Ix)
 import Data.Word (Word16)
-import GHC.Exts (Addr#, Int#, Int(..), Ptr(..), nullAddr#, andI#, iShiftL#, iShiftRL#, (+#), (-#))
-import Unicode.Internal.Bits.Scripts (lookupWord8AsInt#, lookupWord16AsInt#)
+import GHC.Exts (Addr#, Int#, Int(..), Ptr(..), andI#, iShiftL#, iShiftRL#, nullAddr#, (+#), (-#))
+import Unicode.Internal.Bits.Scripts (lookupWord16AsInt#, lookupWord8AsInt#)
 
 -- | Unicode [script](https://www.unicode.org/reports/tr24/).
 --

@@ -21,8 +21,10 @@ import qualified Unicode.CharacterDatabase.Parser.UnicodeData as UD
 import UCD2Haskell.Common (Fold (..), showB)
 import UCD2Haskell.Generator (
     FileRecipe (..),
+    ShamochuCode (..),
     apacheLicense,
     genBitmapShamochu,
+    mkImports,
     unlinesBB,
  )
 
@@ -60,24 +62,20 @@ genCombiningClassModule moduleName = Fold step initial done
             , "(combiningClass, isCombining)"
             , "where"
             , ""
-            , "import Data.Bits (Bits(..))"
-            , "import Data.Char (ord)"
-            , "import Data.Int (Int8)"
-            , "import Data.Word (Word8, Word16)"
-            , "import GHC.Exts (Ptr(..))"
-            , "import Unicode.Internal.Bits (lookupBit, lookupWord8AsInt, lookupWord16AsInt)"
-            , ""
+            , mkImports imports
             , "combiningClass :: Char -> Int"
             , "combiningClass = \\case"
             , unlinesBB (reverse combiningClasses)
             , "  _ -> 0\n"
             , ""
-            , genBitmapShamochu
-                    "isCombining"
-                    (NE.singleton 6)
-                    [2,3,4,5,6]
-                    (reverse combiningCodePoints)
+            , code
             ]
+        where
+        ShamochuCode{..} = genBitmapShamochu
+            "isCombining"
+            (NE.singleton 6)
+            [2,3,4,5,6]
+            (reverse combiningCodePoints)
 
     genCombiningClassDef c cc = mconcat
         [ "  "

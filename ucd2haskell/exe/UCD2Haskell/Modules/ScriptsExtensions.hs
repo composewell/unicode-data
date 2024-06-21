@@ -27,11 +27,14 @@ import qualified Unicode.CharacterDatabase.Parser.Properties.Single as Prop
 import UCD2Haskell.Common (Fold (..), mkHaskellConstructor)
 import UCD2Haskell.Generator (
     FileRecipe (..),
+    ShamochuCode (..),
     apacheLicense,
     enumMapToAddrLiteral,
     genEnumBitmapShamochu,
+    mkImports',
     splitPlanes,
     unlinesBB,
+    (<+>),
  )
 
 recipe :: PropertyValuesAliases -> ScriptExtensions -> FileRecipe Prop.Entry
@@ -98,14 +101,7 @@ genScriptExtensionsModule moduleName aliases extensions = Fold step initial done
         , "(scriptExtensions)"
         , "where"
         , ""
-        , "import Data.Char (ord)"
-        , "import Data.Word (Word8, Word16)"
-        , "import Data.Int (Int8)"
-        , "import GHC.Exts"
-        , "  ( Addr#, Int#, Int(..), Ptr(..), nullAddr#"
-        , "  , negateInt#, andI#, iShiftL#, iShiftRL#, (+#), (-#) )"
-        , "import Unicode.Internal.Bits.Scripts (lookupWord8AsInt#, lookupWord16AsInt#)"
-        , ""
+        , mkImports' "Scripts" imports'
         , "-- | Script extensions of a character."
         , "--"
         , "-- Returns a pair:"
@@ -123,16 +119,7 @@ genScriptExtensionsModule moduleName aliases extensions = Fold step initial done
                     (usedExts Set.\\ singleScriptExtensionsSet)
         , "    s    -> (# negateInt# s, nullAddr# #)"
         , ""
-        , genEnumBitmapShamochu
-            "encodedScriptExtensions"
-            True
-            (NE.singleton 3)
-            [5]
-            toWord8
-            (def, BB.intDec (fromEnum def))
-            (def, BB.intDec (fromEnum def))
-            planes0To3
-            plane14
+        , code
         ]
         where
         -- List ordered by Haskell constructors
@@ -174,6 +161,19 @@ genScriptExtensionsModule moduleName aliases extensions = Fold step initial done
             "Cannot generate: genScriptExtensionsModule"
             (== def)
             scriptExtensions
+        ShamochuCode{..} = genEnumBitmapShamochu
+            "encodedScriptExtensions"
+            True
+            (NE.singleton 3)
+            [5]
+            toWord8
+            (def, BB.intDec (fromEnum def))
+            (def, BB.intDec (fromEnum def))
+            planes0To3
+            plane14
+        imports' = imports <+> Map.singleton
+            "GHC.Exts"
+            (Set.fromList ["Addr#", "Int(..)", "nullAddr#", "negateInt#"])
 
     mkDecodeScriptExtensions
         :: (NE.NonEmpty BS.ShortByteString -> Word8)

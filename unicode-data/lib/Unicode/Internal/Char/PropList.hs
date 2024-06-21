@@ -19,9 +19,9 @@ module Unicode.Internal.Char.PropList
 import Data.Bits (Bits(..))
 import Data.Char (ord)
 import Data.Int (Int8)
-import Data.Word (Word8, Word16)
+import Data.Word (Word8)
 import GHC.Exts (Ptr(..))
-import Unicode.Internal.Bits (lookupBit, lookupWord16AsInt, lookupWord8AsInt)
+import Unicode.Internal.Bits (lookupBit, lookupWord8AsInt)
 
 {-# INLINE isPattern_Syntax #-}
 isPattern_Syntax :: Char -> Bool
