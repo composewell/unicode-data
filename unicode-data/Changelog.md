@@ -1,7 +1,9 @@
 # Changelog
 
-## TBD
+## 0.5.0 (July 2024)
 
+- Fix the inlining of `Addr#` literals and reduce their size. This results in
+  a sensible decrease of the executable size.
 - Changed `integerValue` from `Char -> Maybe Int` to `(Integral a) => Char -> Maybe a`.
 
 ## 0.4.0.1 (December 2022)

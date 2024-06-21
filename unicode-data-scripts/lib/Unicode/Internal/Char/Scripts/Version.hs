@@ -15,6 +15,6 @@ import Data.Version (Version, makeVersion)
 -- | Version of the Unicode standard used by this package:
 -- [15.0.0](https://www.unicode.org/versions/Unicode15.0.0/).
 --
--- @since 0.2.1
+-- @since 0.3.0
 unicodeVersion :: Version
 unicodeVersion = makeVersion [15,0,0]

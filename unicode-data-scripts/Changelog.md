@@ -1,8 +1,10 @@
 # Changelog
 
-## 0.2.1 TBD
+## 0.3.0 (July 2024)
 
 - Add `unicodeVersion` and `scriptShortName` to `Unicode.Char.General.Scripts`.
+- Fix the inlining of `Addr#` literals and reduce their size. This results in
+  a sensible decrease of the executable size.
 - Remove `unicode-data` dependency.
 
 ## 0.2.0.1 (December 2022)
