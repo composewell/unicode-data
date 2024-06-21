@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0 (July 2024)
+
+- Update to [Unicode 15.1.0](https://www.unicode.org/versions/Unicode15.1.0/).
+
 ## 0.3.0 (July 2024)
 
 - Changed the type of `confusablePrototype` and `intentionalConfusables` from

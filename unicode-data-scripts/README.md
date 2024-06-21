@@ -7,7 +7,7 @@ character [scripts](https://www.unicode.org/reports/tr24/) from the
 The Haskell data structures are generated programmatically from the
 Unicode character database (UCD) files. The latest Unicode version
 supported by this library is
-[`15.0.0`](https://www.unicode.org/versions/Unicode15.0.0/).
+[`15.1.0`](https://www.unicode.org/versions/Unicode15.1.0/).
 
 Please see the
 [Haddock documentation](https://hackage.haskell.org/package/unicode-data-scripts)

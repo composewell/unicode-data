@@ -5,38 +5,40 @@
 # we used to generate them earlier are exactly the same as the ones we are
 # downloading. To ensure that verfication of the checksum is necessary.
 
-VERSION=15.0.0
+VERSION=15.1.0
 
 # When downloading fresh new version comment this out
 VERIFY_CHECKSUM=y
 
 # UCD files (https://www.unicode.org/Public/$VERSION/ucd/$file)
 UCD_URL="https://www.unicode.org/Public/$VERSION/ucd"
-# Filename:checksum
+# Useful command to get the checksums:
+# $ find data/$VERSION/ -type f -print0 | xargs -0 sha256sum
+# Format: filename:checksum
 UCD_FILES="\
-  Blocks.txt:529dc5d0f6386d52f2f56e004bbfab48ce2d587eea9d38ba546c4052491bd820 \
-  CaseFolding.txt:cdd49e55eae3bbf1f0a3f6580c974a0263cb86a6a08daa10fbf705b4808a56f7 \
-  DerivedCoreProperties.txt:d367290bc0867e6b484c68370530bdd1a08b6b32404601b8c7accaf83e05628d \
-  DerivedNormalizationProps.txt:d5687a48c95c7d6e1ec59cb29c0f2e8b052018eb069a4371b7368d0561e12a29 \
-  NameAliases.txt:3e39509e8fae3e5d50ba73759d0b97194501d14a9c63107a6372a46b38be18e8 \
-  PropertyValueAliases.txt:13a7666843abea5c6b7eb8c057c57ab9bb2ba96cfc936e204224dd67d71cafad \
-  PropList.txt:e05c0a2811d113dae4abd832884199a3ea8d187ee1b872d8240a788a96540bfd \
-  Scripts.txt:cca85d830f46aece2e7c1459ef1249993dca8f2e46d51e869255be140d7ea4b0 \
-  ScriptExtensions.txt:7e07313d9d0bee42220c476b64485995130ae30917bbcf7780b602d677d7e33f \
-  SpecialCasing.txt:78b29c64b5840d25c11a9f31b665ee551b8a499eca6c70d770fcad7dd710f494 \
-  UnicodeData.txt:806e9aed65037197f1ec85e12be6e8cd870fc5608b4de0fffd990f689f376a73 \
-  extracted/DerivedCombiningClass.txt:ca54f6360cd288ad92113415bf1f77749015abe11cbd6798d21f7fa81f04205d \
-  extracted/DerivedName.txt:f76288153e20de185a40f7ee6e0e365f3c6c80e9e3019b5aa0afc8ac2c1b15f2 \
-  extracted/DerivedNumericValues.txt:6bd30f385f3baf3ab5d5308c111a81de87bea5f494ba0ba69e8ab45263b8c34d"
+    Blocks.txt:443ee0524a775bf021777c296f5b591b5611c8aef6bc922887d27b0bc13892b5 \
+    CaseFolding.txt:4e55acfdc32825a22e87670e9056a3bf94ad7c5400065778e9e10f8314372bcf \
+    DerivedCoreProperties.txt:f55d0db69123431a7317868725b1fcbf1eab6b265d756d1bd7f0f6d9f9ee108b \
+    DerivedNormalizationProps.txt:8875dccee2bc1a7c1fe568a3b502a9e78c9e0495afd96b6568b4294d0ed1f7e1 \
+    NameAliases.txt:fbf0e640bab36e165c4da5b6a98bdd963fcb4f923b5097f26f6f7f18b9678698 \
+    PropertyValueAliases.txt:4b7411fc592c4985e5f03643aa0bddfdfd45250ff1790d358926614d20e37652 \
+    PropList.txt:05672956317b6296bc2ec3d6cef1f6452b57ff4f2efc6dc55b0a19277d5fcfd1 \
+    Scripts.txt:0eacb65169ae6eb1d399cd70826b3da15fff19f6f586eecf819b70c83b1d9b32 \
+    ScriptExtensions.txt:fdfd54237a2c0452ba1060571fd1e58fd46aeecdfda7c5b5be1b716dad755cec \
+    SpecialCasing.txt:55a477efd933a52cd27e6a9bf70265bb2d8814af31aab07767abc8eb421f27ef \
+    UnicodeData.txt:2fc713e6a31a87c4850a37fe2caffa4218180fadb5de86b43a143ddb4581fb86 \
+    extracted/DerivedCombiningClass.txt:b2e69512b1a96e26105f73e8af42bca6d2e40814683ba31615977f276d6734ff \
+    extracted/DerivedName.txt:c5f39bd2049f8b03963a629a6cb9fa0371a46aebd7f057307773dfec28eea5ee \
+    extracted/DerivedNumericValues.txt:120a010f7f95c2123ecb4d61313f2f2121abf9289f6426e992f963ec076ee811"
 
 # Security files (https://www.unicode.org/Public/security/$VERSION/$file)
 SECURITY_URL="https://www.unicode.org/Public/security/$VERSION"
-# Filename:checksum
+# Format: filename:checksum
 SECURITY_FILES="\
-    IdentifierStatus.txt:fd5c5e510914a2018e092bc51ea653bd2bfcf7daa116a346f09179a0f74704b0 \
-    IdentifierType.txt:71e95d5811999776a39c33a9149e5bf3c3311217a36b89005c678f34f08debc0 \
-    confusables.txt:2b10130885c3370b101c52d7baedc452ab7f0e257b86c1e52ee657ecfc29ce64 \
-    intentional.txt:4550bcc406b5ce3b1a40ff857a3f8b703ea0c868c35f2f7c93d86bfb733215f9"
+    IdentifierStatus.txt:d34efea5bd5f219a1ec8a6eee728ac1efafd2dacba66a241e213457e2a9155f4 \
+    IdentifierType.txt:7a513c6d5f57b49ec838e8d62899e9f5e336222313a302ffa2adcf4338f6c665 \
+    confusables.txt:8289f833e4cf78fde56b2080dc0e42934ef5182c9c3f4dd1fbdf2bced69fd5ed \
+    intentional.txt:6ce4e2a713938109091c5d55cff7099d10433a3494d989787a86e637070e9491"
 
 # Download the files
 
