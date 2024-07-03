@@ -8,13 +8,16 @@
 -- General character property related functions.
 --
 module Unicode.Char.General
-    (
-    -- * Unicode general categories
-      GeneralCategory(..)
+    ( -- * Types of Code Points
+      CodePointType(..)
+    , codePointType
+
+      -- * Unicode general categories
+    , GeneralCategory(..)
     , generalCategoryAbbr
     , generalCategory
 
-    -- * Character classification
+      -- * Character classification
     , isAlphabetic
     , isAlphaNum
     , isControl
@@ -25,9 +28,12 @@ module Unicode.Char.General
     , isSymbol
     , isWhiteSpace
     , isNoncharacter
+
+      -- ** Deprecated
     , isLetter
     , isSpace
-    -- ** Re-export
+
+      -- ** Re-export
     , isAscii
     , isLatin1
     , isAsciiUpper
@@ -95,6 +101,7 @@ module Unicode.Char.General
 where
 
 import Control.Exception (assert)
+import Data.Bits ((.&.))
 import Data.Char (isAscii, isLatin1, isAsciiUpper, isAsciiLower, ord)
 import Data.Ix (Ix)
 import Unicode.Internal.Division (quotRem28)
@@ -103,11 +110,15 @@ import qualified Unicode.Internal.Char.DerivedCoreProperties as P
 import qualified Unicode.Internal.Char.PropList as P
 import qualified Unicode.Internal.Char.UnicodeData.GeneralCategory as UC
 
+--------------------------------------------------------------------------------
+-- General Category
+--------------------------------------------------------------------------------
+
 {-| Unicode General Categories.
 
 These classes are defined in the
 [Unicode Character Database](http://www.unicode.org/reports/tr44/tr44-14.html#GC_Values_Table),
-part of the Unicode standard
+part of the Unicode standard.
 
 __Note:__ the classes must be in the same order they are listed in the Unicode Standard,
 because some functions (e.g. 'generalCategory') rely on the 'Enum' instance.
@@ -216,6 +227,116 @@ prop> show (generalCategory c) == show (Data.Char.generalCategory c)
 {-# INLINE generalCategory #-}
 generalCategory :: Char -> GeneralCategory
 generalCategory = toEnum . UC.generalCategory
+
+--------------------------------------------------------------------------------
+-- Types of Code Points
+--------------------------------------------------------------------------------
+
+-- | Types of Code Points.
+--
+-- These classes are defined in the section
+-- [2.4 “Code Points and Characters”](https://www.unicode.org/versions/Unicode15.0.0/ch02.pdf#G14527)
+-- of the Unicode standard.
+--
+-- @since 0.4.1
+data CodePointType
+    = GraphicType
+    -- ^ __Graphic__: defined by the following general categories:
+    --
+    -- * Letters (L): 'UppercaseLetter', 'LowercaseLetter', 'TitlecaseLetter',
+    --   'ModifierLetter', 'OtherLetter'.
+    -- * Marks (M): 'NonSpacingMark', 'SpacingCombiningMark', 'EnclosingMark'.
+    -- * Numbers (N): 'DecimalNumber', 'LetterNumber', 'OtherNumber'.
+    -- * Punctuation (P): 'ConnectorPunctuation', 'DashPunctuation',
+    --   'OpenPunctuation', 'ClosePunctuation', 'InitialQuote', 'FinalQuote',
+    --   'OtherPunctuation'.
+    -- * Symbol (S): 'MathSymbol', 'CurrencySymbol', 'ModifierSymbol',
+    --   'OtherSymbol'.
+    -- * Separators: 'Space'.
+    | FormatType
+    -- ^ __Format__: invisible but affects neighboring characters.
+    --
+    -- Defined by the following general categories:
+    -- 'LineSeparator', 'ParagraphSeparator', 'Format'.
+    | ControlType
+    -- ^ __Control__: usage defined by protocols or standards outside the
+    -- Unicode Standard.
+    --
+    -- Defined by the general category 'Control'.
+    | PrivateUseType
+    -- ^ __Private-use__: usage defined by private agreement outside the
+    -- Unicode Standard.
+    --
+    -- Defined by the general category 'PrivateUse'.
+    | SurrogateType
+    -- ^ __Surrogate__: Permanently reserved for UTF-16.
+    --
+    -- Defined by the general category 'Surrogate'.
+    | NoncharacterType
+    -- ^ __Noncharacter:__ a code point that is permanently reserved for
+    -- internal use (see definition D14 in the section
+    -- [3.4 “Characters and Encoding”](https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G2212)
+    -- of the Unicode Standard).
+    -- Noncharacters consist of the values @U+nFFFE@ and @U+nFFFF@ (where @n@
+    -- is from 0 to 10₁₆) and the values @U+FDD0..U+FDEF@.
+    --
+    -- They are a subset of the general category 'NotAssigned'.
+    | ReservedType
+    -- ^ __Reserved:__ any code point of the Unicode Standard that is reserved
+    -- for future assignment (see definition D15 in the section
+    -- [3.4 “Characters and Encoding”](https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G2212)
+    -- of the Unicode Standard). Also known as an unassigned code point.
+    --
+    -- They are a subset of the general category 'NotAssigned'.
+    deriving ( Show
+             , Eq
+             , Ord
+             , Enum
+             , Bounded
+             , Ix
+             )
+
+-- | Returns the 'CodePointType' of a character.
+--
+-- @since 0.6.0
+codePointType :: Char -> CodePointType
+codePointType c = case generalCategory c of
+    UppercaseLetter      -> GraphicType
+    LowercaseLetter      -> GraphicType
+    TitlecaseLetter      -> GraphicType
+    ModifierLetter       -> GraphicType
+    OtherLetter          -> GraphicType
+    NonSpacingMark       -> GraphicType
+    SpacingCombiningMark -> GraphicType
+    EnclosingMark        -> GraphicType
+    DecimalNumber        -> GraphicType
+    LetterNumber         -> GraphicType
+    OtherNumber          -> GraphicType
+    ConnectorPunctuation -> GraphicType
+    DashPunctuation      -> GraphicType
+    OpenPunctuation      -> GraphicType
+    ClosePunctuation     -> GraphicType
+    InitialQuote         -> GraphicType
+    FinalQuote           -> GraphicType
+    OtherPunctuation     -> GraphicType
+    MathSymbol           -> GraphicType
+    CurrencySymbol       -> GraphicType
+    ModifierSymbol       -> GraphicType
+    OtherSymbol          -> GraphicType
+    Space                -> GraphicType
+    LineSeparator        -> FormatType
+    ParagraphSeparator   -> FormatType
+    Control              -> ControlType
+    Format               -> FormatType
+    Surrogate            -> SurrogateType
+    PrivateUse           -> PrivateUseType
+    NotAssigned
+        | isNoncharacter c -> NoncharacterType
+        | otherwise        -> ReservedType
+
+--------------------------------------------------------------------------------
+-- Predicates
+--------------------------------------------------------------------------------
 
 {-| Returns 'True' for alphabetic Unicode characters (lower-case, upper-case
 and title-case letters, plus letters of caseless scripts and modifiers
