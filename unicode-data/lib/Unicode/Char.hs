@@ -35,7 +35,10 @@ module Unicode.Char
     , module Unicode.Char.Normalization
     , module Unicode.Char.Identifiers
 
-    -- * Re-export from @base@
+      -- * Utils
+    , showCodePoint
+
+      -- * Re-export from @base@
     , ord
     , chr
     )
@@ -50,3 +53,26 @@ import Unicode.Char.Identifiers
 import Unicode.Char.Numeric
 import Unicode.Char.Normalization
 import Unicode.Internal.Char.Version (unicodeVersion)
+
+-- [NOTE] Code inspired from 'showIntAtBase'
+-- | Show the code point of a character using the Unicode Standard convention:
+-- hexadecimal codepoint padded with zeros if inferior to 4 characters.
+--
+-- >>> showCodePoint '\xf' ""
+-- "000F"
+-- >>> showCodePoint '\x1ffff' ""
+-- "1FFFF"
+--
+-- @since 0.6.0
+showCodePoint :: Char -> ShowS
+showCodePoint c = pad . showIt (quotRem cp 16)
+    where
+    cp = ord c
+    pad | cp <= 0x00f = \s -> '0' : '0' : '0' : s
+        | cp <= 0x0ff = \s -> '0' : '0' : s
+        | cp <= 0xfff = ('0' :)
+        | otherwise   = id
+    showIt (n, d) r = case intToDigiT d of
+        !c' -> case n of
+            0 -> c' : r
+            _ -> showIt (quotRem n 16) (c' : r)

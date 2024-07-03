@@ -3,6 +3,7 @@
 ## 0.6.0 (July 2024)
 
 - Updated to [Unicode 15.1.0](https://www.unicode.org/versions/Unicode15.1.0/).
+- Added `showCodePoint` to `Unicode.Char`.
 - Added `intToDigiT` to `Unicode.Char.Numeric`.
 
 ## 0.5.0 (July 2024)
