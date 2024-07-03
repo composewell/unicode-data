@@ -96,12 +96,16 @@ numericValue = V.numericValue
 -- This is a special case of 'numericValue'.
 --
 -- __Warning:__ There is a risk of /integer overflow/ depending of the chosen
--- concrete return type. As of Unicode 15.0 the results range from 0 to 1e12.
+-- concrete return type. As of Unicode 15.1 the results range from 0 to 1e16.
 --
--- >>> integerValue '\x5146' :: Maybe Int64 -- OK
--- Just 1000000000000
--- >>> integerValue '\x5146' :: Maybe Int32 -- Will overflow!
--- Just (-727379968)
+-- >>> minimum [v | v@Just{} <- integerValue <$> [minBound..]] :: Maybe Integer
+-- Just 0
+-- >>> maximum (integerValue <$> [minBound..]) :: Maybe Integer
+-- Just 10000000000000000
+-- >>> integerValue '\x4EAC' :: Maybe Int64 -- OK
+-- Just 10000000000000000
+-- >>> integerValue '\x4EAC' :: Maybe Int32 -- Will overflow!
+-- Just 1874919424
 --
 -- Therefore it is advised to use: @'integerValue' \@'Int64'@.
 --
