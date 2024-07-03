@@ -94,9 +94,10 @@ library
       -- Generated files
       -- This module structure is largely based on the UCD file names from which
       -- the properties are generated.
+      Unicode.Internal.Char.Label
+      Unicode.Internal.Char.Names.Version
       Unicode.Internal.Char.UnicodeData.DerivedName
       Unicode.Internal.Char.UnicodeData.NameAliases
-      Unicode.Internal.Char.Names.Version
   other-modules:
       -- Internal files
       Unicode.Internal.Bits.Names
@@ -104,6 +105,7 @@ library
   hs-source-dirs: lib
   build-depends:
       base             >= 4.7   && < 4.21,
+      unicode-data     >= 0.6   && < 0.7
   -- Support for raw string literals unpacking is included in base ≥ 4.15
   if impl(ghc < 9.0.0)
     build-depends:

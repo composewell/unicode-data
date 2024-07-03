@@ -172,6 +172,11 @@ benchmarks charRange charFilter = bgroup "All"
                 ]
 #endif
             ]
+        , bgroup "nameOrLabel"
+            [ bgroup' "nameOrLabel" "String"
+                [ Bench "unicode-data" String.nameOrLabel
+                ]
+            ]
         , bgroup "nameAliasesByType"
             [ bgroup' "nameAliasesByType" "String"
                 [ Bench "unicode-data"
@@ -219,6 +224,11 @@ benchmarks charRange charFilter = bgroup "All"
                 [ Bench "unicode-data" Text.nameAliases
                 ]
 #endif
+            ]
+        , bgroup "label"
+            [ bgroup' "label" "String"
+                [ Bench "unicode-data"  String.label
+                ]
             ]
         ]
     ]
