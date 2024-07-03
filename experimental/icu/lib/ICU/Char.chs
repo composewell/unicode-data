@@ -15,6 +15,7 @@ module ICU.Char
     , UGeneralCategory(..)
     , toGeneralCategory
     , charType
+    , isNoncharacter
     ) where
 
 #include <unicode/uchar.h>
@@ -134,3 +135,21 @@ toGeneralCategory = \case
     OtherSymbol -> Char.OtherSymbol
     InitialPunctuation -> Char.InitialQuote
     FinalPunctuation -> Char.FinalQuote
+
+{#enum define UProperty {
+    UCHAR_NONCHARACTER_CODE_POINT as NoncharacterCodePoint
+    }
+    deriving (Bounded, Eq, Ord, Show) #}
+
+foreign import ccall safe "icu.h __hs_u_hasBinaryProperty" u_hasBinaryProperty
+    :: UChar32 -> Int -> Bool
+
+-- hasBinaryProperty :: UChar32 -> Int -> Bool
+-- hasBinaryProperty = {#call pure u_hasBinaryProperty as __hs_u_hasBinaryProperty#}
+-- {#fun pure u_hasBinaryProperty as hasBinaryProperty
+--     {`UChar32', `Int'} -> `Bool' #}
+
+isNoncharacter :: Char -> Bool
+isNoncharacter c = u_hasBinaryProperty
+    (fromIntegral (ord c))
+    (fromEnum NoncharacterCodePoint)
