@@ -46,9 +46,9 @@ where
 
 import Data.Char (chr, ord)
 import Unicode.Char.Case hiding (Unfold(..), Step(..))
-import Unicode.Char.Case.Compat hiding (isLower, isUpper)
+import Unicode.Char.Case.Compat
 import Unicode.Char.General
-import Unicode.Char.General.Compat hiding (isLetter, isSpace)
+import Unicode.Char.General.Compat
 import Unicode.Char.Identifiers
 import Unicode.Char.Numeric
 import Unicode.Char.Normalization

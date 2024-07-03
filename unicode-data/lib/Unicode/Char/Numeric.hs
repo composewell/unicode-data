@@ -11,7 +11,6 @@
 module Unicode.Char.Numeric
     ( -- * Predicates
       isNumeric
-    , isNumber
 
       -- * Numeric values
     , numericValue
@@ -34,34 +33,10 @@ import Data.Maybe (isJust)
 import Data.Ratio (denominator, numerator)
 import GHC.Exts (Char (..), Int (..), chr#, isTrue#, (+#), (<=#), (>=#))
 
-import qualified Unicode.Char.Numeric.Compat as Compat
 import qualified Unicode.Internal.Char.DerivedNumericValues as V
 
 -- $setup
 -- >>> import Data.Int (Int32, Int64)
-
--- | Selects Unicode numeric characters, including digits from various
--- scripts, Roman numerals, et cetera.
---
--- This function returns 'True' if its argument has one of the
--- following 'Unicode.Char.General.GeneralCategory's, or 'False' otherwise:
---
--- * 'Unicode.Char.General.DecimalNumber'
--- * 'Unicode.Char.General.LetterNumber'
--- * 'Unicode.Char.General.OtherNumber'
---
--- __Note:__ a character may have a numeric value (see 'numericValue') but return
--- 'False', because 'isNumber' only tests 'Unicode.Char.General.GeneralCategory':
--- some CJK characters are 'Unicode.Char.General.OtherLetter' and do have a
--- numeric value. Use 'isNumeric' to cover those cases as well.
---
--- prop> isNumber c == Data.Char.isNumber c
---
--- @since 0.3.0
-{-# DEPRECATED isNumber "Use Unicode.Char.Numeric.Compat.isNumber instead. This function will be a synonym for isNumeric in a future release. See Unicode.Char.Numeric.Compat for behavior compatible with base:Data.Char." #-}
-{-# INLINE isNumber #-}
-isNumber :: Char -> Bool
-isNumber = Compat.isNumber
 
 -- | Selects Unicode character with a numeric value.
 --
