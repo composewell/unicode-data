@@ -24,6 +24,7 @@ module Unicode.Char.General
     , isSeparator
     , isSymbol
     , isWhiteSpace
+    , isNoncharacter
     , isLetter
     , isSpace
     -- ** Re-export
@@ -413,6 +414,22 @@ prop> isSymbol c == Data.Char.isSymbol c
 isSymbol :: Char -> Bool
 isSymbol c = UC.MathSymbol <= gc && gc <= UC.OtherSymbol
     where gc = UC.generalCategory c
+
+-- | Returns 'True' for any /noncharacter/.
+--
+-- A /noncharacter/ is a code point that is permanently reserved for internal
+-- use (see definition D14 in the section
+-- [3.4 “Characters and Encoding”](https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G2212)
+-- of the Unicode Standard).
+--
+-- Noncharacters consist of the values @U+nFFFE@ and @U+nFFFF@ (where @n@
+-- is from 0 to 10₁₆) and the values @U+FDD0..U+FDEF@.
+--
+-- @since 0.6.0
+isNoncharacter :: Char -> Bool
+isNoncharacter c
+    = ('\xFDD0' <= c && c <= '\xFDEF')
+    || (ord c .&. 0xFFFF) >= 0xFFFE
 
 -- | Returns 'True' for alphabetic Unicode characters (lower-case, upper-case
 -- and title-case letters, plus letters of caseless scripts and modifiers

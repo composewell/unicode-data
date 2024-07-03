@@ -26,6 +26,10 @@ spec = do
             "charType"
             (GeneralCategory . U.generalCategory)
             (GeneralCategory . ICU.toGeneralCategory . ICU.charType)
+        checkAndGatherErrors
+            "isNoncharacter"
+            (GeneralCategory . U.isNoncharacter)
+            (GeneralCategory . ICU.isNoncharacter)
     -- TODO: other functions
     where
     ourUnicodeVersion = versionBranch U.unicodeVersion
