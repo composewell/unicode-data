@@ -16,29 +16,50 @@
 -- @since 0.1.0
 
 module Unicode.Char.General.Names
-    ( -- Unicode version
+    ( -- * Unicode version
       unicodeVersion
+
       -- * Name
     , name
     , nameOrAlias
+    , nameOrLabel
     , correctedName
+
       -- * Name Aliases
     , NameAliases.NameAliasType(..)
     , nameAliases
     , nameAliasesByType
     , nameAliasesWithTypes
+
+      -- * Label
+    , label
     ) where
 
 import Control.Applicative ((<|>))
-import GHC.Exts
-    ( Addr#, Char(..), Char#, Int#
-    , indexCharOffAddr#, plusAddr#, (+#), (-#), (<#), isTrue#, quotRemInt#
-    , dataToTag#, ord# )
+import Control.Monad ((>=>))
+import Foreign.C.String (peekCAStringLen)
+import GHC.Exts (
+    Addr#,
+    Char (..),
+    Char#,
+    Int#,
+    dataToTag#,
+    indexCharOffAddr#,
+    isTrue#,
+    ord#,
+    plusAddr#,
+    quotRemInt#,
+    (+#),
+    (-#),
+    (<#),
+ )
+import System.IO.Unsafe (unsafeDupablePerformIO)
 
 import Unicode.Internal.Bits.Names (unpackNBytes#)
+import qualified Unicode.Internal.Char.Label as Label
+import Unicode.Internal.Char.Names.Version (unicodeVersion)
 import qualified Unicode.Internal.Char.UnicodeData.DerivedName as DerivedName
 import qualified Unicode.Internal.Char.UnicodeData.NameAliases as NameAliases
-import Unicode.Internal.Char.Names.Version (unicodeVersion)
 
 -- | Name of a character, if defined.
 --
@@ -121,6 +142,15 @@ nameOrAlias c@(C# c#) = name c <|> case indexCharOffAddr# addr# 0# of
         0# -> go (t# +# 1#)
         i# -> unpackNBytes'# (addr# `plusAddr#` i#)
 
+-- | Returns a character’s 'name' if defined,
+-- otherwise returns its label between angle brackets.
+--
+-- @since 0.4.0
+nameOrLabel :: Char -> String
+nameOrLabel c = case name c of
+    Nothing -> '<' : label c ++ ">"
+    Just n  -> n
+
 -- | All name aliases of a character, if defined.
 -- The names are listed in the original order of the UCD.
 --
@@ -188,6 +218,24 @@ nameAliasesByType# addr# t = case indexCharOffAddr# (addr# `plusAddr#` t#) 0# of
     '\0'# -> [] -- no aliases for this type
     i#    -> unpackCStrings# (addr# `plusAddr#` ord# i#)
     where t# = dataToTag# t
+
+-- | Returns the label of a code point if it has no character name, otherwise
+-- returns @\"UNDEFINED\"@.
+--
+-- See subsection
+-- [“Code Point Labels”](https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf#G135248)
+-- in section 4.8 “Name” of the Unicode Standard.
+--
+-- >>> label '\0'
+-- "control-0000"
+-- >>> label 'a'
+-- "UNDEFINED"
+-- >>> label '\xffff'
+-- "noncharacter-FFFF"
+--
+-- @since 0.4.0
+label :: Char -> String
+label = unsafeDupablePerformIO . (Label.label >=> peekCAStringLen)
 
 {-# INLINE unpackCStrings# #-}
 unpackCStrings# :: Addr# -> [String]
