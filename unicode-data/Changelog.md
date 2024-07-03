@@ -6,6 +6,15 @@
 - Added `showCodePoint` to `Unicode.Char`.
 - Added `intToDigiT` to `Unicode.Char.Numeric`.
 
+### Removed
+
+- Removed deprecated `isLetter` and `isSpace` from `Unicode.Char.General`.
+  Use the corresponding functions from `Unicode.Char.General.Compat` instead.
+- Remove deprecated `isLower` and `isUpper` from `Unicode.Char.Case`.
+  Use the corresponding functions from `Unicode.Char.Case.Compat` instead.
+- Removed deprecated `Unicode.Char.Numeric.isNumber`.
+  Use `Unicode.Char.Numeric.Compat.isNumber` instead.
+
 ## 0.5.0 (July 2024)
 
 - Fix the inlining of `Addr#` literals and reduce their size. This results in

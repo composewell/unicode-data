@@ -29,10 +29,6 @@ module Unicode.Char.General
     , isWhiteSpace
     , isNoncharacter
 
-      -- ** Deprecated
-    , isLetter
-    , isSpace
-
       -- ** Re-export
     , isAscii
     , isLatin1
@@ -551,25 +547,6 @@ isNoncharacter :: Char -> Bool
 isNoncharacter c
     = ('\xFDD0' <= c && c <= '\xFDEF')
     || (ord c .&. 0xFFFF) >= 0xFFFE
-
--- | Returns 'True' for alphabetic Unicode characters (lower-case, upper-case
--- and title-case letters, plus letters of caseless scripts and modifiers
--- letters).
---
--- @since 0.1.0
-{-# INLINE isLetter #-}
-{-# DEPRECATED isLetter "Use isAlphabetic instead. Note that the behavior of this function does not match base:Data.Char.isLetter. See Unicode.Char.General.Compat for behavior compatible with base:Data.Char." #-}
-isLetter :: Char -> Bool
-isLetter = P.isAlphabetic
-
--- | Returns 'True' for any whitespace characters, and the control
--- characters @\\t@, @\\n@, @\\r@, @\\f@, @\\v@.
---
--- @since 0.1.0
-{-# INLINE isSpace #-}
-{-# DEPRECATED isSpace "Use isWhiteSpace instead. Note that the behavior of this function does not match base:Data.Char.isSpace. See Unicode.Char.General.Compat for behavior compatible with base:Data.Char." #-}
-isSpace :: Char -> Bool
-isSpace = P.isWhite_Space
 
 -------------------------------------------------------------------------------
 -- Korean Hangul

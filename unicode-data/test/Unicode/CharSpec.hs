@@ -12,12 +12,6 @@ import Data.Ix (Ix(..))
 import Data.Maybe (isJust)
 import qualified Unicode.Char as UChar
 import qualified Unicode.Char.General.Blocks as UBlocks
--- [TODO] Remove the following qualified imports once isLetter and isSpace
---        are removed from Unicode.Char.General
-import qualified Unicode.Char.General.Compat as UCharCompat
--- [TODO] Remove the following qualified imports once isUpper and isLower
---        are removed from Unicode.Char.Case
-import qualified Unicode.Char.Case.Compat as UCharCompat
 import qualified Unicode.Char.Numeric as UNumeric
 import qualified Unicode.Char.Numeric.Compat as UNumericCompat
 import qualified Unicode.Internal.Char.UnicodeData.GeneralCategory as UC
@@ -134,7 +128,7 @@ spec = do
         Char.chr UC.MaxIsLetter `shouldBe` maxCodePointBy isLetterRef
         UC.MaxIsLetter `shouldSatisfy` isPlane0To3
       it "Compare to base" do
-        UCharCompat.isLetter `shouldBeEqualToV` Char.isLetter
+        UChar.isLetter `shouldBeEqualToV` Char.isLetter
     it "isMark" do
       UChar.isMark `shouldBeEqualToV` Char.isMark
     it "isPrint" do
@@ -158,7 +152,7 @@ spec = do
         Char.chr UC.MaxIsSpace `shouldBe` maxCodePointBy isSpaceRef
         UC.MaxIsSpace `shouldSatisfy` isPlane0To3
       it "Compare to base" do
-        UCharCompat.isSpace `shouldBeEqualToV` Char.isSpace
+        UChar.isSpace `shouldBeEqualToV` Char.isSpace
     it "isSymbol" do
       UChar.isSymbol `shouldBeEqualToV` Char.isSymbol
   describe "Case" do
@@ -168,7 +162,7 @@ spec = do
         Char.chr UC.MaxIsLower `shouldBe` maxCodePointBy isLowerRef
         UC.MaxIsLower `shouldSatisfy` isPlane0To3
       it "Compare to base" do
-          UCharCompat.isLower `shouldBeEqualToV` Char.isLower
+          UChar.isLower `shouldBeEqualToV` Char.isLower
 #if MIN_VERSION_base(4,18,0)
     it "isLowerCase" do
       UChar.isLowerCase `shouldBeEqualToV` Char.isLowerCase
@@ -182,7 +176,7 @@ spec = do
         Char.chr UC.MaxIsUpper `shouldBe` maxCodePointBy isUpperRef
         UC.MaxIsUpper `shouldSatisfy` isPlane0To3
       it "Compare to base" do
-        UCharCompat.isUpper `shouldBeEqualToV` Char.isUpper
+        UChar.isUpper `shouldBeEqualToV` Char.isUpper
 #if MIN_VERSION_base(4,18,0)
     it "isUpperCase" do
       UChar.isUpperCase `shouldBeEqualToV` Char.isUpperCase
