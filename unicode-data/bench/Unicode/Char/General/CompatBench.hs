@@ -20,6 +20,10 @@ benchmarks r = bgroupWithCharRange "Unicode.Char.General.Compat" r $ \chars ->
       [ Bench "base"         Char.isAlpha
       , Bench "unicode-data" GC.isAlpha
       ]
+    , bgroupWithChars "isAlphaNum" chars
+      [ Bench "base"         Char.isAlphaNum
+      , Bench "unicode-data" GC.isAlphaNum
+      ]
     , bgroupWithChars "isLetter" chars
       [ Bench "base"         Char.isLetter
       , Bench "unicode-data" GC.isLetter
