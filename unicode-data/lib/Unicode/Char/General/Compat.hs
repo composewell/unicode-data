@@ -13,6 +13,7 @@
 --
 module Unicode.Char.General.Compat
     ( isAlpha
+    , isAlphaNum
     , isLetter
     , isSpace
     ) where
@@ -20,12 +21,55 @@ module Unicode.Char.General.Compat
 import Data.Char (ord)
 import qualified Unicode.Internal.Char.UnicodeData.GeneralCategory as UC
 
+-- $setup
+-- import qualified Unicode.Char.General
+
 -- | Same as 'isLetter'.
 --
 -- @since 0.3.0
 {-# INLINE isAlpha #-}
 isAlpha :: Char -> Bool
 isAlpha = isLetter
+
+{-| Selects alphabetic or numeric Unicode characters.
+
+This function returns 'True' if its argument has one of the
+following 'GeneralCategory's, or 'False' otherwise:
+
+* 'UppercaseLetter'
+* 'LowercaseLetter'
+* 'TitlecaseLetter'
+* 'ModifierLetter'
+* 'OtherLetter'
+* 'DecimalNumber'
+* 'LetterNumber'
+* 'OtherNumber'
+
+prop> isAlphaNum c == Data.Char.isAlphaNum c
+
+__Note:__ this function is incompatible with 'Unicode.Char.General.isAlphabetic':
+
+>>> Unicode.Char.General.isAlphabetic '\x345'
+True
+>>> isAlphaNum '\x345'
+False
+
+@since 0.6.0 moved to Compat module
+
+@since 0.3.0
+-}
+isAlphaNum :: Char -> Bool
+isAlphaNum c =
+    let !cp = ord c
+    -- NOTE: The guard constant is updated at each Unicode revision.
+    --       It must be < 0x40000 to be accepted by generalCategoryPlanes0To3.
+    in cp <= UC.MaxIsAlphaNum &&
+        let !gc = UC.generalCategoryPlanes0To3 cp
+        in gc <= UC.OtherLetter ||
+           (UC.DecimalNumber <= gc && gc <= UC.OtherNumber)
+    -- Use the following in case the previous code is not valid anymore:
+    -- gc <= UC.OtherLetter || (UC.DecimalNumber <= gc && gc <= UC.OtherNumber)
+    -- where !gc = UC.generalCategory c
 
 {-| Selects alphabetic Unicode characters (lower-case, upper-case and title-case
 letters, plus letters of caseless scripts and modifiers letters).

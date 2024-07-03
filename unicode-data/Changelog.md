@@ -15,6 +15,11 @@
 - Removed deprecated `Unicode.Char.Numeric.isNumber`.
   Use `Unicode.Char.Numeric.Compat.isNumber` instead.
 
+### Deprecations
+
+- `Unicode.Char.General.isAlphaNum`.
+  Use `Unicode.Char.General.Compat.isAlphaNum` instead.
+
 ## 0.5.0 (July 2024)
 
 - Fix the inlining of `Addr#` literals and reduce their size. This results in

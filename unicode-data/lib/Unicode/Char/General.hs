@@ -100,11 +100,12 @@ import Control.Exception (assert)
 import Data.Bits ((.&.))
 import Data.Char (isAscii, isLatin1, isAsciiUpper, isAsciiLower, ord)
 import Data.Ix (Ix)
-import Unicode.Internal.Division (quotRem28)
 
+import qualified Unicode.Char.General.Compat as Compat
 import qualified Unicode.Internal.Char.DerivedCoreProperties as P
 import qualified Unicode.Internal.Char.PropList as P
 import qualified Unicode.Internal.Char.UnicodeData.GeneralCategory as UC
+import Unicode.Internal.Division (quotRem28)
 
 --------------------------------------------------------------------------------
 -- General Category
@@ -381,20 +382,19 @@ following 'GeneralCategory's, or 'False' otherwise:
 
 prop> isAlphaNum c == Data.Char.isAlphaNum c
 
+__Note:__ this function is incompatible with 'isAlphabetic':
+
+>>> isAlphabetic '\x345'
+True
+>>> isAlphaNum '\x345'
+False
+
 @since 0.3.0
 -}
+{-# INLINE isAlphaNum #-}
+{-# DEPRECATED isAlphaNum "Use Unicode.Char.General.Compat.isAlphaNum instead." #-}
 isAlphaNum :: Char -> Bool
-isAlphaNum c =
-    let !cp = ord c
-    -- NOTE: The guard constant is updated at each Unicode revision.
-    --       It must be < 0x40000 to be accepted by generalCategoryPlanes0To3.
-    in cp <= UC.MaxIsAlphaNum &&
-        let !gc = UC.generalCategoryPlanes0To3 cp
-        in gc <= UC.OtherLetter ||
-           (UC.DecimalNumber <= gc && gc <= UC.OtherNumber)
-    -- Use the following in case the previous code is not valid anymore:
-    -- gc <= UC.OtherLetter || (UC.DecimalNumber <= gc && gc <= UC.OtherNumber)
-    -- where !gc = UC.generalCategory c
+isAlphaNum = Compat.isAlphaNum
 
 {-| Selects control characters, which are the non-printing characters
 of the Latin-1 subset of Unicode.
