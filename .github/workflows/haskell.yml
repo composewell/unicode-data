@@ -29,13 +29,15 @@ jobs:
       # ------------------------------------------------------------------------
       PACKCHECK_LOCAL_PATH: "./packcheck.sh"
       PACKCHECK_GITHUB_URL: "https://raw.githubusercontent.com/composewell/packcheck"
-      PACKCHECK_GITHUB_COMMIT: "v0.6.0"
+      PACKCHECK_GITHUB_COMMIT: "e575ff318c93add2a6d3f9107a52c5e37c666a98"
 
       # ------------------------------------------------------------------------
       # Build options
       # ------------------------------------------------------------------------
+      GHCUP_VERSION: 0.1.20.0
       BUILD: cabal-v2 ${{ matrix.pack_options }}
       GHCVER: ${{ matrix.ghc_version }}
+      CABALVER: ${{ matrix.cabal_version }}
 
     runs-on: ${{ matrix.runner }}
     # [NOTE] The following is a hack to fix the lack of “allow-failure” feature.
@@ -58,53 +60,53 @@ jobs:
           - 9.6.5
           - 9.8.2
           - 9.10.1+ucd2haskell
-          - latest-nightly
+          - 9.12.1-alpha
           - hlint
         include:
 
           - name: 8.0.2
             ghc_version: 8.0.2
             runner: ubuntu-latest
-            cabal_version: latest
+            cabal_version: 3.2.0.0
             pack_options: DISABLE_TEST=y
             ignore_error: false
 
           - name: 8.2.2
             ghc_version: 8.2.2
             runner: ubuntu-latest
-            cabal_version: 3.2
+            cabal_version: 3.2.0.0
             pack_options: DISABLE_TEST=y
             ignore_error: false
 
           - name: 8.4.4
             ghc_version: 8.4.4
             runner: ubuntu-latest
-            cabal_version: 3.2
+            cabal_version: 3.2.0.0
             pack_options: DISABLE_TEST=y
             ignore_error: false
 
           - name: 8.6.5
             ghc_version: 8.6.5
             runner: ubuntu-latest
-            cabal_version: 3.2
+            cabal_version: 3.2.0.0
             ignore_error: false
 
           - name: 8.8.4
             ghc_version: 8.8.4
             runner: ubuntu-latest
-            cabal_version: 3.2
+            cabal_version: 3.2.0.0
             ignore_error: false
 
           - name: 8.10.7
             ghc_version: 8.10.7
             runner: ubuntu-latest
-            cabal_version: 3.2
+            cabal_version: 3.2.0.0
             ignore_error: false
 
           - name: 9.0.2
             ghc_version: 9.0.2
             runner: ubuntu-latest
-            cabal_version: 3.2
+            cabal_version: 3.2.0.0
             ignore_error: false
 
           - name: 9.2.8+ucd2haskell
@@ -112,7 +114,7 @@ jobs:
             # [NOTE] Oldest version supported by ucd2haskell
             pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
             runner: ubuntu-latest
-            cabal_version: 3.6
+            cabal_version: 3.6.2.0
             ignore_error: false
 
           - name: 9.4.8
@@ -124,7 +126,7 @@ jobs:
           - name: 9.4.8+macOS
             ghc_version: 9.4.8
             runner: macos-latest
-            cabal_version: latest
+            cabal_version: 3.10.1.0
             ignore_error: false
 
           - name: 9.6.5
@@ -135,15 +137,22 @@ jobs:
 
           - name: 9.8.2
             ghc_version: 9.8.2
+            cabal_version: 3.12.1.0
             runner: ubuntu-latest
-            cabal_version: latest
             ignore_error: false
 
           - name: 9.10.1+ucd2haskell
             ghc_version: 9.10.1
+            cabal_version: 3.12.1.0
             pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
             runner: ubuntu-latest
-            cabal_version: latest
+            ignore_error: false
+
+          - name: 9.12.1-alpha
+            ghc_version: head
+            cabal_version: 3.12.1.0
+            pack_options: GHCUP_GHC_OPTIONS="-u https://downloads.haskell.org/ghc/9.12.1-alpha1/ghc-9.12.20241014-x86_64-deb12-linux.tar.xz" DISABLE_TEST=y
+            runner: ubuntu-latest
             ignore_error: false
 
           # Template for release candidates
@@ -154,50 +163,39 @@ jobs:
           #   cabal_version: latest
           #   ignore_error: false
 
-          # [TODO] Use latest cabal (pre-)release
-          - name: latest-nightly
-            ghc_version: latest-nightly
-            ghcup_release_channel: "https://ghc.gitlab.haskell.org/ghcup-metadata/ghcup-nightlies-0.0.7.yaml"
-            runner: ubuntu-latest
-            # cabal_version: 3.11.0.0
-            cabal_version: latest
-            ignore_error: true
-
           - name: hlint
             pack_options: HLINT_OPTIONS="lint" HLINT_TARGETS="lib exe"
             runner: ubuntu-latest
-            cabal_version: 3.2
+            cabal_version: 3.2.0.0
             ignore_error: false
 
     steps:
     - uses: actions/checkout@v4
 
-    - uses: haskell-actions/setup@v2
-      with:
-        ghc-version: ${{ matrix.ghc_version }}
-        ghcup-release-channel: ${{ matrix.ghcup_release_channel }}
-        cabal-version: ${{ matrix.cabal_version }}
-
     - uses: actions/cache@v4
       name: Cache ~/.cabal
       with:
         path: ~/.cabal
-        key: ${{ runner.os }}-${{ matrix.ghc_version }}-cabal
+        key: ${{ runner.os }}-${{ matrix.ghc_version }}-1
 
     - name: Download packcheck
       run: |
-        # If a custom stack-yaml is specified, replace the default with that
-        if test -e "$STACK_YAML"; then rm -f stack.yaml && ln -sv $STACK_YAML stack.yaml; else true; fi
-        unset STACK_YAML
-
-        # Get packcheck if needed
-        CURL=$(which curl)
-        PACKCHECK_URL=${PACKCHECK_GITHUB_URL}/${PACKCHECK_GITHUB_COMMIT}/packcheck.sh
-        if test ! -e "$PACKCHECK_LOCAL_PATH"; then $CURL -sL -o "$PACKCHECK_LOCAL_PATH" $PACKCHECK_URL; fi;
-        chmod +x $PACKCHECK_LOCAL_PATH
+        if test ! -e "$PACKCHECK_LOCAL_PATH"
+        then
+          if test -z "$PACKCHECK_GITHUB_COMMIT"
+          then
+              die "PACKCHECK_GITHUB_COMMIT is not specified."
+          fi
+          PACKCHECK_URL=${PACKCHECK_GITHUB_URL}/${PACKCHECK_GITHUB_COMMIT}/packcheck.sh
+          curl --fail -sL -o "$PACKCHECK_LOCAL_PATH" $PACKCHECK_URL || exit 1
+          chmod +x $PACKCHECK_LOCAL_PATH
+        elif test ! -x "$PACKCHECK_LOCAL_PATH"
+        then
+            chmod +x $PACKCHECK_LOCAL_PATH
+        fi
 
     - name: Run packcheck
       run: |
-        # Unset GHC version if it is not numeric, e.g. “latest-nightly”
-        ! [[ $GHCVER =~ ^([[:digit:]]+) ]] && unset GHCVER
-        bash -c "$PACKCHECK_LOCAL_PATH $BUILD"
+        # /usr/local/opt/curl/bin for macOS
+        export PATH=$HOME/.local/bin:$HOME/.ghcup/bin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/opt/curl/bin
+        bash -x -c "$PACKCHECK_LOCAL_PATH $BUILD"
