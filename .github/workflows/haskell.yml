@@ -65,6 +65,7 @@ jobs:
         include:
 
           - name: 8.0.2
+            use_haskell_actions: true
             ghc_version: 8.0.2
             runner: ubuntu-latest
             cabal_version: 3.2.0.0
@@ -72,6 +73,7 @@ jobs:
             ignore_error: false
 
           - name: 8.2.2
+            use_haskell_actions: true
             ghc_version: 8.2.2
             runner: ubuntu-latest
             cabal_version: 3.2.0.0
@@ -171,6 +173,19 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    # This is only required for 8.0.2 and 8.2.2
+    # Fails with the following error when we use ghcup:
+    # /usr/local/.ghcup/tmp/ghcup-05bf9c49ec7cd38c/usr/local/.ghcup/ghc/8.0.2/lib/ghc-8.0.2/bin/ghc-pkg: error while loading shared libraries: libtinfo.so.5: cannot open shared object file: No such file or directory
+    # This might be because the older ghc installers look for libtinfo.so.5 and not libtinfo.so
+    # If that is the case "sudo ln libtinfo.so libtinfo.so.5" should fix the problem
+    # But we can't sudo on the CI so this is the roundabout way to get the CIs working with minimal effort
+    - uses: haskell-actions/setup@v2
+      if: ${{ matrix.use_haskell_actions }}
+      with:
+        ghc-version: ${{ matrix.ghc_version }}
+        ghcup-release-channel: ${{ matrix.ghcup_release_channel }}
+        cabal-version: ${{ matrix.cabal_version }}
 
     - uses: actions/cache@v4
       name: Cache ~/.cabal
