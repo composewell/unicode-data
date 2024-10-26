@@ -66,7 +66,7 @@ library
 
   hs-source-dirs: lib
   build-depends:
-    base             >= 4.7   && < 4.21,
+    base             >= 4.7   && < 4.22,
     text             >= 1.2.4 && < 2.2,
     unicode-data     >= 0.6   && < 0.7
 
@@ -79,7 +79,7 @@ test-suite test
   other-modules:
     Unicode.Text.CaseSpec
   build-depends:
-    base             >= 4.7   && < 4.21,
+    base             >= 4.7   && < 4.22,
     hspec            >= 2.0   && < 2.12,
     text             >= 1.2.4 && < 2.2,
     unicode-data     >= 0.6   && < 0.7,
@@ -93,7 +93,7 @@ benchmark bench
   hs-source-dirs: bench
   main-is: Main.hs
   build-depends:
-    base             >= 4.7   && < 4.21,
+    base             >= 4.7   && < 4.22,
     deepseq          >= 1.1   && < 1.6,
     tasty-bench      >= 0.2.5 && < 0.5,
     tasty            >= 1.4.1 && < 1.6,
