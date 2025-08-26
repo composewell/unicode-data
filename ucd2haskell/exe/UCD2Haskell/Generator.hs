@@ -35,9 +35,8 @@ module UCD2Haskell.Generator
     , mkImports'
     ) where
 
-import Control.Exception (assert)
 import Data.Bifunctor (Bifunctor (..))
-import Data.Bits (Bits (..))
+import Data.Bits (Bits (..), FiniteBits (..))
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Lazy as BL
@@ -51,6 +50,7 @@ import Data.Ratio ((%))
 import qualified Data.Set as Set
 import Data.String (IsString (..))
 import Data.Version (Version, showVersion)
+import qualified Data.Vector.Unboxed as V
 import Data.Word (Word32, Word8)
 import Debug.Trace (trace)
 import qualified GHC.Exts as Exts
@@ -393,7 +393,7 @@ enumMapToAddrLiteral'
   -> Int
   -- ^ Chunk size
   -> Word
-  -- ^ Word per value
+  -- ^ 'Word8's per value
   -> [a]
   -- ^ Values to encode
   -> BB.Builder
@@ -404,7 +404,9 @@ enumMapToAddrLiteral' indentation chunkSize size =
 
     where
 
-    upperBound = 1 `shiftL` (8 * fromIntegral size)
+    byteSize = finiteBitSize (0 :: Word8)
+
+    upperBound = 1 `shiftL` (byteSize * fromIntegral size)
 
     addWords :: a -> BB.Builder -> BB.Builder
     addWords x acc = foldMap (\w -> BB.char7 '\\' <> BB.word8Dec w) (toWord8LEs x) <> acc
@@ -414,8 +416,9 @@ enumMapToAddrLiteral' indentation chunkSize size =
         then go size w
         else error $ "Cannot convert to Word8s: " <> show a <> " " <> show (size, upperBound)
 
+    go :: Word -> Int -> [Word8]
     go 0 _ = []
-    go k n = fromIntegral (n .&. 0xff) : go (k - 1) (n `shiftR` 8)
+    go k n = fromIntegral (n .&. 0xff) : go (k - 1) (n `shiftR` byteSize)
 
 chunkAddrLiteral
   :: forall a. Word8
@@ -554,7 +557,8 @@ packBits = L.unfoldr go
     toByte xs = sum $ map (\i -> if xs !! i then 1 `shiftL` i else 0) [0..7]
 
 genEnumBitmapShamochu
-  :: forall a. (HasCallStack, Bounded a, Enum a, Eq a, Show a)
+  :: forall a b. ( HasCallStack, Eq a, Show a
+                 , FiniteBits b, V.Unbox b, Enum b, Bounded b, Ord b, Num b, Show b)
   => String
   -- ^ Function name
   -> Bool
@@ -563,7 +567,7 @@ genEnumBitmapShamochu
   -- ^ Chunk size stage 1
   -> [Word]
   -- ^ Chunk size stage 2
-  -> (a -> Word8)
+  -> (a -> b)
   -- ^ Conversion
   -> (a, BB.Builder)
   -- ^ Value for planes 15-16
@@ -660,6 +664,7 @@ instance Monoid ShamochuCode where
     mempty = ShamochuCode mempty mempty
 
 generateShamochuBitmaps ::
+    forall a b. (FiniteBits b, V.Unbox b, Enum b, Bounded b, Ord b, Num b, Show b) =>
     -- | Name of the function
     String ->
     -- | Use raw 'Int#' if true
@@ -671,7 +676,7 @@ generateShamochuBitmaps ::
     -- | Chunk sizes stage 2
     [Word] ->
     -- | Conversion function
-    (a -> Word8) ->
+    (a -> b) ->
     -- | Input
     [a] ->
     -- | Bitmaps Haskell code and list of
@@ -690,8 +695,8 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
                 , case mapType of
                     BitMap -> mkBitLookup "data" 1 . mconcat $
                         [ mkWordLookup (Shamochu.offsets1IntSize stats) "offsets" 2 $
-                            mkIndent 3 <> mkShiftR "n" (3 + Shamochu.dataChunkSizeLog2 stats)
-                        , mkAnd (mkShiftR' "n" 3) "mask" ]
+                            mkIndent 3 <> mkShiftR "n" (byteBitSizeLog2 + Shamochu.dataChunkSizeLog2 stats)
+                        , mkAnd (mkShiftR' "n" byteBitSizeLog2) "mask" ]
                     ByteMap -> mkWordLookup (Shamochu.dataIntSize stats) "data" 1 . mconcat $
                         [ mkWordLookup (Shamochu.offsets1IntSize stats) "offsets" 2 $
                             mkIndent 3 <> mkShiftR "n" (Shamochu.dataChunkSizeLog2 stats)
@@ -707,7 +712,7 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
                 , "    \"", enumMapToAddrLiteral'
                                 4
                                 50
-                                (Shamochu.dataIntSize stats `shiftR` 3)
+                                (Shamochu.dataIntSize stats `shiftR` byteBitSizeLog2)
                                 (pad (Exts.toList array))
                                 "\"#\n"
                 , "\n"
@@ -716,7 +721,7 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
                 , "    \"", enumMapToAddrLiteral'
                                 4
                                 50
-                                (Shamochu.offsets1IntSize stats `shiftR` 3)
+                                (Shamochu.offsets1IntSize stats `shiftR` byteBitSizeLog2)
                                 (Exts.toList offsets)
                                 "\"#\n"
                 ]
@@ -761,10 +766,10 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
                         [ mkWordLookup (Shamochu.offsets1IntSize stats) "offsets1" 2 . mconcat $
                             [ mkWordLookup (Shamochu.offsets2IntSize stats) "offsets2" 3 $
                                 mkIndent 4 <>
-                                mkShiftR "n" (3 + Shamochu.dataChunkSizeLog2 stats + Shamochu.offsets1ChunkSizeLog2 stats)
-                            , mkAnd (mkShiftR' "n" (3 + Shamochu.dataChunkSizeLog2 stats)) "maskOffsets"
+                                mkShiftR "n" (byteBitSizeLog2 + Shamochu.dataChunkSizeLog2 stats + Shamochu.offsets1ChunkSizeLog2 stats)
+                            , mkAnd (mkShiftR' "n" (byteBitSizeLog2 + Shamochu.dataChunkSizeLog2 stats)) "maskOffsets"
                             ]
-                        , mkAnd (mkShiftR' "n" 3) "maskData" ]
+                        , mkAnd (mkShiftR' "n" byteBitSizeLog2) "maskData" ]
                     ByteMap -> mkWordLookup (Shamochu.dataIntSize stats) "data" 1 . mconcat $
                         [ mkWordLookup (Shamochu.offsets1IntSize stats) "offsets1" 2 . mconcat $
                             [ mkWordLookup (Shamochu.offsets2IntSize stats) "offsets2" 3 $
@@ -786,7 +791,7 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
                 , "    \"", enumMapToAddrLiteral'
                                 4
                                 50
-                                (Shamochu.dataIntSize stats `shiftR` 3)
+                                (Shamochu.dataIntSize stats `shiftR` byteBitSizeLog2)
                                 (pad (Exts.toList dataArray))
                                 "\"#\n"
                 , "\n"
@@ -795,7 +800,7 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
                 , "    \"", enumMapToAddrLiteral'
                                 4
                                 50
-                                (Shamochu.offsets1IntSize stats `shiftR` 3)
+                                (Shamochu.offsets1IntSize stats `shiftR` byteBitSizeLog2)
                                 (Exts.toList offset1Array)
                                 "\"#\n"
                 , "\n"
@@ -804,7 +809,7 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
                 , "    \"", enumMapToAddrLiteral'
                                 4
                                 50
-                                (Shamochu.offsets2IntSize stats `shiftR` 3)
+                                (Shamochu.offsets2IntSize stats `shiftR` byteBitSizeLog2)
                                 (Exts.toList offsets2Array)
                                 "\"#\n"
                 ]
@@ -839,10 +844,16 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
             offset2Type = "Word" <> BB.wordDec (Shamochu.offsets2IntSize stats)
     where
     xs' = Exts.fromList (convert <$> xs)
-    maxWordBitSizeLog2 = 3
-    maxWordByteSize = assert
-        (all (>= maxWordBitSizeLog2) powersStage1) -- Chunks should not cut words
-        (2^maxWordBitSizeLog2 `div` 8)
+    {-# INLINE log2 #-}
+    log2 :: (Integral n) => Word -> n
+    log2 a = fromIntegral (finiteBitSize (0 :: Word) - 1 - countLeadingZeros a)
+    byteBitSize = finiteBitSize (0 :: Word8)
+    byteBitSizeLog2 :: (Integral bs) => bs
+    byteBitSizeLog2 = log2 (fromIntegral byteBitSize)
+    maxWordBitSizeLog2 = log2 (fromIntegral (finiteBitSize (0 :: b)))
+    maxWordByteSize = if any (< maxWordBitSizeLog2) powersStage1
+        then error "Chunks should not cut words"
+        else 2 ^ (maxWordBitSizeLog2 - byteBitSizeLog2)
     outputType = case mapType of
         BitMap -> "Bool"
         ByteMap -> if rawInt then "Int#" else "Int"
@@ -881,6 +892,7 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
         , "AsInt"
         , if rawInt then "#" else "" ]
     mkWord dataSize = "Word" <> fromString (show dataSize)
+    mkInt dataSize = "Int" <> fromString (show dataSize)
     mkMaskDef mask count = if rawInt
         then mconcat [mask, " = (1# `iShiftL#` ", BB.wordDec count, "#) -# 1#\n"]
         else mconcat [mask, " = (1 `shiftL` ", BB.wordDec count, ") - 1\n"]
@@ -905,7 +917,7 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
         ]
     defaultByteMapImports dataSize offsetsSize = Map.fromList
         [ ( "Data.Char", Set.singleton "ord" )
-        , ( "Data.Int", Set.singleton "Int8" )
+        , ( "Data.Int", Set.singleton (mkInt dataSize) )
         , ( "Data.Word", Set.singleton (mkWord offsetsSize) )
         , ( "GHC.Exts", Set.singleton "Ptr(..)" )
         , ( "Unicode.Internal.Bits"

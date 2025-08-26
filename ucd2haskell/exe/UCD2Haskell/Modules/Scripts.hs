@@ -20,6 +20,7 @@ import Control.Applicative (Alternative (..))
 import Control.Exception (assert)
 import qualified Data.Set as Set
 import qualified Data.Map.Strict as Map
+import Data.Word (Word8)
 import qualified Unicode.CharacterDatabase.Parser.Common as U
 import qualified Unicode.CharacterDatabase.Parser.Properties.Defaults as Defaults
 import qualified Unicode.CharacterDatabase.Parser.Properties.Single as Prop
@@ -322,6 +323,7 @@ genScriptsModule moduleName aliases = Fold step mempty done
             boundPlanes0To1 = length planes0To1
             otherPlanes = zip planes2To3 ['\x20000'..]
                        <> zip plane14    ['\xE0000'..]
+            toWord8 :: Int -> Word8
             toWord8 =
                 assert (fromEnum (length scripts) < 0xff)
                 (fromIntegral . fromEnum)

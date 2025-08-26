@@ -105,6 +105,7 @@ executable ucd2haskell
       , getopt-generics     >= 0.13  && < 0.14
       , shamochu            >= 0.1.0 && < 0.2
       , unicode-data-parser >= 0.3.0.2 && < 0.4
+      , vector              >= 0.13  && < 0.14
   else
     buildable: False
 

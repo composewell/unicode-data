@@ -127,6 +127,7 @@ genScriptExtensionsModule moduleName aliases extensions = Fold step initial done
             . Set.toAscList
             . Set.map (\s -> Arg (mkHaskellConstructor' s) s)
             $ usedScripts
+        toWord8 :: Word8 -> Word8
         toWord8 =
             assert (fromEnum (Map.size encodedExtensions) < 0xff)
             (fromIntegral . fromEnum)

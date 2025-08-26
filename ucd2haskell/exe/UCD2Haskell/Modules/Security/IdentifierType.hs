@@ -16,6 +16,7 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe)
 import qualified Data.Set as Set
+import Data.Word (Word8)
 import qualified Unicode.CharacterDatabase.Parser.Common as U
 import qualified Unicode.CharacterDatabase.Parser.Properties.Single as Prop
 
@@ -201,6 +202,7 @@ genIdentifierTypeModule moduleName = Fold step mempty done
         , code
         ]
         where
+        toWord8 :: Int -> Word8
         toWord8 =
             assert (fromEnum (maxBound :: IdentifierType) < 0xff)
             (fromIntegral . fromEnum)
