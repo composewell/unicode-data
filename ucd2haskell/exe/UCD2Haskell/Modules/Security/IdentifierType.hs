@@ -11,7 +11,6 @@ module UCD2Haskell.Modules.Security.IdentifierType (recipe) where
 import Control.Exception (assert)
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Short as BS
-import Data.Foldable (Foldable(..))
 import qualified Data.List as L
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map

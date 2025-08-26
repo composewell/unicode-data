@@ -8,7 +8,6 @@ module UCD2Haskell.Modules.Security.IdentifierStatus (recipe) where
 
 import qualified Data.ByteString.Builder as BB
 import Data.Char (ord)
-import Data.Foldable (Foldable (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Unicode.CharacterDatabase.Parser.Common as U
 import qualified Unicode.CharacterDatabase.Parser.Properties.Single as Prop

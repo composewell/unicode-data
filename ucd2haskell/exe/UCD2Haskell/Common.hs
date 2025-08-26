@@ -40,7 +40,6 @@ module UCD2Haskell.Common
     , mkHaskellConstructor
     ) where
 
-import Data.Foldable (Foldable(..))
 import qualified Data.Version as V
 import Numeric (showHex)
 import Data.Char (toUpper, ord, isAlphaNum)

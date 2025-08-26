@@ -10,7 +10,6 @@ module UCD2Haskell.Modules.UnicodeData.GeneralCategory
 
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Short as BS
-import Data.Foldable (Foldable (..))
 import qualified Data.List as L
 import qualified Data.List.NonEmpty as NE
 import qualified Unicode.CharacterDatabase.Parser.Common as U

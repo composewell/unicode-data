@@ -11,7 +11,6 @@ import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Short as BS
 import Data.Char (ord)
 import Data.Bits (Bits (..))
-import Data.Foldable (Foldable (..))
 import Data.Function (on)
 import qualified Data.List as L
 import qualified Data.List.NonEmpty as NE

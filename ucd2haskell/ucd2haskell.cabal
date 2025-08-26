@@ -68,6 +68,7 @@ executable ucd2haskell
   hs-source-dirs: exe
   main-is: UCD2Haskell.hs
   other-modules:
+    Prelude
     UCD2Haskell.Common
     UCD2Haskell.Generator
     UCD2Haskell.Generator.Core

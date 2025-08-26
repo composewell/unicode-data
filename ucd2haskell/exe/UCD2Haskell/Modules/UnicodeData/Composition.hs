@@ -11,7 +11,6 @@ module UCD2Haskell.Modules.UnicodeData.Composition
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import Data.Char (ord)
-import Data.Foldable (Foldable (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Set as Set
 import qualified Unicode.CharacterDatabase.Parser.Common as U
