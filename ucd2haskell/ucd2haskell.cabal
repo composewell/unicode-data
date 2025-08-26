@@ -95,9 +95,9 @@ executable ucd2haskell
   if flag(ucd2haskell)
     buildable: True
     build-depends:
-        base                >= 4.7   && < 4.22
+        base                >= 4.7   && < 4.23
       , bytestring          >= 0.11  && < 0.13
-      , containers          >= 0.5   && < 0.7
+      , containers          >= 0.5   && < 0.9
       , directory           >= 1.3.6 && < 1.4
       , filepath            >= 1.4.100 && < 1.5
       , getopt-generics     >= 0.13  && < 0.14
@@ -119,7 +119,7 @@ executable test
   if flag(ucd2haskell)
     buildable: True
     build-depends:
-        base             >= 4.7   && < 4.22
+        base             >= 4.7   && < 4.23
       , directory        >= 1.3.6 && < 1.4
       , filepath         >= 1.4.100 && < 1.5
       , hspec            >= 2.0   && < 2.12
