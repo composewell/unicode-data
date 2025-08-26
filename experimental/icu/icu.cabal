@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                icu
-version:             0.2.0
+version:             0.3.0
 synopsis:            ICU binding
 description:
     ICU binding to ICU for characters names and aliases (internal library).
