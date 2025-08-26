@@ -12,6 +12,7 @@ import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Short as BS
 import qualified Data.List as L
 import qualified Data.List.NonEmpty as NE
+import Data.Word (Word8)
 import qualified Unicode.CharacterDatabase.Parser.Common as U
 import qualified Unicode.CharacterDatabase.Parser.UnicodeData as UD
 
@@ -130,6 +131,7 @@ genGeneralCategoryModule moduleName = Fold step initial done
         , code
         ]
         where
+        toWord8 :: UD.GeneralCategory -> Word8
         toWord8 =
             assert (fromEnum (maxBound :: UD.GeneralCategory) < 0xff)
             (fromIntegral . fromEnum)
