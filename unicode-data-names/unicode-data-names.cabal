@@ -104,7 +104,7 @@ library
 
   hs-source-dirs: lib
   build-depends:
-      base             >= 4.7   && < 4.22,
+      base             >= 4.7   && < 4.23,
       unicode-data     >= 0.6   && < 0.7
   -- Support for raw string literals unpacking is included in base ≥ 4.15
   if impl(ghc < 9.0.0)
@@ -130,7 +130,7 @@ test-suite test
   other-modules:
       Unicode.Char.General.NamesSpec
   build-depends:
-      base             >= 4.7   && < 4.22
+      base             >= 4.7   && < 4.23
     , hspec            >= 2.0   && < 2.12
     , unicode-data     >= 0.6   && < 0.7
     , unicode-data-names
@@ -173,7 +173,7 @@ benchmark bench
   hs-source-dirs: bench
   main-is: Main.hs
   build-depends:
-    base         >= 4.7   && < 4.22,
+    base         >= 4.7   && < 4.23,
     deepseq      >= 1.1   && < 1.6,
     tasty-bench  >= 0.2.5 && < 0.5,
     tasty        >= 1.4.1 && < 1.6,

@@ -118,7 +118,7 @@ library
   hs-source-dirs: lib
   ghc-options: -O2
   build-depends:
-      base >=4.7 && < 4.22
+      base >=4.7 && < 4.23
   if impl(ghc < 9.0)
     -- Required for unpackCString#
     build-depends: ghc-prim
@@ -132,7 +132,7 @@ test-suite test
   other-modules:
       Unicode.CharSpec
   build-depends:
-      base             >= 4.7   && < 4.22
+      base             >= 4.7   && < 4.23
     , hspec            >= 2.0   && < 2.12
     , unicode-data
   if flag(dev-has-icu)
@@ -159,7 +159,7 @@ benchmark bench
     Unicode.Char.NumericBench
     Unicode.Char.Numeric.CompatBench
   build-depends:
-    base        >= 4.7   && < 4.22,
+    base        >= 4.7   && < 4.23,
     deepseq     >= 1.1   && < 1.6,
     tasty-bench >= 0.2.5 && < 0.5,
     tasty       >= 1.4.1 && < 1.6,

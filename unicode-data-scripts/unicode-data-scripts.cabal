@@ -87,7 +87,7 @@ library
 
   hs-source-dirs: lib
   build-depends:
-      base             >= 4.7   && < 4.22
+      base             >= 4.7   && < 4.23
   -- Support for raw string literals unpacking is included in base ≥ 4.15
   if impl(ghc < 9.0.0)
     build-depends:
@@ -102,7 +102,7 @@ test-suite test
   other-modules:
       Unicode.Char.General.ScriptsSpec
   build-depends:
-      base             >= 4.7   && < 4.22
+      base             >= 4.7   && < 4.23
     , hspec            >= 2.0   && < 2.12
     , unicode-data-scripts
   if flag(dev-has-icu)
@@ -118,7 +118,7 @@ benchmark bench
   hs-source-dirs: bench
   main-is: Main.hs
   build-depends:
-    base        >= 4.7   && < 4.22,
+    base        >= 4.7   && < 4.23,
     deepseq     >= 1.1   && < 1.6,
     tasty-bench >= 0.2.5 && < 0.5,
     tasty       >= 1.4.1 && < 1.6,

@@ -64,7 +64,7 @@ library
     ICU.Scripts
   hs-source-dirs: lib
   build-depends:
-      base             >= 4.7   && < 4.22
+      base             >= 4.7   && < 4.23
     , text             >= 2.0   && < 2.2
   include-dirs: cbits
   c-sources: cbits/icu.c
