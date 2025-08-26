@@ -12,7 +12,7 @@ This repository provides packages to use the
 
 The Haskell data structures are generated programmatically from the UCD files.
 The latest Unicode version supported by these libraries is
-[`15.1.0`](https://www.unicode.org/versions/Unicode15.1.0/).
+[`16.0.0`](https://www.unicode.org/versions/Unicode16.0.0/).
 
 ### `unicode-data`
 

@@ -5,12 +5,14 @@ module Unicode.Char.General.ScriptsSpec
   ) where
 
 import Data.Foldable (traverse_)
+import qualified Data.List.NonEmpty as NE
 import GHC.Exts
     ( isTrue#, orI#, andI#, (-#), (<#), (<=#), (==#)
     , Char (..), ord#
     , plusAddr#, eqAddr#, nullAddr#, ltAddr# )
 import Test.Hspec
-    ( expectationFailure, shouldBe, shouldSatisfy, it, describe, Spec )
+    ( expectationFailure, shouldBe, shouldSatisfy, it, describe
+    , Spec, Expectation, HasCallStack )
 import Unicode.Internal.Bits.Scripts (nextInt32#)
 import qualified Unicode.Char.General.Scripts as S
 import qualified Unicode.Internal.Char.Scripts as IS
@@ -63,61 +65,75 @@ spec = do
             '\xE000'  `shouldSatisfy` check S.Unknown
             '\xF0000' `shouldSatisfy` check S.Unknown
         it "scriptExtensions" do
-            let check s = (== s) . S.scriptExtensions
-            minBound  `shouldSatisfy` check [ S.Common]
-            maxBound  `shouldSatisfy` check [ S.Unknown]
-            '.'       `shouldSatisfy` check [ S.Common]
-            '1'       `shouldSatisfy` check [ S.Common]
-            'A'       `shouldSatisfy` check [ S.Latin]
-            'Α'       `shouldSatisfy` check [ S.Greek]
-            'α'       `shouldSatisfy` check [ S.Greek]
-            '\x0300'  `shouldSatisfy` check [ S.Inherited]
-            '\x0485'  `shouldSatisfy` check [ S.Cyrillic, S.Latin]
-            '\x0600'  `shouldSatisfy` check [ S.Arabic]
-            '\x060C'  `shouldSatisfy` check [ S.Arabic
-                                            , S.HanifiRohingya
-                                            , S.Nko
-                                            , S.Syriac
-                                            , S.Thaana
-                                            , S.Yezidi ]
-            '\x0965'  `shouldSatisfy` check [ S.Bengali
-                                            , S.Devanagari
-                                            , S.Dogra
-                                            , S.Grantha
-                                            , S.Gujarati
-                                            , S.GunjalaGondi
-                                            , S.Gurmukhi
-                                            , S.Kannada
-                                            , S.Khudawadi
-                                            , S.Limbu
-                                            , S.Mahajani
-                                            , S.Malayalam
-                                            , S.MasaramGondi
-                                            , S.Nandinagari
-                                            , S.Oriya
-                                            , S.Sinhala
-                                            , S.SylotiNagri
-                                            , S.Takri
-                                            , S.Tamil
-                                            , S.Telugu
-                                            , S.Tirhuta ]
-            '\x1100'  `shouldSatisfy` check [ S.Hangul]
-            '\x3001'  `shouldSatisfy` check [ S.Bopomofo
-                                            , S.Han
-                                            , S.Hangul
-                                            , S.Hiragana
-                                            , S.Katakana
-                                            , S.Yi ]
-            '\x4E00'  `shouldSatisfy` check [ S.Han]
-            '\x11FD0' `shouldSatisfy` check [ S.Grantha, S.Tamil ]
-            '\x1F600' `shouldSatisfy` check [ S.Common]
-            '\x20000' `shouldSatisfy` check [ S.Han]
+            let shouldBe' :: (HasCallStack) => Char -> NE.NonEmpty S.Script -> Expectation
+                shouldBe' c = shouldBe (S.scriptExtensions c)
+            minBound  `shouldBe'` [ S.Common]
+            maxBound  `shouldBe'` [ S.Unknown]
+            '.'       `shouldBe'` [ S.Common]
+            '1'       `shouldBe'` [ S.Common]
+            'A'       `shouldBe'` [ S.Latin]
+            'Α'       `shouldBe'` [ S.Greek]
+            'α'       `shouldBe'` [ S.Greek]
+            '\x0300'  `shouldBe'` [ S.Cherokee
+                                  , S.Coptic
+                                  , S.Cyrillic
+                                  , S.Greek
+                                  , S.Latin
+                                  , S.OldPermic
+                                  , S.Sunuwar
+                                  , S.TaiLe ]
+            '\x031F'  `shouldBe'` [ S.Inherited]
+            '\x0485'  `shouldBe'` [ S.Cyrillic, S.Latin]
+            '\x0600'  `shouldBe'` [ S.Arabic]
+            '\x060C'  `shouldBe'` [ S.Arabic
+                                  , S.Garay
+                                  , S.HanifiRohingya
+                                  , S.Nko
+                                  , S.Syriac
+                                  , S.Thaana
+                                  , S.Yezidi ]
+            '\x0965'  `shouldBe'` [ S.Bengali
+                                  , S.Devanagari
+                                  , S.Dogra
+                                  , S.Grantha
+                                  , S.Gujarati
+                                  , S.GunjalaGondi
+                                  , S.Gurmukhi
+                                  , S.GurungKhema
+                                  , S.Kannada
+                                  , S.Khudawadi
+                                  , S.Limbu
+                                  , S.Mahajani
+                                  , S.Malayalam
+                                  , S.MasaramGondi
+                                  , S.Nandinagari
+                                  , S.OlOnal
+                                  , S.Oriya
+                                  , S.Sinhala
+                                  , S.SylotiNagri
+                                  , S.Takri
+                                  , S.Tamil
+                                  , S.Telugu
+                                  , S.Tirhuta ]
+            '\x1100'  `shouldBe'` [ S.Hangul]
+            '\x1805'  `shouldBe'` [ S.Mongolian, S.PhagsPa ]
+            '\x3001'  `shouldBe'` [ S.Bopomofo
+                                  , S.Han
+                                  , S.Hangul
+                                  , S.Hiragana
+                                  , S.Katakana
+                                  , S.Mongolian
+                                  , S.Yi ]
+            '\x4E00'  `shouldBe'` [ S.Han]
+            '\x11FD0' `shouldBe'` [ S.Grantha, S.Tamil ]
+            '\x1F600' `shouldBe'` [ S.Common]
+            '\x20000' `shouldBe'` [ S.Han]
             -- BOM
-            '\xFEFF'  `shouldSatisfy` check [ S.Common ]
-            '\xFFFF'  `shouldSatisfy` check [ S.Unknown ]
+            '\xFEFF'  `shouldBe'` [ S.Common ]
+            '\xFFFF'  `shouldBe'` [ S.Unknown ]
             -- Private Use Areas
-            '\xE000'  `shouldSatisfy` check [ S.Unknown ]
-            '\xF0000' `shouldSatisfy` check [ S.Unknown ]
+            '\xE000'  `shouldBe'` [ S.Unknown ]
+            '\xF0000' `shouldBe'` [ S.Unknown ]
         it "scriptDefinition" do
             take 304 (S.scriptDefinition S.Latin) `shouldBe`
                 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzªºÀÁÂÃÄÅÆÇ\

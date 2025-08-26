@@ -62,6 +62,15 @@ name (C# c#) = case DerivedName.name c# of
         DerivedName.TangutIdeograph -> Just n
             where
             !n = mkNameFromTemplate# "TANGUT IDEOGRAPH-"# 17# (ord# c#)
+        DerivedName.EgyptianHieroglyph -> Just n
+            where
+            !n = mkNameFromTemplate# "EGYPTIAN HIEROGLYPH-"# 20# (ord# c#)
+        DerivedName.KhitanSmallScript -> Just n
+            where
+            !n = mkNameFromTemplate# "KHITAN SMALL SCRIPT CHARACTER-"# 30# (ord# c#)
+        DerivedName.NushuCharacter -> Just n
+            where
+            !n = mkNameFromTemplate# "NUSHU CHARACTER-"# 16# (ord# c#)
         _
             | isTrue# (len# <# DerivedName.HangulSyllable) ->
                 let !n = unpackAddr# name# len#

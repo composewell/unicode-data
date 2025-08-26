@@ -80,6 +80,18 @@ name (C# c#) = case DerivedName.name c# of
             where
             !hex = showHex c#
             !n = 'T':'A':'N':'G':'U':'T':' ':'I':'D':'E':'O':'G':'R':'A':'P':'H':'-':hex
+        DerivedName.EgyptianHieroglyph -> Just n
+            where
+            !hex = showHex c#
+            !n = 'E':'G':'Y':'P':'T':'I':'A':'N':' ':'H':'I':'E':'R':'O':'G':'L':'Y':'P':'H':'-':hex
+        DerivedName.KhitanSmallScript -> Just n
+            where
+            !hex = showHex c#
+            !n = 'K':'H':'I':'T':'A':'N':' ':'S':'M':'A':'L':'L':' ':'S':'C':'R':'I':'P':'T':' ':'C':'H':'A':'R':'A':'C':'T':'E':'R':'-':hex
+        DerivedName.NushuCharacter -> Just n
+            where
+            !hex = showHex c#
+            !n = 'N':'U':'S':'H':'U':' ':'C':'H':'A':'R':'A':'C':'T':'E':'R':'-':hex
         _
             | isTrue# (len# <# DerivedName.HangulSyllable) -> let !n = unpack name# [] len# in Just n
             | otherwise ->

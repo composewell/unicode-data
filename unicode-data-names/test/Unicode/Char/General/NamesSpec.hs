@@ -50,9 +50,12 @@ spec = do
         -- Name with correction
         name '\x1D0C5' `shouldBe` Just "BYZANTINE MUSICAL SYMBOL FHTORA SKLIRON CHROMA VASIS"
         name '\x1f41d' `shouldBe` Just "HONEYBEE"
-        -- Name generated using pattern (example from UCD file)
+        -- Names generated using pattern (example from UCD file)
+        name '\x13460' `shouldBe` Just "EGYPTIAN HIEROGLYPH-13460"
+        name '\x18B00' `shouldBe` Just "KHITAN SMALL SCRIPT CHARACTER-18B00"
+        name '\x18CFF' `shouldBe` Just "KHITAN SMALL SCRIPT CHARACTER-18CFF"
         name '\x2f89f' `shouldBe` Just "CJK COMPATIBILITY IDEOGRAPH-2F89F"
-        -- Last name defined, as of Unicode 15.0.0
+        -- Last name defined, as of Unicode 16.0.0
         name '\xe01ef' `shouldBe` Just "VARIATION SELECTOR-256"
         name maxBound  `shouldBe` Nothing
     it "correctedName: Test some characters" do
