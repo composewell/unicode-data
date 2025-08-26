@@ -182,7 +182,7 @@ spec = do
       UChar.isUpperCase `shouldBeEqualToV` Char.isUpperCase
 #endif
     it "toLower" do
-      UChar.toLower `shouldBeEqualToV` Char.toLower
+      UChar.toLower `shouldBeEqualToV'` Char.toLower
     let caseCheck f (c, cs) = c `shouldSatisfy` (== cs) . f
     describe "toLowerString" do
         it "Examples" do
@@ -203,7 +203,7 @@ spec = do
                     in cf == foldMap UChar.toLowerString cf
             traverse_ check [minBound..maxBound]
     it "toUpper" do
-      UChar.toUpper `shouldBeEqualToV` Char.toUpper
+      UChar.toUpper `shouldBeEqualToV'` Char.toUpper
     describe "toUpperString" do
         it "Examples" do
             let examples = [ ('\0', "\0")
@@ -224,7 +224,7 @@ spec = do
                     in cf == foldMap UChar.toUpperString cf
             traverse_ check [minBound..maxBound]
     it "toTitle" do
-      UChar.toTitle `shouldBeEqualToV` Char.toTitle
+      UChar.toTitle `shouldBeEqualToV'` Char.toTitle
     describe "toTitleString" do
         it "Examples" do
             let examples = [ ('\0', "\0")
@@ -287,7 +287,7 @@ spec = do
     -- If we use `pendingWith` then the whole test is pending, not just
     -- the assertion.
     shouldBeEqualToV
-        :: forall b. (HasCallStack) => (Eq b, Show b)
+        :: forall b. (HasCallStack, Eq b, Show b)
         => (Char -> b)
         -> (Char -> b)
         -> IO ()
@@ -295,8 +295,25 @@ spec = do
         let same x = f x == g x
         in traverse_ (`shouldSatisfyV` same) [minBound..maxBound]
 
+    -- This adds an additional fallback depending on the resulting characters
+    shouldBeEqualToV'
+        :: (HasCallStack)
+        => (Char -> Char)
+        -> (Char -> Char)
+        -> IO ()
+    shouldBeEqualToV' f g =
+        let same x = f x == g x
+        in traverse_ (\c -> shouldSatisfyV' c (Just (f, g)) same) [minBound..maxBound]
+
     shouldSatisfyV :: (HasCallStack) => Char -> (Char -> Bool) -> IO ()
-    shouldSatisfyV c h
+    shouldSatisfyV = (`shouldSatisfyV'` Nothing)
+
+    shouldSatisfyV' :: (HasCallStack)
+                    => Char
+                    -> Maybe (Char -> Char, Char -> Char)
+                    -> (Char -> Bool)
+                    -> IO ()
+    shouldSatisfyV' c cs h
         | hasSameUnicodeVersion = shouldSatisfy c h
         | h c = pure ()
         | not hasGhcUnicodeVersion = traceM . mconcat $
@@ -313,6 +330,15 @@ spec = do
             [ "[WARNING] Cannot test ", show c
             , ": incompatible Unicode version (different general category)."
             , " Expected "
+            , showVersion UChar.unicodeVersion
+            , ", but got: "
+            , showVersion unicodeVersion ]
+        -- In case we compared 2 functions (Char -> Char),
+        -- skip if one of the resulting char is unassigned.
+        | Just (f, g) <- cs, let c1 = f c, let c2 = g c
+        , isUnassigned c1 || isUnassigned c2 = traceM . mconcat $
+            [ "[WARNING] Cannot test ", show c
+            , ": incompatible Unicode version (unassigned mapped char). Expected "
             , showVersion UChar.unicodeVersion
             , ", but got: "
             , showVersion unicodeVersion ]
