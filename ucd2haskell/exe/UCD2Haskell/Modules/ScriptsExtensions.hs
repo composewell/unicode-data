@@ -10,7 +10,6 @@ module UCD2Haskell.Modules.ScriptsExtensions
     ) where
 
 import Control.Arrow (Arrow (..))
-import Control.Exception (assert)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Short as BS
@@ -18,7 +17,7 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
 import Data.Semigroup (Arg (..))
 import qualified Data.Set as Set
-import Data.Word (Word8)
+import Data.Word (Word16)
 import qualified Unicode.CharacterDatabase.Parser.Common as U
 import qualified Unicode.CharacterDatabase.Parser.Properties.Defaults as Defaults
 import qualified Unicode.CharacterDatabase.Parser.Properties.Single as Prop
@@ -127,15 +126,15 @@ genScriptExtensionsModule moduleName aliases extensions = Fold step initial done
             . Set.toAscList
             . Set.map (\s -> Arg (mkHaskellConstructor' s) s)
             $ usedScripts
-        toWord8 :: Word8 -> Word8
-        toWord8 =
-            assert (fromEnum (Map.size encodedExtensions) < 0xff)
-            (fromIntegral . fromEnum)
+        toWord16 :: Word16 -> Word16
+        toWord16 = if fromEnum (Map.size encodedExtensions) < 0xffff
+            then fromIntegral . fromEnum
+            else error "Too many script extensions"
 
         mkHaskellConstructor' = B.toStrict . BB.toLazyByteString . mkHaskellConstructor
-        encodedAbbr :: Map.Map BS.ShortByteString Word8
+        encodedAbbr :: Map.Map BS.ShortByteString Word16
         encodedAbbr = Map.fromList (first getScriptAbbr <$> zip scripts [0..])
-        encodeAbbr :: BS.ShortByteString -> Word8
+        encodeAbbr :: BS.ShortByteString -> Word16
         encodeAbbr = (encodedAbbr Map.!)
 
         singleScriptExtensions = pure . getScriptAbbr <$> scripts
@@ -147,10 +146,10 @@ genScriptExtensionsModule moduleName aliases extensions = Fold step initial done
         extensionsList = singleScriptExtensions
                       <> Set.toList multiScriptExtensions
 
-        encodedExtensions :: Map.Map (NE.NonEmpty BS.ShortByteString) Word8
-        encodedExtensions = let len = length extensionsList in if len > 0xff
-            then error ("Too many script extensions: " <> show len)
-            else Map.fromList (zip extensionsList [0..])
+        encodedExtensions :: Map.Map (NE.NonEmpty BS.ShortByteString) Word16
+        encodedExtensions = let len = length extensionsList in if len < 0xffff
+            then Map.fromList (zip extensionsList [0..])
+            else error ("Too many script extensions: " <> show len)
 
         encodeExtensions = (encodedExtensions Map.!)
 
@@ -166,7 +165,7 @@ genScriptExtensionsModule moduleName aliases extensions = Fold step initial done
             True
             (NE.singleton 3)
             [5]
-            toWord8
+            toWord16
             (def, BB.intDec (fromEnum def))
             (def, BB.intDec (fromEnum def))
             planes0To3
@@ -176,8 +175,8 @@ genScriptExtensionsModule moduleName aliases extensions = Fold step initial done
             (Set.fromList ["Addr#", "Int(..)", "nullAddr#", "negateInt#"])
 
     mkDecodeScriptExtensions
-        :: (NE.NonEmpty BS.ShortByteString -> Word8)
-        -> (BS.ShortByteString -> Word8)
+        :: (NE.NonEmpty BS.ShortByteString -> Word16)
+        -> (BS.ShortByteString -> Word16)
         -> Set.Set (NE.NonEmpty BS.ShortByteString)
         -> BB.Builder
     mkDecodeScriptExtensions encodeExtensions encodeAbbr
@@ -187,7 +186,7 @@ genScriptExtensionsModule moduleName aliases extensions = Fold step initial done
 
     mkDecodeScriptExtensions' = foldMap $ \(Arg v exts) -> mconcat
         [ "\n    "
-        , BB.word8Dec v
+        , BB.word16Dec v
         , "# -> (# "
         , BB.intDec (length exts)
         , "#, \""
