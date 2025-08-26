@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.0 (TBD)
+
+- Updated to [Unicode 16.0.0](https://www.unicode.org/versions/Unicode16.0.0/).
+
 ## 0.6.0 (July 2024)
 
 - Updated to [Unicode 15.1.0](https://www.unicode.org/versions/Unicode15.1.0/).

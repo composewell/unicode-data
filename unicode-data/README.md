@@ -7,7 +7,7 @@ design of this package.
 The Haskell data structures are generated programmatically from the
 [Unicode character database](https://www.unicode.org/ucd/) (UCD) files.
 The latest Unicode version supported by this library is
-[`15.1.0`](https://www.unicode.org/versions/Unicode15.1.0/).
+[`16.0.0`](https://www.unicode.org/versions/Unicode16.0.0/).
 
 Please see the
 [Haddock documentation](https://hackage.haskell.org/package/unicode-data)
