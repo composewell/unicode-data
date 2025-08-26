@@ -14,7 +14,6 @@ import qualified Unicode.CharacterDatabase.Parser.NameAliases as N
 
 import UCD2Haskell.Generator (FileRecipe (..), unlinesBB, apacheLicense, enumMapToAddrLiteral)
 import UCD2Haskell.Common (Fold (..), showHexCodepointB)
-import Data.Foldable (Foldable(..))
 
 recipe :: FileRecipe N.Entry
 recipe = ModuleRecipe

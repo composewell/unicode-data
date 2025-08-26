@@ -11,7 +11,6 @@ import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Short as BS
 import Data.Char (ord)
-import Data.Foldable (Foldable(..))
 import Data.Word (Word8)
 import qualified Unicode.CharacterDatabase.Parser.Extracted.DerivedName as N
 

@@ -18,7 +18,6 @@ module UCD2Haskell.Modules.UnicodeData.Decomposition
 
 import qualified Data.ByteString.Builder as BB
 import Data.Char (ord)
-import Data.Foldable (Foldable (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Unicode.CharacterDatabase.Parser.Common as U
 import qualified Unicode.CharacterDatabase.Parser.UnicodeData as UD
