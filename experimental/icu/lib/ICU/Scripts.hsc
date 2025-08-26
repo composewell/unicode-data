@@ -274,4 +274,12 @@ data Script
     | Vithkuqi                    -- ^ USCRIPT_VITHKUQI                      = 197
     | Kawi                        -- ^ USCRIPT_KAWI                          = 198
     | NagMundari                  -- ^ USCRIPT_NAG_MUNDARI                   = 199
+    | Aran                        -- ^ USCRIPT_ARABIC_NASTALIQ               = 200
+    | Gara                        -- ^ USCRIPT_GARAY                         = 201
+    | Gukh                        -- ^ USCRIPT_GURUNG_KHEMA                  = 202
+    | Krai                        -- ^ USCRIPT_KIRAT_RAI                     = 203
+    | Onao                        -- ^ USCRIPT_OL_ONAL                       = 204
+    | Sunu                        -- ^ USCRIPT_SUNUWAR                       = 205
+    | Todr                        -- ^ USCRIPT_TODHRI                        = 206
+    | Tutg                        -- ^ USCRIPT_TULU_TIGALARI                 = 207
     deriving (Bounded, Enum, Eq, Show)
