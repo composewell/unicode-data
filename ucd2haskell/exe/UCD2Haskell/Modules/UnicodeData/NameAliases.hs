@@ -12,7 +12,7 @@ import qualified Data.Map.Strict as Map
 import Data.Word (Word8)
 import qualified Unicode.CharacterDatabase.Parser.NameAliases as N
 
-import UCD2Haskell.Generator (FileRecipe (..), unlinesBB, apacheLicense, enumMapToAddrLiteral)
+import UCD2Haskell.Generator (FileRecipe (..), unlinesBB, apacheLicense, enumMapToAddrLiteral8)
 import UCD2Haskell.Common (Fold (..), showHexCodepointB)
 
 recipe :: FileRecipe N.Entry
@@ -46,7 +46,7 @@ genAliasesModule moduleName = Fold step mempty done
 
     mkCharAliasesLiteral :: Char -> CharAliases -> BB.Builder
     mkCharAliasesLiteral char aliasesMap =
-        enumMapToAddrLiteral 0 0xfff
+        enumMapToAddrLiteral8 0 0xfff
             (reverse index)
             (mconcat (reverse ("\\0":aliases)))
         where

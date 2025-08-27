@@ -14,7 +14,7 @@ import Data.Word (Word8, Word32)
 import qualified Unicode.CharacterDatabase.Parser.Common as U
 import qualified Unicode.CharacterDatabase.Parser.Properties.Single as Prop
 
-import UCD2Haskell.Generator (FileRecipe (..), unlinesBB, apacheLicense, word32ToWord8s, enumMapToAddrLiteral)
+import UCD2Haskell.Generator (FileRecipe (..), unlinesBB, apacheLicense, word32ToWord8s, enumMapToAddrLiteral8)
 import UCD2Haskell.Common (Fold (..), showPaddedHexB, showPaddedHeXB, mkHaskellConstructor)
 
 recipe :: FileRecipe Prop.Entry
@@ -109,7 +109,7 @@ genBlocksModule moduleName = Fold step initial done
         , ""
         , "rangesBitmap :: Ptr Word32"
         , "rangesBitmap = Ptr"
-        , "    \"" <> enumMapToAddrLiteral 4 0xff (mkRanges ranges') "\"#"
+        , "    \"" <> enumMapToAddrLiteral8 4 0xff (mkRanges ranges') "\"#"
         ]
 
     initial = Acc 0 mempty mempty mempty

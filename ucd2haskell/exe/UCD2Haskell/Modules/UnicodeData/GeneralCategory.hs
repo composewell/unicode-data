@@ -23,7 +23,6 @@ import UCD2Haskell.Generator (
     genEnumBitmapShamochu,
     unlinesBB, ShamochuCode (..), mkImports,
  )
-import Control.Exception (assert)
 
 recipe :: FileRecipe UD.Entry
 recipe = ModuleRecipe
@@ -132,9 +131,9 @@ genGeneralCategoryModule moduleName = Fold step initial done
         ]
         where
         toWord8 :: UD.GeneralCategory -> Word8
-        toWord8 =
-            assert (fromEnum (maxBound :: UD.GeneralCategory) < 0xff)
-            (fromIntegral . fromEnum)
+        toWord8 = if fromEnum (maxBound :: UD.GeneralCategory) < 0xff
+            then fromIntegral . fromEnum
+            else error "Cannot encode GeneralCategory"
         foldMapWithNewLine f = mconcat . L.intersperse "\n" . fmap f
         mkExport p = ", pattern " <> p
         mkGeneralCategoryPatternExport = mkExport . generalCategoryConstructor
