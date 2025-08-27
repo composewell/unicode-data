@@ -16,7 +16,7 @@ module UCD2Haskell.Generator
     , genBitmap
     , genEnumBitmap
     , bitMapToAddrLiteral
-    , enumMapToAddrLiteral
+    , enumMapToAddrLiteral8
     , chunkAddrLiteral
     , word32ToWord8s
     , splitPlanes
@@ -177,6 +177,7 @@ apacheLicense year modName =
 -- Bitmaps
 --------------------------------------------------------------------------------
 
+-- | Deprecated, use 'genBitmapShamochu' instead
 genBitmap :: HasCallStack => BB.Builder -> [Int] -> BB.Builder
 genBitmap funcName ordList = mconcat
     [ "{-# INLINE " <> funcName <> " #-}\n"
@@ -277,6 +278,7 @@ splitPlanes msg isDef xs = if all isDef planes4To13 && null planes15To16
     plane14 = L.dropWhileEnd isDef (take 0x10000 planes14To16)
     planes15To16 = drop 0x10000 planes14To16
 
+-- | Deprecated, prefer 'genEnumBitmapShamochu'
 genEnumBitmap
   :: forall a. (HasCallStack, Bounded a, Enum a, Eq a, Show a)
   => BB.Builder
@@ -300,7 +302,7 @@ genEnumBitmap funcName rawInt (defPUA, pPUA) (def, pDef) planes0To3 plane14 =
     , "    !(Ptr bitmap#) = ", bitmapLookup, "\n\n"
     , bitmapLookup, " :: Ptr Word8\n"
     , bitmapLookup, " = Ptr\n"
-    , "    \"", enumMapToAddrLiteral 4 0xff bitmap "\"#"
+    , "    \"", enumMapToAddrLiteral8 4 0xff bitmap "\"#"
     ]
     where
     rawSuffix = if rawInt then "#" else ""
@@ -356,12 +358,23 @@ genEnumBitmap funcName rawInt (defPUA, pPUA) (def, pDef) planes0To3 plane14 =
 
 {-| Encode a list of values as a byte map, using their 'Enum' instance.
 
+Specialization of 'enumMapToAddrLiteralN' using a single 'Word8' to encode
+values.
+
+>>> enumMapToAddrLiteral8 0 2 [(1 :: Word8), 2, 3] ""
+"\\1\\2\\\n\\\\3"
+>>> :{
+enumMapToAddrLiteral8 0 2 [(1 :: Word8), 2, 3] "" ==
+enumMapToAddrLiteralN 0 2 1 [(1 :: Word8), 2, 3] ""
+:}
+True
+
 __Note:__ 'Enum' instance must respect the following:
 
 * @fromEnum minBound >= 0x00@
 * @fromEnum maxBound <= 0xff@
 -}
-enumMapToAddrLiteral
+enumMapToAddrLiteral8
   :: forall a. (Bounded a, Enum a, Show a)
   => Word8
   -- ^ Indentation
@@ -372,7 +385,7 @@ enumMapToAddrLiteral
   -> BB.Builder
   -- ^ String to append
   -> BB.Builder
-enumMapToAddrLiteral indentation chunkSize =
+enumMapToAddrLiteral8 indentation chunkSize =
     chunkAddrLiteral indentation chunkSize addWord
 
     where
@@ -386,7 +399,9 @@ enumMapToAddrLiteral indentation chunkSize =
         else error $ "Cannot convert to Word8: " <> show a
 
 -- | Encode a list of values as a byte map, using their 'Enum' instance.
-enumMapToAddrLiteral'
+--
+-- Generalization of 'enumMapToAddrLiteral8'.
+enumMapToAddrLiteralN
   :: forall a. (Bounded a, Enum a, Show a)
   => Word8
   -- ^ Indentation
@@ -399,7 +414,7 @@ enumMapToAddrLiteral'
   -> BB.Builder
   -- ^ String to append
   -> BB.Builder
-enumMapToAddrLiteral' indentation chunkSize size =
+enumMapToAddrLiteralN indentation chunkSize size =
     chunkAddrLiteral indentation chunkSize addWords
 
     where
@@ -420,6 +435,7 @@ enumMapToAddrLiteral' indentation chunkSize size =
     go 0 _ = []
     go k n = fromIntegral (n .&. 0xff) : go (k - 1) (n `shiftR` byteSize)
 
+-- | Pretty-print 'Addr#' litterals
 chunkAddrLiteral
   :: forall a. Word8
   -- ^ Indentation
@@ -469,6 +485,8 @@ word32ToWord8s n = (\k -> fromIntegral ((n `shiftR` k) .&. 0xff)) <$> [0,8..24]
 -- Bitmaps: Shamochu algorithm
 --------------------------------------------------------------------------------
 
+-- | Given a list of /boolean/ denoted by the index of the 'True' values, create
+-- the corresponding efficient lookup function.
 genBitmapShamochu ::
      HasCallStack
   => String
@@ -477,6 +495,7 @@ genBitmapShamochu ::
   -> [Word]
   -- ^ Chunk size stage 2
   -> [Int]
+  -- ^ List of boolean 'True' denoted by their index
   -> ShamochuCode
 genBitmapShamochu funcNameStr stage1 stage2 ordList = ShamochuCode
     { code = mconcat
@@ -488,17 +507,18 @@ genBitmapShamochu funcNameStr stage1 stage2 ordList = ShamochuCode
         ]
     , imports = imports }
     where
-    ShamochuCode{..} = generateShamochuBitmaps
-                            funcNameStr
-                            False
-                            BitMap
-                            stage1
-                            stage2
-                            id
-                            (packBits bitmap)
     funcName = BB.string7 funcNameStr
     rawBitmap = positionsToBitMap ordList
     lookupFunc = toLookupBitMapName funcNameStr
+
+    -- Because data is sparse and repetitive, lookup has 2 steps:
+    -- 1. Get the offset corresponding to the plane, or a default value if the
+    --    plane has only the default value.
+    -- 2. If we get an offset, then lookup the value in the Shamochu-compressed
+    --    dataset.
+
+    -- Given multiple data sets for planes, combine them into a single
+    -- data set and create the corresponding lookup function.
     (func, bitmap) = if length rawBitmap <= 0x40000
         -- Only planes 0-3
         then
@@ -511,7 +531,7 @@ genBitmapShamochu funcNameStr stage1 stage2 ordList = ShamochuCode
             , rawBitmap )
         -- Planes 0-3 and 14
         else
-            let (planes0To3, plane14) = splitPlanes "genBitmap: cannot build" not rawBitmap
+            let (planes0To3, plane14) = splitPlanes "genBitmapShamochu: cannot build" not rawBitmap
                 bound0 = pred (minimum ordList)
                 bound1 = length planes0To3
                 bound2 = 0xE0000 + length plane14
@@ -533,6 +553,15 @@ genBitmapShamochu funcNameStr stage1 stage2 ordList = ShamochuCode
                     , "    | otherwise = False\n"
                     ]
                 , planes0To3 <> plane14 )
+    -- Given a list of values, create efficient lookup function using Shamochu
+    ShamochuCode{..} = generateShamochuBitmaps
+                            funcNameStr
+                            False
+                            BitMap
+                            stage1
+                            stage2
+                            id
+                            (packBits bitmap)
 
 {-|
 >>> packBits [True, False, False, False, False, False, False, False, False, True]
@@ -556,6 +585,8 @@ packBits = L.unfoldr go
     toByte :: [Bool] -> Word8
     toByte xs = sum $ map (\i -> if xs !! i then 1 `shiftL` i else 0) [0..7]
 
+-- | Given a list of values from an /enumeration/, create the corresponding
+-- efficient lookup function.
 genEnumBitmapShamochu
   :: forall a b. ( HasCallStack, Eq a, Show a
                  , FiniteBits b, V.Unbox b, Enum b, Bounded b, Ord b, Num b, Show b)
@@ -589,21 +620,22 @@ genEnumBitmapShamochu funcNameStr rawInt stage1 stage2 convert (defPUA, pPUA) (d
             ]
         , imports = imports }
     where
-    ShamochuCode{..} = generateShamochuBitmaps
-                            funcNameStr
-                            rawInt
-                            ByteMap
-                            stage1
-                            stage2
-                            convert
-                            bitmap
     rawSuffix = if rawInt then "#" else ""
     funcName = BB.string7 funcNameStr
     lookupFunc = toLookupBitMapName funcNameStr
     planes0To3' = L.dropWhileEnd (== def) planes0To3
     check = if length planes0To3 <= 0x40000
         then ()
-        else error "genEnumBitmap: Cannot build"
+        else error "genEnumBitmapShamochu: Cannot build"
+
+    -- Because data is sparse and repetitive, lookup has 2 steps:
+    -- 1. Get the offset corresponding to the plane, or a default value if the
+    --    plane has only the default value.
+    -- 2. If we get an offset, then lookup the value in the Shamochu-compressed
+    --    dataset.
+
+    -- Given multiple data sets for planes, combine them into a single
+    -- data set and create the corresponding lookup function.
     (func, bitmap) = check `seq` if null plane14 && defPUA == def
         -- Only planes 0-3
         then
@@ -648,8 +680,18 @@ genEnumBitmapShamochu funcNameStr rawInt stage1 stage2 convert (defPUA, pPUA) (d
                     , "    where\n"
                     , "    ", if rawInt then "!cp@(I# cp#)" else "cp", " = ord c\n" ]
                 , planes0To3' <> plane14' )
+    -- Given a list of values, create efficient lookup function using Shamochu
+    ShamochuCode{..} = generateShamochuBitmaps
+                            funcNameStr
+                            rawInt
+                            ByteMap
+                            stage1
+                            stage2
+                            convert
+                            bitmap
 
 data BitmapType = BitMap | ByteMap
+-- | Module → imported items map
 type Imports = Map.Map BS.ShortByteString (Set.Set BS.ShortByteString)
 
 data ShamochuCode = ShamochuCode
@@ -663,6 +705,7 @@ instance Semigroup ShamochuCode where
 instance Monoid ShamochuCode where
     mempty = ShamochuCode mempty mempty
 
+-- | Given a list of values, create a time- and space-efficient lookup function
 generateShamochuBitmaps ::
     forall a b. (FiniteBits b, V.Unbox b, Enum b, Bounded b, Ord b, Num b, Show b) =>
     -- | Name of the function
@@ -679,7 +722,7 @@ generateShamochuBitmaps ::
     (a -> b) ->
     -- | Input
     [a] ->
-    -- | Bitmaps Haskell code and list of
+    -- | Bitmaps Haskell code and import list
     ShamochuCode
 generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs =
     case Shamochu.compress powersStage1 powersStage2 xs' of
@@ -709,7 +752,7 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
                 , "\n"
                 , dataBitMap, " :: Ptr ", dataType, "\n"
                 , dataBitMap, " = Ptr\n"
-                , "    \"", enumMapToAddrLiteral'
+                , "    \"", enumMapToAddrLiteralN
                                 4
                                 50
                                 (Shamochu.dataIntSize stats `shiftR` byteBitSizeLog2)
@@ -718,7 +761,7 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
                 , "\n"
                 , offsetsBitMap, " :: Ptr ", offsetType, "\n"
                 , offsetsBitMap, " = Ptr\n"
-                , "    \"", enumMapToAddrLiteral'
+                , "    \"", enumMapToAddrLiteralN
                                 4
                                 50
                                 (Shamochu.offsets1IntSize stats `shiftR` byteBitSizeLog2)
@@ -788,7 +831,7 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
                 , "\n"
                 , dataBitMap, " :: Ptr ", dataType, "\n"
                 , dataBitMap, " = Ptr\n"
-                , "    \"", enumMapToAddrLiteral'
+                , "    \"", enumMapToAddrLiteralN
                                 4
                                 50
                                 (Shamochu.dataIntSize stats `shiftR` byteBitSizeLog2)
@@ -797,7 +840,7 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
                 , "\n"
                 , offsets1BitMap, " :: Ptr ", offset1Type, "\n"
                 , offsets1BitMap, " = Ptr\n"
-                , "    \"", enumMapToAddrLiteral'
+                , "    \"", enumMapToAddrLiteralN
                                 4
                                 50
                                 (Shamochu.offsets1IntSize stats `shiftR` byteBitSizeLog2)
@@ -806,7 +849,7 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
                 , "\n"
                 , offsets2BitMap, " :: Ptr ", offset2Type, "\n"
                 , offsets2BitMap, " = Ptr\n"
-                , "    \"", enumMapToAddrLiteral'
+                , "    \"", enumMapToAddrLiteralN
                                 4
                                 50
                                 (Shamochu.offsets2IntSize stats `shiftR` byteBitSizeLog2)
@@ -844,34 +887,32 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
             offset2Type = "Word" <> BB.wordDec (Shamochu.offsets2IntSize stats)
     where
     xs' = Exts.fromList (convert <$> xs)
-    {-# INLINE log2 #-}
-    log2 :: (Integral n) => Word -> n
-    log2 a = fromIntegral (finiteBitSize (0 :: Word) - 1 - countLeadingZeros a)
+    nameBB = BB.string7 name
+
+    -- Integer types sizes: byte
     byteBitSize = finiteBitSize (0 :: Word8)
     byteBitSizeLog2 :: (Integral bs) => bs
     byteBitSizeLog2 = log2 (fromIntegral byteBitSize)
+
+    -- Integer types sizes: encoded value
     maxWordBitSizeLog2 = log2 (fromIntegral (finiteBitSize (0 :: b)))
     maxWordByteSize = if any (< maxWordBitSizeLog2) powersStage1
         then error "Chunks should not cut words"
         else 2 ^ (maxWordBitSizeLog2 - byteBitSizeLog2)
-    outputType = case mapType of
-        BitMap -> "Bool"
-        ByteMap -> if rawInt then "Int#" else "Int"
+
+    -- Helper for correct Addr# literal
     pad ys = case mapType of
         -- Ensure lookupBit read full words at the edge
         BitMap -> case rem (length ys) maxWordByteSize of
             0 -> ys
             k -> ys <> replicate (maxWordByteSize - k) 0
         ByteMap -> ys
+
+    -- Lookup functions
+    outputType = case mapType of
+        BitMap -> "Bool"
+        ByteMap -> if rawInt then "Int#" else "Int"
     rawSuffix = if rawInt then "#" else ""
-    trace' stages stats = trace $ mconcat
-        [ "* ", name, ": Shamochu: ", stages, "; savings: "
-        , show (fromRational (100 * (1 - 1 / toRational (Shamochu.ratio stats))) :: Centi)
-        , "%; "
-        , show stats ]
-    nameBB = BB.string7 name
-    mkIndent :: Word -> BB.Builder
-    mkIndent count = foldMap (const "    ") [1..count]
     mkBitLookup addrName indent index = mconcat
         [ mkIndent indent
         , "lookupBit", rawSuffix, " ", addrName, "# (\n"
@@ -886,11 +927,6 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
         , " ", addrName, "# (\n"
         , index, "\n"
         , mkIndent indent, ")" ]
-    mkWordLookupFunc dataSize = mconcat
-        [ "lookupWord"
-        , fromString (show dataSize)
-        , "AsInt"
-        , if rawInt then "#" else "" ]
     mkWord dataSize = "Word" <> fromString (show dataSize)
     mkInt dataSize = "Int" <> fromString (show dataSize)
     mkMaskDef mask count = if rawInt
@@ -904,6 +940,10 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
         then mconcat [n, " `iShiftRL#` ", BB.wordDec count, "#"]
         else mconcat [n, " `shiftR` ", BB.wordDec count]
     mkShiftR' n count = "(" <> mkShiftR n count <> ")"
+    mkIndent :: Word -> BB.Builder
+    mkIndent count = foldMap (const "    ") [1..count]
+
+    -- Imports
     defaultBitMapImports offsetsSize = Map.fromList
         [ ( "Data.Char", Set.singleton "ord" )
         , ( "Data.Int", Set.singleton "Int8" )
@@ -936,6 +976,18 @@ generateShamochuBitmaps name rawInt mapType powersStage1 powersStage2 convert xs
     lookupFuncImport size = Map.singleton
         "Unicode.Internal.Bits"
         (Set.singleton (mkWordLookupFunc size))
+    mkWordLookupFunc dataSize = mconcat
+        [ "lookupWord"
+        , fromString (show dataSize)
+        , "AsInt"
+        , if rawInt then "#" else "" ]
+
+    -- Debug
+    trace' stages stats = trace $ mconcat
+        [ "* ", name, ": Shamochu: ", stages, "; savings: "
+        , show (fromRational (100 * (1 - 1 / toRational (Shamochu.ratio stats))) :: Centi)
+        , "%; "
+        , show stats ]
 
 toLookupBitMapName :: String -> BB.Builder
 toLookupBitMapName name = "lookup" <> BB.string7 (toTitle name) <> "BitMap"
@@ -943,6 +995,10 @@ toLookupBitMapName name = "lookup" <> BB.string7 (toTitle name) <> "BitMap"
 --------------------------------------------------------------------------------
 -- Helpers
 --------------------------------------------------------------------------------
+
+{-# INLINE log2 #-}
+log2 :: (Integral n) => Word -> n
+log2 a = fromIntegral (finiteBitSize (0 :: Word) - 1 - countLeadingZeros a)
 
 toTitle :: String -> String
 toTitle = \case

@@ -17,7 +17,6 @@ import qualified Data.List.NonEmpty as NE
 import Data.Maybe (fromMaybe)
 import Data.Semigroup (Semigroup (..))
 import Control.Applicative (Alternative (..))
-import Control.Exception (assert)
 import qualified Data.Set as Set
 import qualified Data.Map.Strict as Map
 import Data.Word (Word8)
@@ -324,9 +323,9 @@ genScriptsModule moduleName aliases = Fold step mempty done
             otherPlanes = zip planes2To3 ['\x20000'..]
                        <> zip plane14    ['\xE0000'..]
             toWord8 :: Int -> Word8
-            toWord8 =
-                assert (fromEnum (length scripts) < 0xff)
-                (fromIntegral . fromEnum)
+            toWord8 = if fromEnum (length scripts) < 0xff
+                then fromIntegral . fromEnum
+                else error "Cannot encode scripts"
             bitmap0To1 = "scriptPlanes0To1"
             ShamochuCode{..} = generateShamochuBitmaps
                                 bitmap0To1

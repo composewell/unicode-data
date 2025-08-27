@@ -14,7 +14,7 @@ import Data.Char (ord)
 import Data.Word (Word8)
 import qualified Unicode.CharacterDatabase.Parser.Extracted.DerivedName as N
 
-import UCD2Haskell.Generator (FileRecipe (..), unlinesBB, apacheLicense, enumMapToAddrLiteral, chunkAddrLiteral)
+import UCD2Haskell.Generator (FileRecipe (..), unlinesBB, apacheLicense, enumMapToAddrLiteral8, chunkAddrLiteral)
 import UCD2Haskell.Common (Fold (..), showPaddedHeXB, showHexCodepoint, showPaddedHeX, showHexCodepointB, showHexCodepointBS)
 
 recipe :: FileRecipe N.Entry
@@ -233,7 +233,7 @@ genNamesModule moduleName = Fold step initial done
         , "offsetsBitmap :: Ptr Int32"
         , "offsetsBitmap = Ptr"
         , "    \""
-            <> enumMapToAddrLiteral 4 0xff (mconcat (reverse offsets)) "\"#"
+            <> enumMapToAddrLiteral8 4 0xff (mconcat (reverse offsets)) "\"#"
         ]
         where
         showsB :: Word8 -> BB.Builder -> BB.Builder

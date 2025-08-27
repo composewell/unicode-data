@@ -5,7 +5,7 @@ module Unicode.CharSpec
   ( spec
   ) where
 
-import Control.Monad (when)
+import Control.Monad (unless)
 import Data.Foldable (traverse_)
 import Data.List.Split (splitOn)
 import Data.Version (showVersion)
@@ -24,7 +24,7 @@ spec = do
     dataDir <- runIO getDataDir
     let pythonRefFile = dataDir </> "python.csv"
     hasPythonRefFile <- runIO (doesFileExist pythonRefFile)
-    when (not hasPythonRefFile) do
+    unless hasPythonRefFile do
         error ("Cannot find file “" <> pythonRefFile <> "”. Run python script first.")
     describe "unicode-data" do
         describe "Compare to Python" do

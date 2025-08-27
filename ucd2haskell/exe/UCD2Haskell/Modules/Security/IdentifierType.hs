@@ -8,7 +8,6 @@
 --
 module UCD2Haskell.Modules.Security.IdentifierType (recipe) where
 
-import Control.Exception (assert)
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Short as BS
 import qualified Data.List as L
@@ -103,11 +102,15 @@ genIdentifierTypeModule moduleName = Fold step mempty done
         let encoding = Set.toList (Set.fromList (def : Map.elems types))
             defIdx = case L.elemIndex def encoding of
                 Nothing -> error "impossible"
-                Just i -> assert (i == 0) i
-        in assert (length encoding < 0xff)
-            ( foldMap addEncoding (zip [0..] encoding)
-            , snd (Map.foldlWithKey' (addChar defIdx encoding) ('\0', mempty) types)
-            , defIdx )
+                Just i -> if i == 0
+                    then i
+                    else error ("unexpected " <> show i)
+        in if length encoding < 0xff
+            then
+                ( foldMap addEncoding (zip [0..] encoding)
+                , snd (Map.foldlWithKey' (addChar defIdx encoding) ('\0', mempty) types)
+                , defIdx )
+            else error "Cannot encode IdentifiersTypes"
 
     -- Default value
     -- TODO def = IdentifierTypes (Set.singleton Not_Character)
@@ -203,9 +206,9 @@ genIdentifierTypeModule moduleName = Fold step mempty done
         ]
         where
         toWord8 :: Int -> Word8
-        toWord8 =
-            assert (fromEnum (maxBound :: IdentifierType) < 0xff)
-            (fromIntegral . fromEnum)
+        toWord8 = if fromEnum (maxBound :: IdentifierType) < 0xff
+            then fromIntegral . fromEnum
+            else error "Cannot encode IdentifierType"
         (planes0To3, plane14) = splitPlanes
             "Cannot generate: genIdentifierTypeModule"
             (== defIdx)

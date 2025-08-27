@@ -28,7 +28,7 @@ import UCD2Haskell.Generator (
     FileRecipe (..),
     ShamochuCode (..),
     apacheLicense,
-    enumMapToAddrLiteral,
+    enumMapToAddrLiteral8,
     genEnumBitmapShamochu,
     mkImports',
     splitPlanes,
@@ -191,7 +191,7 @@ genScriptExtensionsModule moduleName aliases extensions = Fold step initial done
         , "# -> (# "
         , BB.intDec (length exts)
         , "#, \""
-        , enumMapToAddrLiteral 0 0xff (NE.toList exts) "\"# #)" ]
+        , enumMapToAddrLiteral8 0 0xff (NE.toList exts) "\"# #)" ]
 
     mkScriptExtensions def
         = reverse
