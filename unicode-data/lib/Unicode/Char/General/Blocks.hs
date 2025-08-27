@@ -1,7 +1,3 @@
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE DeriveGeneric #-}
-
 -- |
 -- Module      : Unicode.Char.General.Blocks
 -- Copyright   : (c) 2020 Composewell Technologies and Contributors

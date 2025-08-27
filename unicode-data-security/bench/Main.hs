@@ -22,16 +22,16 @@ main = defaultMain
             [ benchNF "isAllowedInIdentifier" Security.isAllowedInIdentifier
             ]
         , bgroup "Identifier Types"
-            [ benchNF "identifierTypes"     (fmap fromEnum . Security.identifierTypes)
+            [ benchNF "identifierTypes" (fmap fromEnum . Security.identifierTypes)
             ]
         , bgroup "Confusables"
             [ bgroup' "confusablePrototype"
-                [ Bench "CString" (\c -> Ptr (Confusables.confusablePrototype c))
+                [ Bench "CString" confusablePrototype
                 , Bench "String"  Security.confusablePrototype
                 ]
             -- , benchNF "prototype" Security.prototype
             , bgroup' "intentionalConfusables"
-                [ Bench "CString" (\c -> Ptr (Confusables.intentionalConfusables c))
+                [ Bench "CString" intentionalConfusables
                 , Bench "String"  Security.intentionalConfusables
                 ]
             , benchNF "isIntentionallyConfusable" Security.intentionalConfusables
@@ -39,6 +39,10 @@ main = defaultMain
         ]
     ]
   where
+    -- [NOTE] Cannot use point-free because of unlifted types
+    confusablePrototype c = Ptr (Confusables.confusablePrototype c)
+    intentionalConfusables c = Ptr (Confusables.intentionalConfusables c)
+
     bgroup' groupTitle bs = bgroup groupTitle
         [ benchNF' groupTitle title f
         | Bench title f <- bs
