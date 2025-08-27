@@ -58,6 +58,6 @@ spec = do
             -- [TODO] more invariants
             traverse_ check (enumFromTo minBound maxBound)
     it "Identifier status is consistent with identifier types" do
-        let checkChar c = all (== isAllowedInIdentifier c)
-                              (isIdentifierTypeAllowed <$> identifierTypes c)
+        let checkChar c = all ((== isAllowedInIdentifier c) . isIdentifierTypeAllowed)
+                              (identifierTypes c)
         traverse_ (`shouldSatisfy` checkChar) (enumFromTo minBound maxBound)
