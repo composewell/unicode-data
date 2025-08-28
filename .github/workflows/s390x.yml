@@ -20,11 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: uraimo/run-on-arch-action@v2.7.2
+    - uses: uraimo/run-on-arch-action@v3
       timeout-minutes: 60
       with:
         arch: s390x
-        distro: ubuntu22.04
+        distro: ubuntu_rolling
         githubToken: ${{ github.token }}
         install: |
           apt-get update -y
