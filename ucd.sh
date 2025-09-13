@@ -5,7 +5,7 @@
 # we used to generate them earlier are exactly the same as the ones we are
 # downloading. To ensure that verfication of the checksum is necessary.
 
-VERSION=16.0.0
+VERSION=17.0.0
 
 # When downloading fresh new version comment this out
 VERIFY_CHECKSUM=y
@@ -16,29 +16,31 @@ UCD_URL="https://www.unicode.org/Public/$VERSION/ucd"
 # $ find data/$VERSION/ -type f -print0 | xargs -0 sha256sum
 # Format: filename:checksum
 UCD_FILES="\
-    Blocks.txt:f3907b395d410f1b97342292ca6bc83dd12eb4b205f2a0c48efdef99e517d7b0 \
-    CaseFolding.txt:6f1f9c588eb4a5c718d9e8f93b782685e5c7fec872cf05e8e6878053599e09bb \
-    DerivedCoreProperties.txt:39d35161f2954497f69e08bdb9e701493f476a3d30222de20028feda36c1dabd \
-    DerivedNormalizationProps.txt:4d4c03892dea9146d674b686e495df2d55a28d071ac474041d73518f887abddc \
-    NameAliases.txt:9953f0fcebf5ea8091c5c581e4df0e43f20d2533c84ccca7987a9bb819a896a8 \
-    PropertyValueAliases.txt:440fd3e5460b9bfe31da67b6f923992e1989d31fe2ed91e091c4b8f8e2620bf9 \
-    PropList.txt:53d614508e2a0b2305a8aa21cd60d993de9326cdf65993660dfcce4503548583 \
-    Scripts.txt:9e88f0a677df47311106340be8ede2ecdacd9c1c931831218d2be6d5508e0039 \
-    ScriptExtensions.txt:049117ce26b9769fe2749b06eef51a50a89faef4a97764dd2d81daa715980700 \
-    SpecialCasing.txt:8d5de354eef79f2395a54c9c7dcebbaf3d30fc962d0f85611ea97aa973a0c451 \
-    UnicodeData.txt:ff58e5823bd095166564a006e47d111130813dcf8bf234ef79fa51a870edb48f \
-    extracted/DerivedCombiningClass.txt:52064d588c98c623b2373905e6a449eb520f900113954bcd212e94ef0810b471 \
-    extracted/DerivedName.txt:0cc1469faa0c5518572ef93f4f457f93aa8a160ce320aad3793d85f4b435fd24 \
-    extracted/DerivedNumericValues.txt:00b43cc5c9b86a834f82389c4537f103e652821387daa556f0bd220f6c23007e"
+    Blocks.txt:c0edefaf1a19771e830a82735472716af6bf3c3975f6c2a23ffbe2580fbbcb15\
+    CaseFolding.txt:ff8d8fefbf123574205085d6714c36149eb946d717a0c585c27f0f4ef58c4183\
+    DerivedCoreProperties.txt:24c7fed1195c482faaefd5c1e7eb821c5ee1fb6de07ecdbaa64b56a99da22c08\
+    DerivedNormalizationProps.txt:71fd6a206a2c0cdd41feb6b7f656aa31091db45e9cedc926985d718397f9e488\
+    NameAliases.txt:793f6f1e4d15fd90f05ae66460191dc4d75d1fea90136a25f30dd6a4cb950eac\
+    PropertyValueAliases.txt:64e9a5f76f7a1e8b5a47d6a1f9a26522a251208f5276bdfa1559dac7cf2e827a\
+    PropList.txt:130dcddcaadaf071008bdfce1e7743e04fdfbc910886f017d9f9ac931d8c64dd\
+    Scripts.txt:9f5e50d3abaee7d6ce09480f325c706f485ae3240912527e651954d2d6b035bf\
+    ScriptExtensions.txt:ec2107e58825a1586acee8e0911ce18260394ac8b87e535ca325f1ccbeb06bc6\
+    SpecialCasing.txt:efc25faf19de21b92c1194c111c932e03d2a5eaf18194e33f1156e96de4c9588\
+    UnicodeData.txt:2e1efc1dcb59c575eedf5ccae60f95229f706ee6d031835247d843c11d96470c\
+    extracted/DerivedCombiningClass.txt:191463abfbd202703c6fd6776a92a23ac44ec65e0476a7f95aa91ca492cef29b\
+    extracted/DerivedName.txt:019758bbe6c756c40fca6d505187ea660c5e195533e2ff2c841963a212c9d369\
+    extracted/DerivedNumericValues.txt:139b976bdc288be01c80f018523da769cf2845109b5a7f0f8a432db64bfedcfa"
 
-# Security files (https://www.unicode.org/Public/security/$VERSION/$file)
-SECURITY_URL="https://www.unicode.org/Public/security/$VERSION"
+# Security files:
+# - < 17.0.0: https://www.unicode.org/Public/security/$VERSION/$file)
+# - ≥ 17.0.0: https://www.unicode.org/Public/$VERSION/security/$file)
+SECURITY_URL="https://www.unicode.org/Public/$VERSION/security"
 # Format: filename:checksum
 SECURITY_FILES="\
-    IdentifierStatus.txt:c6108ca140e054b55a5b0378e7ebed8b1ef0e846251f6195361bc9af8ffc61b1 \
-    IdentifierType.txt:c7e57f71176fb3035e0c85e4d9f30b08374588b2bd16e729efbc7e49c7c9438f \
-    confusables.txt:95bd0aad6dced5ebc63436f459c06ab21a8d107cd842fb57f5c3a1e91bca8611 \
-    intentional.txt:6827f1f7694f747aa93e374619b4bf81ffb18e2feb0b9c982c427f7eec2266c1"
+    IdentifierStatus.txt:617228a16da13850bf8af28b6cd08f5e9b6595d2eb60404fe6eee2c85b4e4a35\
+    IdentifierType.txt:924ac63faa97ed73420d6ac48d08279d90968c7da0502ab701e08bfbb9683c22\
+    confusables.txt:091c7f82fc39ef208faf8f94d29c244de99254675e09de163160c810d13ef22a\
+    intentional.txt:33738217c15c1a0df0b7a2cc0a0b50b27ebdca119ca11253440ec0102f05626b"
 
 # Download the files
 
