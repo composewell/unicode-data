@@ -16,12 +16,13 @@ import qualified Unicode.CharacterDatabase.Parser.NameAliases as NA
 import qualified UCD2Haskell.Modules.UnicodeData.DerivedNames as Names
 import qualified UCD2Haskell.Modules.UnicodeData.NameAliases as NameAliases
 import qualified UCD2Haskell.Modules.Version as Version
-import UCD2Haskell.Generator (runGenerator)
+import UCD2Haskell.Generator (UnicodeSourceType(..), runGenerator)
 
 generateModules :: Version -> FilePath -> FilePath -> [String] -> IO ()
 generateModules version indir outdir patterns = do
     runGenerator
         version
+        UCD
         indir
         ("extracted" </> "DerivedName.txt")
         N.parse
@@ -31,6 +32,7 @@ generateModules version indir outdir patterns = do
 
     runGenerator
         version
+        UCD
         indir
         "NameAliases.txt"
         NA.parse
