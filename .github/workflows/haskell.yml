@@ -47,7 +47,6 @@ jobs:
       fail-fast: false
       matrix:
         name:
-          - 8.0.2
           - 8.2.2
           - 8.4.4
           - 8.6.5
@@ -64,14 +63,6 @@ jobs:
           - 9.14.1-alpha
           - hlint
         include:
-
-          - name: 8.0.2
-            use_haskell_actions: true
-            ghc_version: 8.0.2
-            runner: ubuntu-latest
-            cabal_version: 3.2.0.0
-            pack_options: DISABLE_TEST=y
-            ignore_error: false
 
           - name: 8.2.2
             use_haskell_actions: true
