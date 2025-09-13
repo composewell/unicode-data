@@ -16,8 +16,7 @@ copyright:           2022 Composewell Technologies and Contributors
 category:            Data,Text,Unicode
 stability:           Experimental
 build-type:          Simple
-tested-with:         GHC==8.0.2
-                   , GHC==8.2.2
+tested-with:         GHC==8.2.2
                    , GHC==8.4.4
                    , GHC==8.6.5
                    , GHC==8.8.4
