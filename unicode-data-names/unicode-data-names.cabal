@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                unicode-data-names
-version:             0.5.0
+version:             0.6.0
 synopsis:            Unicode characters names and aliases
 description:
   @unicode-data-names@ provides Haskell APIs to access the Unicode
@@ -105,7 +105,7 @@ library
   hs-source-dirs: lib
   build-depends:
       base             >= 4.7   && < 4.23,
-      unicode-data     >= 0.7   && < 0.8
+      unicode-data     >= 0.8   && < 0.9
   -- Support for raw string literals unpacking is included in base ≥ 4.15
   if impl(ghc < 9.0.0)
     build-depends:
@@ -132,7 +132,7 @@ test-suite test
   build-depends:
       base             >= 4.7   && < 4.23
     , hspec            >= 2.0   && < 2.12
-    , unicode-data     >= 0.7   && < 0.8
+    , unicode-data     >= 0.8   && < 0.9
     , unicode-data-names
   if flag(has-text)
     cpp-options: -DHAS_TEXT
@@ -177,7 +177,7 @@ benchmark bench
     deepseq      >= 1.1   && < 1.6,
     tasty-bench  >= 0.2.5 && < 0.5,
     tasty        >= 1.4.1 && < 1.6,
-    unicode-data >= 0.7   && < 0.8,
+    unicode-data >= 0.8   && < 0.9,
     unicode-data-names
   if flag(has-text)
     cpp-options: -DHAS_TEXT
