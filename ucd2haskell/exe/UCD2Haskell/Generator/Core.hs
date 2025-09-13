@@ -30,7 +30,7 @@ import qualified UCD2Haskell.Modules.UnicodeData.Decomposition as Decomposition
 import qualified UCD2Haskell.Modules.UnicodeData.GeneralCategory as GeneralCategory
 import qualified UCD2Haskell.Modules.UnicodeData.SimpleCaseMappings as SimpleCaseMappings
 import qualified UCD2Haskell.Modules.Version as Version
-import UCD2Haskell.Generator (runGenerator)
+import UCD2Haskell.Generator (UnicodeSourceType(..), runGenerator)
 
 generateModules :: Version -> FilePath -> FilePath -> [String] -> [String] -> IO ()
 generateModules version indir outdir patterns props = do
@@ -44,7 +44,7 @@ generateModules version indir outdir patterns props = do
     specialCasings <- SpecialCasings.parse
         <$> B.readFile (indir </> "SpecialCasing.txt")
 
-    let runGenerator' = runGenerator version indir
+    let runGenerator' = runGenerator version UCD indir
 
     runGenerator'
         "Blocks.txt"
