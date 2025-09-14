@@ -5,6 +5,8 @@ module ICU.CharSpec
     ) where
 
 import Control.Applicative (Alternative(..))
+import Data.Bits (Bits(..))
+import qualified Data.Char as Char
 import Data.Foldable (traverse_)
 import Data.Version (showVersion, versionBranch)
 import Numeric (showHex)
@@ -35,6 +37,12 @@ spec = do
     ourUnicodeVersion = versionBranch U.unicodeVersion
     theirUnicodeVersion = versionBranch ICU.unicodeVersion
     showCodePoint c = ("U+" ++) . fmap U.toUpper . showHex (U.ord c)
+    -- Check if the character is not assigned in exactly one Unicode version.
+    isUnassigned c = (U.generalCategory c == U.NotAssigned)
+               `xor` (ICU.toGeneralCategory (ICU.charType c) == Char.NotAssigned)
+    -- Check if the character has changed its general category
+    hasDifferentCategory c = fromEnum (U.generalCategory c)
+                          /= fromEnum (ICU.toGeneralCategory (ICU.charType c))
 
     -- There is no feature to display warnings other than `trace`, so
     -- hack our own:
@@ -61,8 +69,11 @@ spec = do
             | n == nRef = acc
             -- Unicode version mismatch: char is not mapped in one of the libs:
             -- add warning.
-            | age' > ourUnicodeVersion || age' > theirUnicodeVersion
-            = acc{warnings=c : warnings acc}
+            | age' > ourUnicodeVersion || age' > theirUnicodeVersion ||
+              isUnassigned c
+            = acc{warnings=(c, Unassigned) : warnings acc}
+            | hasDifferentCategory c
+            = acc{warnings=(c, CategoryChange) : warnings acc}
             -- Error
             | otherwise =
                 let !msg = mconcat
@@ -75,14 +86,18 @@ spec = do
             !nRef = fRef c
             age = ICU.charAge c
             age' = take 3 (versionBranch age)
-        mkWarning c = it (showCodePoint c "") . pendingWith $ mconcat
+        mkWarning (c, reason) = it (showCodePoint c "") . pendingWith $ mconcat
             [ "Incompatible ICU Unicode version: expected "
             , showVersion U.unicodeVersion
             , ", got: "
             , showVersion ICU.unicodeVersion
-            , " (ICU character age is: "
-            , showVersion (ICU.charAge c)
-            , ")" ]
+            , case reason of
+                Unassigned -> mconcat
+                    [ " (ICU character age is: "
+                    , showVersion (ICU.charAge c)
+                    , ")" ]
+                CategoryChange -> " (different general category)"
+            ]
 
 -- | Helper to compare our GeneralCategory to 'Data.Char.GeneralCategory'.
 data GeneralCategory = forall c. (Show c, Enum c) => GeneralCategory c
@@ -93,6 +108,12 @@ instance Show GeneralCategory where
 instance Eq GeneralCategory where
     GeneralCategory a == GeneralCategory b = fromEnum a == fromEnum b
 
+data MismatchReason
+    = Unassigned
+    | CategoryChange
+
 -- | Warning accumulator
-data Acc = Acc { warnings :: ![Char], firstError :: !(Maybe String) }
+data Acc = Acc
+    { warnings :: ![(Char, MismatchReason)]
+    , firstError :: !(Maybe String) }
 

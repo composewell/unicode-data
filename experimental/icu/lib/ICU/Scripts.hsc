@@ -2,6 +2,7 @@
 
 module ICU.Scripts
     ( Script(..)
+    , maxSupportedScript
     , script
     , codepointScript
     , scriptShortName
@@ -35,8 +36,14 @@ foreign import ccall safe "icu.h __hs_uscript_getScript" uscript_getScript
 foreign import ccall unsafe "icu.h __hs_uscript_getScriptExtensions" uscript_getScriptExtensions
     :: UChar32 -> Ptr UScriptCode -> Int32 -> IO Int32
 
+foreign import ccall unsafe "icu.h __hs_getMaxScript" getMaxScript
+    :: IO CInt
+
 foreign import ccall unsafe "icu.h __hs_uscript_getShortName" uscript_getShortName
     :: UScriptCode -> IO CString
+
+maxSupportedScript :: Script
+maxSupportedScript = toEnum (fromIntegral (unsafePerformIO getMaxScript))
 
 {-# INLINE codepointScript #-}
 codepointScript :: Word32 -> Script
@@ -65,13 +72,13 @@ scriptExtensionsRaw
     capacity = 30
 
 scriptShortName :: Script -> String
-scriptShortName
-    = unsafePerformIO
-    . (uscript_getShortName . fromIntegral . fromEnum >=> peekCString)
+scriptShortName s = if s <= maxSupportedScript
+    then unsafePerformIO ((uscript_getShortName . fromIntegral . fromEnum >=> peekCString) s)
+    else ""
 
 
 -- See: https://unicode-org.github.io/icu-docs/apidoc/released/icu4c/uscript_8h_source.html
--- Last sync: 2023-03-09
+-- Last sync: 2025-09-13
 
 data Script
     = Common                      -- ^ USCRIPT_COMMON                        =  0
@@ -282,4 +289,9 @@ data Script
     | Sunu                        -- ^ USCRIPT_SUNUWAR                       = 205
     | Todr                        -- ^ USCRIPT_TODHRI                        = 206
     | Tutg                        -- ^ USCRIPT_TULU_TIGALARI                 = 207
-    deriving (Bounded, Enum, Eq, Show)
+    | Berf                        -- ^ USCRIPT_BERIA_ERFE                    = 208
+    | Sidt                        -- ^ USCRIPT_SIDETIC                       = 209
+    | Tayo                        -- ^ USCRIPT_TAI_YO                        = 210
+    | Tols                        -- ^ USCRIPT_TOLONG_SIKI                   = 211
+    | Hntl                        -- ^ USCRIPT_TRADITIONAL_HAN_WITH_LATIN    = 212
+    deriving (Bounded, Enum, Eq, Ord, Show)
