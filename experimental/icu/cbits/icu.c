@@ -15,6 +15,26 @@ bool __hs_u_hasBinaryProperty(UChar32 c, UProperty which) {
     return u_hasBinaryProperty(c, which);
 }
 
+bool __hs_u_islower(UChar32 c) {
+    return u_islower(c);
+}
+
+bool __hs_u_isupper(UChar32 c) {
+    return u_isupper(c);
+}
+
+UChar32 __hs_u_tolower(UChar32 c) {
+    return u_tolower(c);
+}
+
+UChar32 __hs_u_toupper(UChar32 c) {
+    return u_toupper(c);
+}
+
+UChar32 __hs_u_istitle(UChar32 c) {
+    return u_istitle(c);
+}
+
 /*******************************************************************************
  * Names
  ******************************************************************************/

@@ -13,6 +13,16 @@ void __hs_u_getUnicodeVersion(UVersionInfo versionArray);
 
 bool __hs_u_hasBinaryProperty(UChar32 c, UProperty which);
 
+bool __hs_u_islower(UChar32 c);
+
+bool __hs_u_isupper(UChar32 c);
+
+UChar32 __hs_u_tolower(UChar32 c);
+
+UChar32 __hs_u_toupper(UChar32 c);
+
+UChar32 __hs_u_istitle(UChar32 c);
+
 /*******************************************************************************
  * Names
  ******************************************************************************/

@@ -15,18 +15,27 @@ module ICU.Char
     , UGeneralCategory(..)
     , toGeneralCategory
     , charType
+    , UProperty(..)
+    , hasBinaryProperty
     , isNoncharacter
+    , isLowerCase
+    , isUpperCase
+    , isLower
+    , isUpper
+    , isTitle
+    , toLowerCase
+    , toUpperCase
     ) where
 
 #include <unicode/uchar.h>
 
-import Data.Char (ord)
+import Data.Char (chr, ord)
 import qualified Data.Char as Char
 import Data.Int (Int8)
 import Data.Version (Version, makeVersion)
 import Data.Word (Word32)
 import Foreign (Ptr)
-import Foreign.C (CInt)
+import Foreign.C (CInt(..))
 import Foreign.Marshal.Array (allocaArray, peekArray)
 import System.IO.Unsafe (unsafePerformIO)
 
@@ -137,19 +146,56 @@ toGeneralCategory = \case
     FinalPunctuation -> Char.FinalQuote
 
 {#enum define UProperty {
-    UCHAR_NONCHARACTER_CODE_POINT as NoncharacterCodePoint
+    UCHAR_NONCHARACTER_CODE_POINT as NoncharacterCodePoint,
+    UCHAR_LOWERCASE as LowerCase,
+    UCHAR_UPPERCASE as UpperCase
     }
     deriving (Bounded, Eq, Ord, Show) #}
 
 foreign import ccall safe "icu.h __hs_u_hasBinaryProperty" u_hasBinaryProperty
-    :: UChar32 -> Int -> Bool
+    :: UChar32 -> CInt -> Bool
 
--- hasBinaryProperty :: UChar32 -> Int -> Bool
--- hasBinaryProperty = {#call pure u_hasBinaryProperty as __hs_u_hasBinaryProperty#}
--- {#fun pure u_hasBinaryProperty as hasBinaryProperty
---     {`UChar32', `Int'} -> `Bool' #}
+hasBinaryProperty :: Char -> UProperty -> Bool
+hasBinaryProperty c
+    = u_hasBinaryProperty (fromIntegral (ord c))
+    . fromIntegral
+    . fromEnum
 
 isNoncharacter :: Char -> Bool
-isNoncharacter c = u_hasBinaryProperty
-    (fromIntegral (ord c))
-    (fromEnum NoncharacterCodePoint)
+isNoncharacter = (`hasBinaryProperty` NoncharacterCodePoint)
+
+isLowerCase :: Char -> Bool
+isLowerCase = (`hasBinaryProperty` LowerCase)
+
+isUpperCase :: Char -> Bool
+isUpperCase = (`hasBinaryProperty` UpperCase)
+
+foreign import ccall safe "icu.h __hs_u_islower" u_islower
+    :: UChar32 -> Bool
+
+isLower :: Char -> Bool
+isLower = u_islower . fromIntegral . ord
+
+foreign import ccall safe "icu.h __hs_u_isupper" u_isupper
+    :: UChar32 -> Bool
+
+isUpper :: Char -> Bool
+isUpper = u_isupper . fromIntegral . ord
+
+foreign import ccall safe "icu.h __hs_u_istitle" u_istitle
+    :: UChar32 -> Bool
+
+isTitle :: Char -> Bool
+isTitle = u_istitle . fromIntegral . ord
+
+foreign import ccall safe "icu.h __hs_u_tolower" u_tolower
+    :: UChar32 -> UChar32
+
+toLowerCase :: Char -> Char
+toLowerCase = chr . fromIntegral . u_tolower . fromIntegral . ord
+
+foreign import ccall safe "icu.h __hs_u_toupper" u_toupper
+    :: UChar32 -> UChar32
+
+toUpperCase :: Char -> Char
+toUpperCase = chr . fromIntegral . u_toupper . fromIntegral . ord
