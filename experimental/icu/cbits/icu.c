@@ -52,6 +52,10 @@ int32_t __hs_uscript_getScriptExtensions
     return uscript_getScriptExtensions(codepoint, scripts, capacity, &err);
 }
 
+int __hs_getMaxScript(void) {
+    return u_getIntPropertyMaxValue(UCHAR_SCRIPT);
+}
+
 const char * __hs_uscript_getShortName(UScriptCode scriptCode) {
     return uscript_getShortName(scriptCode);
 }

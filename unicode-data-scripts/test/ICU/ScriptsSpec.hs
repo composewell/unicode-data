@@ -8,9 +8,8 @@ import Data.Char (toUpper, ord)
 import Data.Foldable (traverse_)
 import qualified Data.List as L
 import qualified Data.List.NonEmpty as NE
-import Data.Maybe (isJust)
 import Data.Version (versionBranch, showVersion)
-import Debug.Trace (traceM)
+import Debug.Trace (trace, traceM)
 import Numeric (showHex)
 import Test.Hspec ( Spec, it, expectationFailure, shouldSatisfy )
 
@@ -20,9 +19,19 @@ import qualified Unicode.Char.General.Scripts as S
 
 spec :: Spec
 spec = do
-    let icuScripts = (\s -> (ICU.scriptShortName s, s)) <$> [minBound..maxBound]
     it "scriptShortName"
-        let check = isJust . (`lookup` icuScripts) . S.scriptShortName
+        let check s = case toIcuScript s of
+                    Just _ -> True
+                    Nothing
+                        | versionMismatch -> trace (mconcat
+                            [ "[WARNING] Cannot test scriptShortName for "
+                            , show s
+                            , ": incompatible ICU version ("
+                            , showVersion ICU.unicodeVersion
+                            , " /= "
+                            , showVersion S.unicodeVersion
+                            , ")." ]) True
+                        | otherwise -> False
         in traverse_ (`shouldSatisfy` check) [minBound..maxBound]
     it "script"
         let check c
@@ -48,10 +57,23 @@ spec = do
         let {
         check s =
             case lookup (S.scriptShortName s) icuScripts of
-                Nothing -> error ("Cannot convert script: " ++ show s)
+                Nothing
+                    | ourUnicodeVersion > theirUnicodeVersion
+                    -> traceM . mconcat $
+                        [ "[WARNING] Cannot convert script "
+                        , show s
+                        , ": incompatible ICU version ("
+                        , showVersion ICU.unicodeVersion
+                        , " /= "
+                        , showVersion S.unicodeVersion
+                        , "). "
+                        , "Max supported ICU script:"
+                        , show ICU.maxSupportedScript ]
+                    | otherwise -> error ("Cannot convert script: " ++ show s)
                 Just s'
                     | def == defRef -> pure ()
-                    | ourUnicodeVersion /= theirUnicodeVersion -> traceM . mconcat $
+                    | ourUnicodeVersion /= theirUnicodeVersion
+                    -> traceM . mconcat $
                         [ "[WARNING] Cannot test "
                         , show s
                         , ": incompatible ICU version ("
@@ -106,3 +128,5 @@ spec = do
     theirUnicodeVersion = take 3 (versionBranch ICU.unicodeVersion)
     showCodePoint c = ("U+" ++) . fmap toUpper $ showHex (ord c) ""
     versionMismatch = ourUnicodeVersion /= theirUnicodeVersion
+    icuScripts = (\s -> (ICU.scriptShortName s, s)) <$> [minBound..maxBound]
+    toIcuScript = (`lookup` icuScripts) . S.scriptShortName

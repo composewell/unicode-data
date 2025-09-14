@@ -41,6 +41,8 @@ int32_t __hs_uscript_getScriptExtensions
     , UScriptCode * scripts
     , int32_t capacity );
 
+int __hs_getMaxScript(void);
+
 const char * __hs_uscript_getShortName(UScriptCode scriptCode);
 
 #endif
