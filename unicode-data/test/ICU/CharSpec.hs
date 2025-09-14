@@ -20,6 +20,8 @@ import Test.Hspec
 
 import qualified ICU.Char as ICU
 import qualified Unicode.Char as U
+import qualified Unicode.Char.Case as C
+import qualified Unicode.Char.Case.Compat as CC
 
 spec :: Spec
 spec = do
@@ -32,6 +34,31 @@ spec = do
             "isNoncharacter"
             (GeneralCategory . U.isNoncharacter)
             (GeneralCategory . ICU.isNoncharacter)
+    describe "Case" do
+        checkAndGatherErrors
+            "isLowerCase"
+            C.isLowerCase
+            ICU.isLowerCase
+        checkAndGatherErrors
+            "isUpperCase"
+            C.isUpperCase
+            ICU.isUpperCase
+        checkAndGatherErrors
+            "isLower"
+            CC.isLower
+            ICU.isLower
+        checkAndGatherErrors
+            "isUpper"
+            CC.isUpper
+            (\c -> ICU.isUpper c || ICU.isTitle c)
+        checkAndGatherErrors
+            "toLower"
+            CC.toLower
+            ICU.toLowerCase
+        checkAndGatherErrors
+            "toUpper"
+            CC.toUpper
+            ICU.toUpperCase
     -- TODO: other functions
     where
     ourUnicodeVersion = versionBranch U.unicodeVersion
