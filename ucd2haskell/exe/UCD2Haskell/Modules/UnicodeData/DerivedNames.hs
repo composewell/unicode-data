@@ -39,10 +39,16 @@ genNamesModule moduleName = Fold step initial done
 
     step acc = \case
         N.SingleChar{..} -> step' acc char name
-        N.CharRange{..} -> foldl'
-            (\a c -> step' a c (mkName prefix c))
-            acc
-            [start..end]
+        N.CharRange{..} -> if prefix `elem` rangePrefixes
+            then foldl'
+                (\a c -> step' a c (mkName prefix c))
+                acc
+                [start..end]
+            else error . mconcat $
+                [ "Unexpected name range: "
+                , show prefix
+                , ". Please update the generator and the "
+                , "Unicode.Char.General.Names* modules" ]
 
     mkName prefix c = prefix <> showHexCodepointBS c
 
@@ -95,6 +101,14 @@ genNamesModule moduleName = Fold step initial done
     nushu = 0xf5
     hangul = 0x80
 
+    rangePrefixes =
+        [ "CJK COMPATIBILITY IDEOGRAPH-"
+        , "CJK UNIFIED IDEOGRAPH-"
+        , "TANGUT IDEOGRAPH-"
+        , "EGYPTIAN HIEROGLYPH-"
+        , "KHITAN SMALL SCRIPT CHARACTER-"
+        , "NUSHU CHARACTER-" ]
+
     encodeName name
         | BS.take 28 name == "CJK COMPATIBILITY IDEOGRAPH-"   = ("", cjkCompat, 0, True)
         | BS.take 22 name == "CJK UNIFIED IDEOGRAPH-"         = ("", cjkUnified, 0, True)
@@ -102,7 +116,7 @@ genNamesModule moduleName = Fold step initial done
         | BS.take 20 name == "EGYPTIAN HIEROGLYPH-"           = ("", egyptianHieroglyph, 0, True)
         | BS.take 30 name == "KHITAN SMALL SCRIPT CHARACTER-" = ("", khitan, 0, True)
         | BS.take 16 name == "NUSHU CHARACTER-"               = ("", nushu, 0, True)
-        | BS.take 16 name == "HANGUL SYLLABLE "             =
+        | BS.take 16 name == "HANGUL SYLLABLE "               =
             let !name' = BS.drop 16 name; !len = BS.length name'
             in if len <= 12
                 then (name', hangul + len, len, True)
