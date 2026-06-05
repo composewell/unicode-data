@@ -14,6 +14,9 @@ copyright:           2023 Composewell Technologies and Contributors
 category:            Data,Text,Unicode
 stability:           Experimental
 build-type:          Simple
+extra-source-files:
+  cbits/icu.c
+  cbits/icu.h
 
 source-repository head
   type: git
@@ -47,9 +50,6 @@ common compile-options
                -fwarn-incomplete-uni-patterns
                -fwarn-tabs
   default-language: Haskell2010
-
-extra-source-files:
-  cbits/icu.h
 
 library
   import: default-extensions, compile-options
