@@ -35,7 +35,7 @@ import Data.Int (Int8)
 import Data.Version (Version, makeVersion)
 import Data.Word (Word32)
 import Foreign (Ptr)
-import Foreign.C (CInt(..))
+import Foreign.C (CBool(..), CInt(..))
 import Foreign.Marshal.Array (allocaArray, peekArray)
 import System.IO.Unsafe (unsafePerformIO)
 
@@ -153,11 +153,13 @@ toGeneralCategory = \case
     deriving (Bounded, Eq, Ord, Show) #}
 
 foreign import ccall safe "icu.h __hs_u_hasBinaryProperty" u_hasBinaryProperty
-    :: UChar32 -> CInt -> Bool
+    :: UChar32 -> CInt -> CBool
 
 hasBinaryProperty :: Char -> UProperty -> Bool
 hasBinaryProperty c
-    = u_hasBinaryProperty (fromIntegral (ord c))
+    = toEnum
+    . fromIntegral
+    . u_hasBinaryProperty (fromIntegral (ord c))
     . fromIntegral
     . fromEnum
 

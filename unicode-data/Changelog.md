@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.0 (September 2026)
+
+- Updated to [Unicode 18.0.0](https://www.unicode.org/versions/Unicode18.0.0/).
+
 ## 0.8.0 (September 2025)
 
 - Updated to [Unicode 17.0.0](https://www.unicode.org/versions/Unicode17.0.0/).

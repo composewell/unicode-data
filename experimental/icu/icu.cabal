@@ -68,7 +68,8 @@ library
     , text             >= 2.0   && < 2.2
   include-dirs: cbits
   c-sources: cbits/icu.c
-  cc-options: -Wall -Wextra -pedantic
+  -- FIXME: -pedantic
+  cc-options: -Wall -Wextra
   extra-libraries: icuuc
   pkgconfig-depends:
     icu-uc >= 72.1

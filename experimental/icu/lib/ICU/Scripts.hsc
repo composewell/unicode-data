@@ -294,4 +294,6 @@ data Script
     | Tayo                        -- ^ USCRIPT_TAI_YO                        = 210
     | Tols                        -- ^ USCRIPT_TOLONG_SIKI                   = 211
     | Hntl                        -- ^ USCRIPT_TRADITIONAL_HAN_WITH_LATIN    = 212
+    | Pcun                        -- ^ USCRIPT_PROTO_CUNEIFORM               = 213
+    | Seal                        -- ^ USCRIPT_SEAL                          = 214
     deriving (Bounded, Enum, Eq, Ord, Show)

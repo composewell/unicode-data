@@ -55,7 +55,12 @@ spec = do
         name '\x18B00' `shouldBe` Just "KHITAN SMALL SCRIPT CHARACTER-18B00"
         name '\x18CFF' `shouldBe` Just "KHITAN SMALL SCRIPT CHARACTER-18CFF"
         name '\x2f89f' `shouldBe` Just "CJK COMPATIBILITY IDEOGRAPH-2F89F"
-        -- Last name defined, as of Unicode 16.0.0
+        -- Names generated using pattern (Remaining scripts)
+        name '\x17000' `shouldBe` Just "TANGUT IDEOGRAPH-17000"
+        name '\x18e00' `shouldBe` Just "JURCHEN CHARACTER-18E00"
+        name '\x1b170' `shouldBe` Just "NUSHU CHARACTER-1B170"
+        name '\x3d000' `shouldBe` Just "SMALL SEAL CHARACTER-3D000"
+        -- Last name defined, as of Unicode 18.0.0
         name '\xe01ef' `shouldBe` Just "VARIATION SELECTOR-256"
         name maxBound  `shouldBe` Nothing
     it "correctedName: Test some characters" do

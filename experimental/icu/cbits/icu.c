@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <unicode/utypes.h>
 #include <unicode/uchar.h>
 #include <unicode/uscript.h>
