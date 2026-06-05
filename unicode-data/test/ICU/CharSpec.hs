@@ -7,7 +7,9 @@ module ICU.CharSpec
 import Control.Applicative (Alternative(..))
 import Data.Bits (Bits(..))
 import qualified Data.Char as Char
+import Data.Dynamic (toDyn, fromDynamic)
 import Data.Foldable (traverse_)
+import Data.Typeable (Typeable)
 import Data.Version (showVersion, versionBranch)
 import Numeric (showHex)
 import Test.Hspec
@@ -62,7 +64,7 @@ spec = do
     -- TODO: other functions
     where
     ourUnicodeVersion = versionBranch U.unicodeVersion
-    theirUnicodeVersion = versionBranch ICU.unicodeVersion
+    -- theirUnicodeVersion = versionBranch ICU.unicodeVersion
     showCodePoint c = ("U+" ++) . fmap U.toUpper . showHex (U.ord c)
     -- Check if the character is not assigned in exactly one Unicode version.
     isUnassigned c = (U.generalCategory c == U.NotAssigned)
@@ -78,7 +80,7 @@ spec = do
     -- 3. Create pending spec for each Char that raises a Unicode version
     --    mismatch between ICU and unicode-data.
     checkAndGatherErrors
-        :: forall a. (HasCallStack, Eq a, Show a)
+        :: forall a. (HasCallStack, Typeable a, Eq a, Show a)
         => String
         -> (Char -> a)
         -> (Char -> a)
@@ -96,11 +98,13 @@ spec = do
             | n == nRef = acc
             -- Unicode version mismatch: char is not mapped in one of the libs:
             -- add warning.
-            | age' > ourUnicodeVersion || age' > theirUnicodeVersion ||
-              isUnassigned c
+            | age' > ourUnicodeVersion || isUnassigned c
             = acc{warnings=(c, Unassigned) : warnings acc}
             | hasDifferentCategory c
             = acc{warnings=(c, CategoryChange) : warnings acc}
+            | Just True <- (\(c', cRef') -> (c == c') /= (c == cRef'))
+                        <$> fromDynamic (toDyn (f c, fRef c))
+            = acc{warnings=(c, CaseChange) : warnings acc}
             -- Error
             | otherwise =
                 let !msg = mconcat
@@ -124,6 +128,11 @@ spec = do
                     , showVersion (ICU.charAge c)
                     , ")" ]
                 CategoryChange -> " (different general category)"
+                CaseChange -> mconcat
+                    [ " (case change: unicode data: "
+                    , show (f c)
+                    , ", ICU: "
+                    , show (fRef c) ]
             ]
 
 -- | Helper to compare our GeneralCategory to 'Data.Char.GeneralCategory'.
@@ -138,6 +147,7 @@ instance Eq GeneralCategory where
 data MismatchReason
     = Unassigned
     | CategoryChange
+    | CaseChange
 
 -- | Warning accumulator
 data Acc = Acc
