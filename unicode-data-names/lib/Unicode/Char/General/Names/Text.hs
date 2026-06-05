@@ -63,6 +63,12 @@ name (C# c#) = case DerivedName.name c# of
         DerivedName.NushuCharacter -> Just n
             where
             !n = mkNameFromTemplate "NUSHU CHARACTER-"# 16# (ord# c#)
+        DerivedName.JurchenCharacter -> Just n
+            where
+            !n = mkNameFromTemplate "JURCHEN CHARACTER-"# 18# (ord# c#)
+        DerivedName.SealCharacter -> Just n
+            where
+            !n = mkNameFromTemplate "SMALL SEAL CHARACTER-"# 21# (ord# c#)
         _
             | isTrue# (len# <# DerivedName.HangulSyllable) ->
                 let !n = unpackAddr# name# len#

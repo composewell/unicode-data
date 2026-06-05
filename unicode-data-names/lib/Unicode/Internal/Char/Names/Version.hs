@@ -13,8 +13,8 @@ module Unicode.Internal.Char.Names.Version (unicodeVersion) where
 import Data.Version (Version, makeVersion)
 
 -- | Version of the Unicode standard used by this package:
--- [17.0.0](https://www.unicode.org/versions/Unicode17.0.0/).
+-- [18.0.0](https://www.unicode.org/versions/Unicode18.0.0/).
 --
 -- @since 0.3.0
 unicodeVersion :: Version
-unicodeVersion = makeVersion [17,0,0]
+unicodeVersion = makeVersion [18,0,0]

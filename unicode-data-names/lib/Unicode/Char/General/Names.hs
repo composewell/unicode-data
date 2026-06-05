@@ -92,6 +92,14 @@ name (C# c#) = case DerivedName.name c# of
             where
             !hex = showHex c#
             !n = 'N':'U':'S':'H':'U':' ':'C':'H':'A':'R':'A':'C':'T':'E':'R':'-':hex
+        DerivedName.JurchenCharacter -> Just n
+            where
+            !hex = showHex c#
+            !n = 'J':'U':'R':'C':'H':'E':'N':' ':'C':'H':'A':'R':'A':'C':'T':'E':'R':'-':hex
+        DerivedName.SealCharacter -> Just n
+            where
+            !hex = showHex c#
+            !n = 'S':'M':'A':'L':'L':' ':'S':'E':'A':'L':' ':'C':'H':'A':'R':'A':'C':'T':'E':'R':'-':hex
         _
             | isTrue# (len# <# DerivedName.HangulSyllable) -> let !n = unpack name# [] len# in Just n
             | otherwise ->
