@@ -69,39 +69,39 @@ jobs:
             use_haskell_actions: true
             ghc_version: 8.2.2
             runner: ubuntu-latest
-            cabal_version: 3.2.0.0
+            cabal_version: 3.10.3.0
             pack_options: DISABLE_TEST=y
             ignore_error: false
 
           - name: 8.4.4
             ghc_version: 8.4.4
             runner: ubuntu-latest
-            cabal_version: 3.2.0.0
+            cabal_version: 3.10.3.0
             pack_options: DISABLE_TEST=y
             ignore_error: false
 
           - name: 8.6.5
             ghc_version: 8.6.5
             runner: ubuntu-latest
-            cabal_version: 3.2.0.0
+            cabal_version: 3.10.3.0
             ignore_error: false
 
           - name: 8.8.4
             ghc_version: 8.8.4
             runner: ubuntu-latest
-            cabal_version: 3.2.0.0
+            cabal_version: 3.10.3.0
             ignore_error: false
 
           - name: 8.10.7
             ghc_version: 8.10.7
             runner: ubuntu-latest
-            cabal_version: 3.2.0.0
+            cabal_version: 3.10.3.0
             ignore_error: false
 
           - name: 9.0.2
             ghc_version: 9.0.2
             runner: ubuntu-latest
-            cabal_version: 3.2.0.0
+            cabal_version: 3.10.3.0
             ignore_error: false
 
           - name: 9.2.8+ucd2haskell
@@ -109,25 +109,25 @@ jobs:
             # [NOTE] Oldest version supported by ucd2haskell
             pack_options: CABAL_BUILD_OPTIONS="-f ucd2haskell"
             runner: ubuntu-latest
-            cabal_version: 3.6.2.0
+            cabal_version: 3.10.3.0
             ignore_error: false
 
           - name: 9.4.8
             ghc_version: 9.4.8
             runner: ubuntu-latest
-            cabal_version: 3.8.1.0
+            cabal_version: 3.10.3.0
             ignore_error: false
 
           - name: 9.4.8+macOS
             ghc_version: 9.4.8
             runner: macos-latest
-            cabal_version: 3.10.1.0
+            cabal_version: 3.10.3.0
             ignore_error: false
 
           - name: 9.6.5
             ghc_version: 9.6.5
             runner: ubuntu-latest
-            cabal_version: 3.10.1.0
+            cabal_version: 3.10.3.0
             ignore_error: false
 
           - name: 9.8.4
@@ -158,7 +158,7 @@ jobs:
           # TODO: update to 9.16.1-alpha when available
           # - name: 9.16.1-alpha
           #   ghc_version: head
-          #   cabal_version: 3.16.1.0
+          #   cabal_version: 3.18.1.0
           #   pack_options: >
           #       GHCUP_GHC_OPTIONS="-u https://downloads.haskell.org/ghc/9.16.1-alpha1/ghc-9.16.0.XXXXX-x86_64-deb12-linux.tar.xz"
           #       DISABLE_TEST=y
@@ -177,7 +177,7 @@ jobs:
           - name: hlint
             pack_options: HLINT_OPTIONS="lint" HLINT_TARGETS="lib exe"
             runner: ubuntu-latest
-            cabal_version: 3.2.0.0
+            cabal_version: 3.10.3.0
             ignore_error: false
 
     steps:
